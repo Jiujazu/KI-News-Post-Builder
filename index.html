@@ -75,8 +75,8 @@ body{
 }
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;padding-top:8px}
 .topbar h1{font-size:17px;font-weight:700;white-space:nowrap;color:var(--title-color)}
-.btn-row{display:flex;gap:6px}
-button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:12px 16px;border-radius:12px;transition:all .15s;font-family:inherit;-webkit-appearance:none}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap}
+button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12px;border-radius:12px;transition:all .15s;font-family:inherit;-webkit-appearance:none}
 .btn-e{background:var(--accent);color:#fff}
 .btn-e.on{background:var(--accent-dark)}
 .btn-x{background:var(--btn-secondary-bg);color:var(--btn-secondary-text)}
@@ -183,10 +183,11 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:12px 16
   <div class="topbar">
     <h1>KI News</h1>
     <div class="btn-row">
-      <button class="btn-e on" id="bE" aria-label="Editor schliessen">&#10003; Fertig</button>
+      <button class="btn-e on" id="bE" aria-label="Vorschau anzeigen">Vorschau</button>
       <button class="btn-x" id="bX" aria-label="Als JPG speichern">JPG speichern</button>
       <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
       <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
+      <button class="btn-x" id="bN" aria-label="Neuen Post beginnen">Neu</button>
     </div>
   </div>
   <div class="pw"><canvas id="cv" width="1200" height="1500"></canvas></div>
@@ -498,8 +499,8 @@ function renderUI() {
 $bE.addEventListener('click', function() {
   S.editing = !S.editing;
   $EP.style.display = S.editing ? 'block' : 'none';
-  this.textContent = S.editing ? '\u2713 Fertig' : 'Bearbeiten';
-  this.setAttribute('aria-label', S.editing ? 'Editor schliessen' : 'Editor oeffnen');
+  this.textContent = S.editing ? 'Vorschau' : 'Bearbeiten';
+  this.setAttribute('aria-label', S.editing ? 'Vorschau anzeigen' : 'Editor oeffnen');
   this.classList.toggle('on', S.editing);
   if (!S.editing) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -507,6 +508,27 @@ $bE.addEventListener('click', function() {
   } else {
     autoSize($hl);
   }
+});
+// New post
+var $bN = document.getElementById('bN');
+$bN.addEventListener('click', function() {
+  revokeBlob(0); revokeBlob(1);
+  S.imgs = [null, null]; S.blobs = [null, null]; S.creds = ['', ''];
+  S.crop = [50, 50]; S.allCaps = false;
+  S.hlLines = ['']; S.subText = '';
+  var m = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  var d = new Date();
+  S.dateText = d.getDate() + '. ' + m[d.getMonth()] + ' ' + d.getFullYear();
+  $hl.value = ''; $sub.value = ''; $date.value = S.dateText;
+  $togCaps.classList.remove('on');
+  $togCaps.setAttribute('aria-checked', 'false');
+  $f[0].value = ''; $f[1].value = '';
+  setLayout('one');
+  setFormat('4:5');
+  autoSize($hl);
+  renderUI();
+  saveState();
+  showToast('Neuer Post');
 });
 // Export (async toBlob)
 $bX.addEventListener('click', function() {
@@ -556,6 +578,7 @@ $togCaps.addEventListener('click', function() {
   S.allCaps = !S.allCaps;
   this.classList.toggle('on', S.allCaps);
   this.setAttribute('aria-checked', String(S.allCaps));
+  saveState();
   scheduleDraw();
 });
 // Headline input
@@ -566,17 +589,20 @@ $hl.addEventListener('input', function() {
   if (S.hlLines.length === 0) S.hlLines = [''];
   updateCharCount(this, $hlCount, hlLimits()[0], hlLimits()[1]);
   autoSize(this);
+  saveState();
   scheduleDraw();
 });
 // Subtitle input
 $sub.addEventListener('input', function() {
   S.subText = this.value;
   updateCharCount(this, $subCount, subLimits()[0], subLimits()[1]);
+  saveState();
   scheduleDraw();
 });
 // Date input
 $date.addEventListener('input', function() {
   S.dateText = this.value;
+  saveState();
   scheduleDraw();
 });
 // Layout buttons
@@ -591,6 +617,7 @@ function setLayout(l) {
   updateCropVis();
   updateSwapBtn();
   refreshCounts();
+  saveState();
   scheduleDraw();
 }
 $lbTwo.addEventListener('click',  function() { setLayout('two'); });
@@ -608,6 +635,7 @@ function setFormat(fmt) {
   }
   $hint.textContent = fmt + ' Format \u00b7 ' + W + ' \u00d7 ' + H + ' px';
   refreshCounts();
+  saveState();
   scheduleDraw();
 }
 for (var fi = 0; fi < $fmtBtns.length; fi++) {
@@ -623,6 +651,7 @@ $swapBtn.addEventListener('click', function(e) {
   t = S.blobs[0]; S.blobs[0] = S.blobs[1]; S.blobs[1] = t;
   t = S.creds[0]; S.creds[0] = S.creds[1]; S.creds[1] = t;
   t = S.crop[0];  S.crop[0]  = S.crop[1];  S.crop[1]  = t;
+  saveState();
   renderUI();
 });
 // Image loading
@@ -684,6 +713,7 @@ function loadImageFile(i, file) {
     revokeBlob(i);
     S.imgs[i] = null; S.creds[i] = ''; S.crop[i] = 50;
     $f[i].value = '';
+    saveState();
     renderUI();
   });
   // Crop slider
@@ -695,12 +725,12 @@ function loadImageFile(i, file) {
   // Credit input
   $cr[i].addEventListener('input', function() {
     S.creds[i] = this.value;
+    saveState();
     scheduleDraw();
   });
 });
 // ===== DRAW =====
 function draw() {
-  saveState();
   // Background from cached 1px gradient
   cx.drawImage(gradCV, 0, 0, 1, H, 0, 0, W, H);
   var topPad = 55, footerH = 100;
@@ -854,8 +884,16 @@ function init() {
   autoSize($hl);
   draw();
 }
+var fontLoaded = false;
 if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(init);
+  document.fonts.ready.then(function() { fontLoaded = true; init(); });
+  // Fallback: if font takes too long, init anyway after 3s
+  setTimeout(function() {
+    if (!fontLoaded) {
+      showToast('\u26a0 Font nicht verf\u00fcgbar \u2013 Fallback aktiv');
+      init();
+    }
+  }, 3000);
 } else {
   window.addEventListener('load', init);
 }
