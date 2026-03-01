@@ -1013,11 +1013,21 @@ function init() {
   draw();
 }
 var fontLoaded = false;
-if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(function() { fontLoaded = true; init(); });
+if (document.fonts && document.fonts.load) {
+  // Explicitly trigger font download — fonts.ready alone resolves
+  // immediately when no DOM element references the font (Canvas-only usage)
+  document.fonts.load('bold 48px Festivo').then(function() {
+    fontLoaded = true;
+    init();
+  }).catch(function() {
+    fontLoaded = true;
+    showToast('\u26a0 Font nicht verf\u00fcgbar \u2013 Fallback aktiv');
+    init();
+  });
   // Fallback: if font takes too long, init anyway after 3s
   setTimeout(function() {
     if (!fontLoaded) {
+      fontLoaded = true;
       showToast('\u26a0 Font nicht verf\u00fcgbar \u2013 Fallback aktiv');
       init();
     }
