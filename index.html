@@ -65,14 +65,7 @@ body{
   overscroll-behavior-y:contain;
 }
 .app{max-width:680px;margin:0 auto;padding:12px 12px 100px}
-/* ===== STICKY PREVIEW ===== */
-.preview-sticky{
-  position:sticky;top:0;z-index:50;
-  background:var(--bg);
-  padding:0 0 8px;
-  margin:0 -12px;
-  padding-left:12px;padding-right:12px;
-}
+/* ===== TOPBAR ===== */
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;padding-top:8px}
 .topbar h1{font-size:17px;font-weight:700;white-space:nowrap;color:var(--title-color)}
 .btn-row{display:flex;gap:6px;flex-wrap:wrap}
@@ -81,8 +74,31 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .btn-e.on{background:var(--accent-dark)}
 .btn-x{background:var(--btn-secondary-bg);color:var(--btn-secondary-text)}
 .btn-x:active{transform:scale(.96)}
+/* ===== PREVIEW ===== */
+.preview-col{
+  margin-bottom:12px;
+  position:sticky;top:8px;z-index:50;
+  background:var(--bg);padding-bottom:8px;
+}
 .pw{display:flex;justify-content:center;overflow:hidden;border-radius:10px}
-.pw canvas{width:100%;max-width:480px;border-radius:10px;display:block}
+.pw canvas{width:100%;max-width:280px;border-radius:10px;display:block}
+/* ===== DESKTOP LAYOUT ===== */
+@media (min-width:1024px) {
+  .app{max-width:1200px;padding:12px 24px 40px}
+  .app-layout{display:flex;gap:24px;align-items:flex-start}
+  .preview-col{
+    flex:0 0 auto;width:480px;
+    top:12px;padding-bottom:0;
+  }
+  .pw canvas{max-width:100%}
+  .editor-col{flex:1;min-width:0}
+  .editor-col{display:block !important} /* always visible on desktop */
+  #bE{display:none} /* toggle not needed on desktop */
+}
+/* ===== TABLET (medium screens) ===== */
+@media (min-width:600px) and (max-width:1023px) {
+  .pw canvas{max-width:360px}
+}
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px}
 .ed-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--text-faint);margin-bottom:12px}
@@ -186,22 +202,23 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 </head>
 <body>
 <div class="app">
-<!-- ===== STICKY PREVIEW AREA ===== -->
-<div class="preview-sticky">
-  <div class="topbar">
-    <h1>KI News</h1>
-    <div class="btn-row">
-      <button class="btn-e on" id="bE" aria-label="Vorschau anzeigen">Vorschau</button>
-      <button class="btn-x" id="bX" aria-label="Als JPG speichern">JPG speichern</button>
-      <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
-      <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
-      <button class="btn-x" id="bN" aria-label="Neuen Post beginnen">Neu</button>
-    </div>
+<div class="topbar">
+  <h1>KI News</h1>
+  <div class="btn-row">
+    <button class="btn-e on" id="bE" aria-label="Vorschau anzeigen">Vorschau</button>
+    <button class="btn-x" id="bX" aria-label="Als JPG speichern">JPG speichern</button>
+    <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
+    <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
+    <button class="btn-x" id="bN" aria-label="Neuen Post beginnen">Neu</button>
   </div>
-  <div class="pw"><canvas id="cv" width="1200" height="1500"></canvas></div>
 </div>
-<!-- ===== EDITOR ===== -->
-<div id="EP">
+<div class="app-layout">
+  <!-- ===== PREVIEW ===== -->
+  <div class="preview-col">
+    <div class="pw"><canvas id="cv" width="1200" height="1500"></canvas></div>
+  </div>
+  <!-- ===== EDITOR ===== -->
+  <div class="editor-col" id="EP">
   <!-- TEXT -->
   <div class="ed">
     <div class="ed-t">Text</div>
@@ -273,7 +290,8 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
       </div>
     </div>
   </div>
-</div><!-- /EP -->
+  </div><!-- /editor-col -->
+</div><!-- /app-layout -->
 <div class="hint" id="hint">4:5 Format &middot; 1200 &times; 1500 px</div>
 </div>
 <!-- TOAST -->
@@ -563,8 +581,10 @@ function renderUI() {
   scheduleDraw();
 }
 // ===== EVENTS =====
-// Edit toggle
+// Edit toggle (mobile only — on desktop both panels are always visible)
+function isDesktop() { return window.innerWidth >= 1024; }
 $bE.addEventListener('click', function() {
+  if (isDesktop()) return; // no toggle needed on desktop
   S.editing = !S.editing;
   $EP.style.display = S.editing ? 'block' : 'none';
   this.textContent = S.editing ? 'Vorschau' : 'Bearbeiten';
@@ -982,6 +1002,13 @@ function init() {
   setLayout(S.layout);
   setFormat(S.format);
   setGradient(activeGradient);
+  // On desktop: always show editor; on mobile: respect S.editing
+  if (isDesktop()) {
+    $EP.style.display = 'block';
+    $bE.style.display = 'none';
+  } else {
+    $EP.style.display = S.editing ? 'block' : 'none';
+  }
   autoSize($hl);
   draw();
 }
@@ -998,7 +1025,13 @@ if (document.fonts && document.fonts.ready) {
 } else {
   window.addEventListener('load', init);
 }
-window.addEventListener('resize', function() { scheduleDraw(); });
+window.addEventListener('resize', function() {
+  // Ensure editor visibility matches layout mode
+  if (isDesktop()) {
+    $EP.style.display = 'block';
+  }
+  scheduleDraw();
+});
 })();
 </script>
 </body>
