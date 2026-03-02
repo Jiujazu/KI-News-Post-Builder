@@ -1068,8 +1068,18 @@ function prepareText(maxW) {
   var headlineText = S.hlLines.join('\n');
   if (S.allCaps) headlineText = headlineText.toUpperCase();
   var isNone = (S.layout === 'none');
-  var hlFS = isNone ? (S.hlLines.length > 1 ? 230 : 260) : (S.hlLines.length > 1 ? 120 : 130);
-  var subFS = isNone ? 90 : 60;
+  var isLandscape = W > H;
+  var hlFS, subFS;
+  if (isNone) {
+    hlFS = S.hlLines.length > 1 ? 230 : 260;
+    subFS = 90;
+  } else if (isLandscape) {
+    hlFS = S.hlLines.length > 1 ? 78 : 88;
+    subFS = 42;
+  } else {
+    hlFS = S.hlLines.length > 1 ? 120 : 130;
+    subFS = 60;
+  }
   // Auto-shrink headline
   var rawLines = headlineText.split('\n');
   cx.font = 'bold ' + hlFS + 'px Festivo, serif';
@@ -1082,7 +1092,7 @@ function prepareText(maxW) {
     }
   }
   if (worstRatio < 1) {
-    hlFS = Math.max(Math.floor(hlFS * worstRatio), HL_MIN_FS);
+    hlFS = Math.max(Math.floor(hlFS * worstRatio), isLandscape ? 60 : HL_MIN_FS);
   }
   // Word-wrap headline
   var hlArr = [];
@@ -1104,14 +1114,14 @@ function prepareText(maxW) {
     }
   }
   cx.restore(); // end measurement phase
-  return { hlArr: hlArr, hlFS: hlFS, subArr: subArr, subFS: subFS, isNone: isNone };
+  return { hlArr: hlArr, hlFS: hlFS, subArr: subArr, subFS: subFS, isNone: isNone, isLandscape: isLandscape };
 }
 function drawText(t, maxW) {
   var hlLineH = Math.round(t.hlFS * HL_LINE_H_FACTOR);
   var hlBlockH = t.hlArr.length * hlLineH;
   var subLineH = Math.round(t.subFS * SUB_LINE_H_FACTOR);
   var subBlockH = t.subArr.length > 0 ? t.subArr.length * subLineH : 0;
-  var subGap = t.isNone ? 20 : 14;
+  var subGap = t.isNone ? 20 : t.isLandscape ? 8 : 14;
   // Y position
   var curY;
   if (t.isNone) {
@@ -1119,7 +1129,7 @@ function drawText(t, maxW) {
     var totalH = hlBlockH + (subBlockH > 0 ? subGap + subBlockH : 0);
     curY = TOP_PAD + Math.round((availH - totalH) / 2);
   } else {
-    curY = TOP_PAD;
+    curY = t.isLandscape ? 36 : TOP_PAD;
   }
   // Headline (centered)
   cx.font = 'bold ' + t.hlFS + 'px Festivo, serif';
@@ -1145,8 +1155,11 @@ function drawText(t, maxW) {
   return curY;
 }
 function drawImages(curY) {
-  var imgTop = curY + IMG_TOP_GAP;
-  var imgH = Math.max(H - FOOTER_H - imgTop, IMG_MIN_H);
+  var isLandscape = W > H;
+  var imgTopGap = isLandscape ? 14 : IMG_TOP_GAP;
+  var footerH = isLandscape ? 70 : FOOTER_H;
+  var imgTop = curY + imgTopGap;
+  var imgH = Math.max(H - footerH - imgTop, IMG_MIN_H);
   if (S.layout === 'two') {
     var imgW = Math.round((W - MX * 2 - IMG_GAP) / 2);
     drawCroppedImage(0, MX, imgTop, imgW, imgH);
@@ -1156,17 +1169,21 @@ function drawImages(curY) {
   }
 }
 function drawFooter() {
+  var isLandscape = W > H;
+  var fFS = isLandscape ? 28 : FOOTER_FS;
+  var fBottom = isLandscape ? 20 : FOOTER_BOTTOM;
+  var fLogoH = isLandscape ? 42 : LOGO_H;
   cx.textBaseline = 'bottom';
-  cx.font = '500 ' + FOOTER_FS + 'px Festivo, serif';
+  cx.font = '500 ' + fFS + 'px Festivo, serif';
   cx.fillStyle = '#ffffff';
   cx.textAlign = 'center';
-  cx.fillText('vandieken.com', W / 2, H - FOOTER_BOTTOM);
+  cx.fillText('vandieken.com', W / 2, H - fBottom);
   cx.textAlign = 'left';
-  cx.fillText(S.dateText, MX, H - FOOTER_BOTTOM);
+  cx.fillText(S.dateText, MX, H - fBottom);
   if (LOGO.complete && LOGO.naturalWidth > 0) {
-    var lw = LOGO_H * (LOGO.naturalWidth / LOGO.naturalHeight);
+    var lw = fLogoH * (LOGO.naturalWidth / LOGO.naturalHeight);
     cx.globalAlpha = 0.85;
-    cx.drawImage(LOGO, W - MX - lw, H - FOOTER_BOTTOM - LOGO_H + 6, lw, LOGO_H);
+    cx.drawImage(LOGO, W - MX - lw, H - fBottom - fLogoH + 6, lw, fLogoH);
     cx.globalAlpha = 1;
   }
   cx.textBaseline = 'alphabetic';
