@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KI News">
 <meta name="theme-color" content="#0a0a1a">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob:;">
 <title>KI News Post Generator</title>
 <style>
 @font-face {
@@ -46,8 +47,8 @@
     --border-hover: #bbb;
     --text: #1a1a2e;
     --text-muted: #666;
-    --text-dim: #999;
-    --text-faint: #aaa;
+    --text-dim: #707070;
+    --text-faint: #767676;
     --input-bg: rgba(0,0,0,.04);
     --input-bg-focus: rgba(0,0,0,.07);
     --title-color: #1a1a2e;
@@ -86,35 +87,37 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 /* ===== PREVIEW ===== */
 .preview-col{
   margin-bottom:12px;
-  position:sticky;top:8px;z-index:50;
   background:var(--bg);padding-bottom:8px;
 }
 .pw{display:flex;justify-content:center;overflow:hidden;border-radius:var(--radius-md)}
-.pw canvas{width:100%;max-width:280px;border-radius:var(--radius-md);display:block}
+.pw canvas{width:100%;max-width:clamp(280px,75vw,360px);border-radius:var(--radius-md);display:block}
 /* ===== DESKTOP LAYOUT ===== */
 @media (min-width:1024px) {
   .app{max-width:1200px;padding:12px 24px 40px}
   .app-layout{display:flex;gap:24px;align-items:flex-start}
   .preview-col{
     flex:0 0 auto;width:480px;
-    top:12px;padding-bottom:0;
+    position:sticky;top:12px;z-index:50;padding-bottom:0;
   }
   .pw canvas{max-width:100%}
   .editor-col{flex:1;min-width:0}
   .editor-col{display:block !important} /* always visible on desktop */
   #segCtrl{display:none} /* toggle not needed on desktop */
 }
-/* ===== TABLET (medium screens) ===== */
-@media (min-width:600px) and (max-width:1023px) {
-  .pw canvas{max-width:360px}
+/* ===== MOBILE TOPBAR ===== */
+@media (max-width:1023px) {
+  .topbar{flex-wrap:wrap}
+  .btn-row{width:100%;justify-content:flex-start}
+  .btn-row button{padding:8px 10px;font-size:13px}
+  .seg{padding:6px 12px;font-size:12px}
 }
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px}
-.ed-t{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px}
+.ed-t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px}
 .fld{margin-bottom:14px;position:relative}
 .fld:last-child{margin-bottom:0}
-.fld label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:5px}
-.fld .charcount{float:right;font-size:11px;color:var(--text-faint);font-variant-numeric:tabular-nums}
+.fld label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px}
+.fld .charcount{float:right;font-size:12px;color:var(--text-faint);font-variant-numeric:tabular-nums}
 .fld .charcount.warn{color:#e85d4a}
 .fld input,.fld textarea{
   width:100%;background:var(--input-bg);border:1px solid var(--border-hover);
@@ -172,7 +175,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .swap-btn.show{display:flex}
 /* ===== CROP SLIDERS ===== */
 .crop-ctrl{margin-bottom:12px}
-.crop-ctrl label{font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px}
+.crop-ctrl label{font-size:13px;color:var(--text-dim);display:block;margin-bottom:6px}
 .crop-ctrl .sr{display:flex;align-items:center;gap:10px}
 .crop-ctrl input[type=range]{
   flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none;
@@ -192,7 +195,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 }
 .lb.on{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
 /* ===== HINT ===== */
-.hint{text-align:center;font-size:12px;color:var(--text-dim);padding:8px 0 20px}
+.hint{text-align:center;font-size:13px;color:var(--text-dim);padding:8px 0 20px}
 /* ===== TOAST ===== */
 .toast{
   position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -249,16 +252,24 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .hist-item:hover .hist-del,.hist-item:focus-within .hist-del{opacity:1}
 @media (hover:none){.hist-item .hist-del{opacity:1}}
 .hist-del:hover,.hist-del:focus-visible{background:rgba(220,50,50,.9)}
+/* ===== FOCUS INDICATORS ===== */
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.img-zone .crd:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.crop-ctrl input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+/* ===== TOUCH TARGET IMPROVEMENTS ===== */
+.tog::before{content:'';position:absolute;inset:-8px}
+.hist-del::before{content:'';position:absolute;inset:-6px}
+.crop-ctrl input[type=range]::-webkit-slider-thumb{width:32px;height:32px}
 </style>
 </head>
 <body>
 <div class="app">
-<div class="topbar">
+<header class="topbar">
   <h1>KI News</h1>
   <div class="btn-row">
-    <div class="seg-ctrl" id="segCtrl">
-      <button class="seg active" id="segEdit" aria-label="Editor anzeigen">Editor</button>
-      <button class="seg" id="segPreview" aria-label="Vorschau anzeigen">Vorschau</button>
+    <div class="seg-ctrl" id="segCtrl" role="tablist" aria-label="Ansicht">
+      <button class="seg active" id="segEdit" role="tab" aria-selected="true" aria-label="Editor anzeigen">Editor</button>
+      <button class="seg" id="segPreview" role="tab" aria-selected="false" aria-label="Vorschau anzeigen">Vorschau</button>
     </div>
     <button class="btn-primary" id="bX" aria-label="Als JPG speichern">JPG speichern</button>
     <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
@@ -267,19 +278,19 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
     <button class="btn-x" id="bH" aria-label="Archiv öffnen">Archiv</button>
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
   </div>
-</div>
-<div class="app-layout">
+</header>
+<main class="app-layout">
   <!-- ===== PREVIEW ===== -->
   <div class="preview-col">
-    <div class="pw"><canvas id="cv" width="1200" height="1500"></canvas></div>
+    <div class="pw"><canvas id="cv" width="1200" height="1500" role="img" aria-label="Vorschau des generierten Posts"></canvas></div>
   </div>
   <!-- ===== EDITOR ===== -->
   <div class="editor-col" id="EP">
   <!-- TEXT -->
   <div class="ed">
-    <div class="ed-t">Text</div>
+    <h2 class="ed-t">Text</h2>
     <div class="fld">
-      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount"></span></label>
+      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
       <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
     </div>
     <div class="tog-row">
@@ -287,7 +298,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
       <span>GROSSBUCHSTABEN</span>
     </div>
     <div class="fld">
-      <label>Untertitel (Enter = Umbruch) <span class="charcount" id="subCount"></span></label>
+      <label>Untertitel (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
       <textarea id="inSub" rows="1" placeholder="optional"></textarea>
     </div>
     <div class="fld">
@@ -297,23 +308,23 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   </div>
   <!-- LAYOUT -->
   <div class="ed">
-    <div class="ed-t">Layout</div>
-    <div class="lbtns" style="margin-bottom:8px">
-      <button class="lb on" id="lbOne" aria-label="Layout: 1 Bild">1 Bild</button>
-      <button class="lb" id="lbTwo" aria-label="Layout: 2 Bilder">2 Bilder</button>
-      <button class="lb" id="lbNone" aria-label="Layout: Kein Bild">Kein Bild</button>
+    <h2 class="ed-t">Layout</h2>
+    <div class="lbtns" style="margin-bottom:8px" role="radiogroup" aria-label="Bild-Layout">
+      <button class="lb on" id="lbOne" role="radio" aria-checked="true" aria-label="Layout: 1 Bild">1 Bild</button>
+      <button class="lb" id="lbTwo" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder">2 Bilder</button>
+      <button class="lb" id="lbNone" role="radio" aria-checked="false" aria-label="Layout: Kein Bild">Kein Bild</button>
     </div>
-    <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:5px">Format</label>
-    <div class="lbtns">
-      <button class="lb fmt on" data-fmt="4:5" aria-label="Format 4:5" title="Instagram Post">4:5</button>
-      <button class="lb fmt" data-fmt="1:1" aria-label="Format 1:1" title="Quadratisch">1:1</button>
-      <button class="lb fmt" data-fmt="16:9" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
-      <button class="lb fmt" data-fmt="9:16" aria-label="Format 9:16" title="Story / Reel">9:16</button>
+    <label style="display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px">Format</label>
+    <div class="lbtns" role="radiogroup" aria-label="Bildformat">
+      <button class="lb fmt on" data-fmt="4:5" role="radio" aria-checked="true" aria-label="Format 4:5" title="Instagram Post">4:5</button>
+      <button class="lb fmt" data-fmt="1:1" role="radio" aria-checked="false" aria-label="Format 1:1" title="Quadratisch">1:1</button>
+      <button class="lb fmt" data-fmt="16:9" role="radio" aria-checked="false" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
+      <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
     </div>
   </div>
   <!-- IMAGES -->
   <div class="ed" id="imgEd">
-    <div class="ed-t">Bilder</div>
+    <h2 class="ed-t">Bilder</h2>
     <div class="img-zones">
       <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
@@ -347,12 +358,12 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
     </div>
   </div>
   </div><!-- /editor-col -->
-</div><!-- /app-layout -->
+</main><!-- /app-layout -->
 <div class="hint" id="hint">4:5 Format &middot; 1200 &times; 1500 px</div>
 </div>
 <!-- HISTORY DRAWER -->
 <div class="hist-overlay" id="histOverlay"></div>
-<div class="hist-drawer" id="histDrawer" role="dialog" aria-label="Post-Archiv">
+<div class="hist-drawer" id="histDrawer" role="dialog" aria-modal="true" aria-label="Post-Archiv">
   <div class="hist-header">
     <h2>Archiv</h2>
     <button class="hist-close" id="histClose" aria-label="Archiv schließen">&times;</button>
@@ -363,43 +374,45 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   </div>
 </div>
 <!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
 "use strict";
 // ===== CONSTANTS =====
-var SYS_FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
-var MX = 52;                // horizontal margin
-var TOP_PAD = 55;           // space above headline
-var FOOTER_H = 100;         // footer height
-var IMG_GAP = 16;           // gap between two images
-var IMG_TOP_GAP = 24;       // gap between text and images
-var IMG_MIN_H = 80;         // minimum image height
-var HL_MIN_FS = 120;        // minimum headline font size after shrink
-var HL_MAX_LINES = 3;       // max wrapped headline lines
-var SUB_MAX_LINES = 2;      // max wrapped subtitle lines
-var HL_LINE_H_FACTOR = 1.08;  // headline line-height multiplier
-var SUB_LINE_H_FACTOR = 1.15; // subtitle line-height multiplier
-var FOOTER_FS = 36;         // footer font size
-var FOOTER_BOTTOM = 32;     // footer distance from bottom
-var LOGO_H = 56;            // logo height in footer
-var FORMATS = {
+const SYS_FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+const MX = 52;                // horizontal margin
+const TOP_PAD = 55;           // space above headline
+const FOOTER_H = 100;         // footer height
+const IMG_GAP = 16;           // gap between two images
+const IMG_TOP_GAP = 24;       // gap between text and images
+const IMG_MIN_H = 80;         // minimum image height
+const HL_MIN_FS = 120;        // minimum headline font size after shrink
+const HL_MAX_LINES = 3;       // max wrapped headline lines
+const SUB_MAX_LINES = 2;      // max wrapped subtitle lines
+const HL_LINE_H_FACTOR = 1.08;  // headline line-height multiplier
+const SUB_LINE_H_FACTOR = 1.15; // subtitle line-height multiplier
+const FOOTER_FS = 36;         // footer font size
+const FOOTER_BOTTOM = 32;     // footer distance from bottom
+const LOGO_H = 56;            // logo height in footer
+const FORMATS = {
   '4:5':  { w: 1200, h: 1500 },
   '1:1':  { w: 1200, h: 1200 },
   '16:9': { w: 1200, h: 675 },
   '9:16': { w: 1080, h: 1920 }
 };
-var W = 1200, H = 1500;
-var LOGO = new Image();
+let W = 1200, H = 1500;
+const LOGO = new Image();
+LOGO.onload = function() { scheduleDraw(); };
+LOGO.onerror = function() { console.warn('Logo konnte nicht geladen werden'); };
 LOGO.src = "logo.png";
 // ===== GRADIENT =====
-var GRADIENT_STOPS = [
+const GRADIENT_STOPS = [
   [0,    '#025671'],
   [0.50, '#261c53'],
   [1,    '#1f0e1d']
 ];
 // ===== CACHED GRADIENT =====
-var gradCV = document.createElement('canvas');
+const gradCV = document.createElement('canvas');
 function rebuildGradient() {
   gradCV.width = 1; gradCV.height = H;
   var gx = gradCV.getContext('2d');
@@ -412,16 +425,16 @@ function rebuildGradient() {
 }
 rebuildGradient();
 // ===== CANVAS =====
-var cv = document.getElementById('cv');
-var cx = cv.getContext('2d');
+const cv = document.getElementById('cv');
+const cx = cv.getContext('2d');
 // ===== CONSTANTS =====
-var MONTHS_DE = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const MONTHS_DE = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 function todayDE() {
   var d = new Date();
   return d.getDate() + '. ' + MONTHS_DE[d.getMonth()] + ' ' + d.getFullYear();
 }
 // ===== STATE =====
-var S = {
+const S = {
   imgs: [null, null],
   blobs: [null, null],
   creds: ['', ''],
@@ -435,50 +448,52 @@ var S = {
   dateText: todayDE()
 };
 // ===== DOM REFS =====
-var $hl   = document.getElementById('inHL');
-var $sub  = document.getElementById('inSub');
-var $date = document.getElementById('inDate');
-var $EP   = document.getElementById('EP');
-var $segCtrl = document.getElementById('segCtrl');
-var $segEdit = document.getElementById('segEdit');
-var $segPreview = document.getElementById('segPreview');
-var $bX   = document.getElementById('bX');
-var $bC   = document.getElementById('bC');
-var $bS   = document.getElementById('bS');
-var $togCaps = document.getElementById('togCaps');
-var $swapBtn = document.getElementById('swapBtn');
-var $toast   = document.getElementById('toast');
-var $lbTwo   = document.getElementById('lbTwo');
-var $lbOne   = document.getElementById('lbOne');
-var $lbNone  = document.getElementById('lbNone');
-var $imgEd   = document.getElementById('imgEd');
-var $hlCount  = document.getElementById('hlCount');
-var $subCount = document.getElementById('subCount');
-var $hint    = document.getElementById('hint');
-var $fmtBtns = document.querySelectorAll('.fmt');
-var $z  = [document.getElementById('z0'),  document.getElementById('z1')];
-var $pv = [document.getElementById('pv0'), document.getElementById('pv1')];
-var $ph = [document.getElementById('ph0'), document.getElementById('ph1')];
-var $f  = [document.getElementById('f0'),  document.getElementById('f1')];
-var $rm = [document.getElementById('rm0'), document.getElementById('rm1')];
-var $cr = [document.getElementById('cr0'), document.getElementById('cr1')];
-var $sl = [document.getElementById('sl0'), document.getElementById('sl1')];
-var $vl = [document.getElementById('vl0'), document.getElementById('vl1')];
-var $cc = [document.getElementById('cc0'), document.getElementById('cc1')];
-var $bA   = document.getElementById('bA');
-var $bH   = document.getElementById('bH');
-var $histOverlay = document.getElementById('histOverlay');
-var $histDrawer  = document.getElementById('histDrawer');
-var $histClose   = document.getElementById('histClose');
-var $histBody    = document.getElementById('histBody');
-var $histEmpty   = document.getElementById('histEmpty');
-var $histGrid    = document.getElementById('histGrid');
+const $hl   = document.getElementById('inHL');
+const $sub  = document.getElementById('inSub');
+const $date = document.getElementById('inDate');
+const $EP   = document.getElementById('EP');
+const $segCtrl = document.getElementById('segCtrl');
+const $segEdit = document.getElementById('segEdit');
+const $segPreview = document.getElementById('segPreview');
+const $bX   = document.getElementById('bX');
+const $bC   = document.getElementById('bC');
+const $bS   = document.getElementById('bS');
+const $togCaps = document.getElementById('togCaps');
+const $swapBtn = document.getElementById('swapBtn');
+const $toast   = document.getElementById('toast');
+const $lbTwo   = document.getElementById('lbTwo');
+const $lbOne   = document.getElementById('lbOne');
+const $lbNone  = document.getElementById('lbNone');
+const $imgEd   = document.getElementById('imgEd');
+const $hlCount  = document.getElementById('hlCount');
+const $subCount = document.getElementById('subCount');
+const $hint    = document.getElementById('hint');
+const $fmtBtns = document.querySelectorAll('.fmt');
+const $z  = [document.getElementById('z0'),  document.getElementById('z1')];
+const $pv = [document.getElementById('pv0'), document.getElementById('pv1')];
+const $ph = [document.getElementById('ph0'), document.getElementById('ph1')];
+const $f  = [document.getElementById('f0'),  document.getElementById('f1')];
+const $rm = [document.getElementById('rm0'), document.getElementById('rm1')];
+const $cr = [document.getElementById('cr0'), document.getElementById('cr1')];
+const $sl = [document.getElementById('sl0'), document.getElementById('sl1')];
+const $vl = [document.getElementById('vl0'), document.getElementById('vl1')];
+const $cc = [document.getElementById('cc0'), document.getElementById('cc1')];
+const $bA   = document.getElementById('bA');
+const $bH   = document.getElementById('bH');
+const $histOverlay = document.getElementById('histOverlay');
+const $histDrawer  = document.getElementById('histDrawer');
+const $histClose   = document.getElementById('histClose');
+const $histBody    = document.getElementById('histBody');
+const $histEmpty   = document.getElementById('histEmpty');
+const $histGrid    = document.getElementById('histGrid');
 // ===== INDEXEDDB =====
-var DB_NAME = 'ki-news-history';
-var DB_VER = 1;
-var DB_STORE = 'posts';
+const DB_NAME = 'ki-news-history';
+const DB_VER = 1;
+const DB_STORE = 'posts';
+let _dbPromise = null;
 function dbOpen() {
-  return new Promise(function(resolve, reject) {
+  if (_dbPromise) return _dbPromise;
+  _dbPromise = new Promise(function(resolve, reject) {
     var req = indexedDB.open(DB_NAME, DB_VER);
     req.onupgradeneeded = function(e) {
       var db = e.target.result;
@@ -488,8 +503,9 @@ function dbOpen() {
       }
     };
     req.onsuccess = function(e) { resolve(e.target.result); };
-    req.onerror = function(e) { reject(e.target.error); };
+    req.onerror = function(e) { _dbPromise = null; reject(e.target.error); };
   });
+  return _dbPromise;
 }
 function dbAdd(post) {
   return dbOpen().then(function(db) {
@@ -525,7 +541,7 @@ function dbDelete(id) {
 function compressImage(img, maxSide, quality) {
   maxSide = maxSide || 2000;
   quality = quality || 0.8;
-  return new Promise(function(resolve) {
+  return new Promise(function(resolve, reject) {
     var w = img.naturalWidth, h = img.naturalHeight;
     if (w > maxSide || h > maxSide) {
       var ratio = maxSide / Math.max(w, h);
@@ -535,18 +551,24 @@ function compressImage(img, maxSide, quality) {
     var c = document.createElement('canvas');
     c.width = w; c.height = h;
     c.getContext('2d').drawImage(img, 0, 0, w, h);
-    c.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', quality);
+    c.toBlob(function(blob) {
+      if (blob) resolve(blob);
+      else reject(new Error('compressImage: toBlob returned null'));
+    }, 'image/jpeg', quality);
   });
 }
 function canvasToThumbnail(canvas, maxW) {
   maxW = maxW || 300;
-  return new Promise(function(resolve) {
+  return new Promise(function(resolve, reject) {
     var ratio = maxW / canvas.width;
     var c = document.createElement('canvas');
     c.width = maxW;
     c.height = Math.round(canvas.height * ratio);
     c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height);
-    c.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', 0.85);
+    c.toBlob(function(blob) {
+      if (blob) resolve(blob);
+      else reject(new Error('canvasToThumbnail: toBlob returned null'));
+    }, 'image/jpeg', 0.85);
   });
 }
 // ===== SHOW COPY/SHARE IF SUPPORTED =====
@@ -557,21 +579,19 @@ if (navigator.canShare && navigator.canShare({ files: [new File([''], 't.jpg', {
   $bS.style.display = '';
 }
 // ===== CHARACTER LIMITS =====
-var CHAR_LIMITS = { hl: [60, 70], sub: [70, 80] };
-function hlLimits() { return CHAR_LIMITS.hl; }
-function subLimits() { return CHAR_LIMITS.sub; }
+const CHAR_LIMITS = { hl: [60, 70], sub: [70, 80] };
 // ===== LOCALSTORAGE =====
-var LAYOUT_KEYS = { one: true, two: true, none: true };
-var STORE_KEY = 'ki-news-state';
+const LAYOUT_KEYS = { one: true, two: true, none: true };
+const STORE_KEY = 'ki-news-state';
 function saveState() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
-      layout: S.layout, format: S.format, allCaps: S.allCaps, creds: S.creds
+      layout: S.layout, format: S.format, allCaps: S.allCaps
     }));
   } catch(e) { console.warn('saveState failed:', e); }
 }
-var saveTimer = null;
+let saveTimer = null;
 function debouncedSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveState, 300);
@@ -587,7 +607,7 @@ function loadState() {
     if (typeof saved.layout === 'string' && LAYOUT_KEYS[saved.layout]) S.layout = saved.layout;
     if (typeof saved.format === 'string' && FORMATS[saved.format]) S.format = saved.format;
     if (typeof saved.allCaps === 'boolean') S.allCaps = saved.allCaps;
-    if (Array.isArray(saved.creds)) S.creds = saved.creds;
+    // Credits werden nicht im localStorage gespeichert (nur in IndexedDB mit den Bildern)
   } catch(e) { console.warn('loadState failed:', e); }
 }
 loadState();
@@ -599,7 +619,7 @@ if (S.format !== '4:5') {
   rebuildGradient();
 }
 // ===== RAF THROTTLE =====
-var rafPending = false;
+let rafPending = false;
 function scheduleDraw() {
   if (rafPending) return;
   rafPending = true;
@@ -609,7 +629,7 @@ function scheduleDraw() {
   });
 }
 // ===== TOAST =====
-var toastTimer = null;
+let toastTimer = null;
 function showToast(msg) {
   $toast.textContent = msg;
   $toast.classList.add('show');
@@ -634,9 +654,8 @@ function updateCharCount(el, $counter, soft, hard) {
   el.classList.toggle('over', len > soft);
 }
 function refreshCounts() {
-  var hl = hlLimits(), sub = subLimits();
-  updateCharCount($hl, $hlCount, hl[0], hl[1]);
-  updateCharCount($sub, $subCount, sub[0], sub[1]);
+  updateCharCount($hl, $hlCount, CHAR_LIMITS.hl[0], CHAR_LIMITS.hl[1]);
+  updateCharCount($sub, $subCount, CHAR_LIMITS.sub[0], CHAR_LIMITS.sub[1]);
 }
 function revokeBlob(i) {
   if (S.blobs[i]) { URL.revokeObjectURL(S.blobs[i]); S.blobs[i] = null; }
@@ -724,6 +743,8 @@ function setView(editing) {
   $EP.style.display = S.editing ? 'block' : 'none';
   $segEdit.classList.toggle('active', S.editing);
   $segPreview.classList.toggle('active', !S.editing);
+  $segEdit.setAttribute('aria-selected', String(S.editing));
+  $segPreview.setAttribute('aria-selected', String(!S.editing));
   if (!S.editing) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     scheduleDraw();
@@ -734,7 +755,7 @@ function setView(editing) {
 $segEdit.addEventListener('click', function() { setView(true); });
 $segPreview.addEventListener('click', function() { setView(false); });
 // New post
-var $bN = document.getElementById('bN');
+const $bN = document.getElementById('bN');
 $bN.addEventListener('click', function() {
   var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
   if (hasContent && !confirm('Aktuellen Post verwerfen und neu beginnen?')) return;
@@ -764,9 +785,8 @@ $bN.addEventListener('click', function() {
 $bX.addEventListener('click', function() {
   var btn = this;
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
-  scheduleDraw();
-  requestAnimationFrame(function() {
-    cv.toBlob(function(blob) {
+  draw();
+  cv.toBlob(function(blob) {
       if (!blob) {
         btn.disabled = false; btn.textContent = 'JPG speichern';
         showToast('\u26a0 Export fehlgeschlagen');
@@ -787,16 +807,14 @@ $bX.addEventListener('click', function() {
         btn.classList.remove('btn-success');
       }, 1500);
     }, 'image/jpeg', 0.95);
-  });
 });
 // Web Share API
 $bS.addEventListener('click', function() {
   var btn = this;
   btn.disabled = true; btn.textContent = 'Teilen\u2026';
-  scheduleDraw();
-  requestAnimationFrame(function() {
-    cv.toBlob(function(blob) {
-      if (!blob) {
+  draw();
+  cv.toBlob(function(blob) {
+    if (!blob) {
         btn.disabled = false; btn.textContent = 'Teilen';
         showToast('\u26a0 Teilen fehlgeschlagen');
         return;
@@ -806,15 +824,13 @@ $bS.addEventListener('click', function() {
         btn.disabled = false; btn.textContent = 'Teilen';
       });
     }, 'image/jpeg', 0.95);
-  });
 });
 // Copy to clipboard
 $bC.addEventListener('click', function() {
   var btn = this;
   btn.disabled = true; btn.textContent = 'Kopiert\u2026';
-  scheduleDraw();
-  requestAnimationFrame(function() {
-    cv.toBlob(function(blob) {
+  draw();
+  cv.toBlob(function(blob) {
       if (!blob) {
         btn.disabled = false; btn.textContent = 'Kopieren';
         showToast('\u26a0 Kopieren fehlgeschlagen');
@@ -834,7 +850,6 @@ $bC.addEventListener('click', function() {
         showToast('\u26a0 Kopieren fehlgeschlagen');
       });
     }, 'image/png');
-  });
 });
 // ALL CAPS toggle
 $togCaps.addEventListener('click', function() {
@@ -847,10 +862,10 @@ $togCaps.addEventListener('click', function() {
 // Headline input
 $hl.addEventListener('input', function() {
   var parts = this.value.split('\n');
-  if (parts.length > 2) { parts = parts.slice(0, 2); this.value = parts.join('\n'); }
+  if (parts.length > HL_MAX_LINES) { parts = parts.slice(0, HL_MAX_LINES); this.value = parts.join('\n'); }
   S.hlLines = this.value.split('\n').filter(function(l) { return l.length > 0; });
   if (S.hlLines.length === 0) S.hlLines = [''];
-  updateCharCount(this, $hlCount, hlLimits()[0], hlLimits()[1]);
+  updateCharCount(this, $hlCount, CHAR_LIMITS.hl[0], CHAR_LIMITS.hl[1]);
   autoSize(this);
   debouncedSave();
   scheduleDraw();
@@ -860,7 +875,7 @@ $sub.addEventListener('input', function() {
   var parts = this.value.split('\n');
   if (parts.length > SUB_MAX_LINES) { parts = parts.slice(0, SUB_MAX_LINES); this.value = parts.join('\n'); }
   S.subText = this.value;
-  updateCharCount(this, $subCount, subLimits()[0], subLimits()[1]);
+  updateCharCount(this, $subCount, CHAR_LIMITS.sub[0], CHAR_LIMITS.sub[1]);
   autoSize(this);
   debouncedSave();
   scheduleDraw();
@@ -872,11 +887,12 @@ $date.addEventListener('input', function() {
   scheduleDraw();
 });
 // Layout buttons
-var LAYOUT_BTNS = { two: $lbTwo, one: $lbOne, none: $lbNone };
+const LAYOUT_BTNS = { two: $lbTwo, one: $lbOne, none: $lbNone };
 function setLayout(l) {
   S.layout = l;
   Object.keys(LAYOUT_BTNS).forEach(function(k) {
     LAYOUT_BTNS[k].classList.toggle('on', k === l);
+    LAYOUT_BTNS[k].setAttribute('aria-checked', String(k === l));
   });
   $imgEd.style.display = (l === 'none') ? 'none' : 'block';
   $z[1].style.display = (l === 'two') ? 'flex' : 'none';
@@ -899,17 +915,19 @@ function setFormat(fmt) {
     rebuildGradient();
   }
   for (var i = 0; i < $fmtBtns.length; i++) {
-    $fmtBtns[i].classList.toggle('on', $fmtBtns[i].getAttribute('data-fmt') === fmt);
+    var isOn = $fmtBtns[i].getAttribute('data-fmt') === fmt;
+    $fmtBtns[i].classList.toggle('on', isOn);
+    $fmtBtns[i].setAttribute('aria-checked', String(isOn));
   }
   $hint.textContent = fmt + ' Format \u00b7 ' + W + ' \u00d7 ' + H + ' px';
   refreshCounts();
   saveState();
   scheduleDraw();
 }
-for (var fi = 0; fi < $fmtBtns.length; fi++) {
-  $fmtBtns[fi].addEventListener('click', (function(btn) {
-    return function() { setFormat(btn.getAttribute('data-fmt')); };
-  })($fmtBtns[fi]));
+for (let fi = 0; fi < $fmtBtns.length; fi++) {
+  $fmtBtns[fi].addEventListener('click', function() {
+    setFormat(this.getAttribute('data-fmt'));
+  });
 }
 // Swap button
 $swapBtn.addEventListener('click', function(e) {
@@ -923,7 +941,7 @@ $swapBtn.addEventListener('click', function(e) {
   renderUI();
 });
 // Image loading
-var MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8 MB
+const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8 MB
 function loadImageFile(i, file) {
   if (!file || !/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
     if (file) showToast('\u26a0 Nur JPG, PNG, WebP oder GIF');
@@ -1039,8 +1057,8 @@ function prepareText(maxW) {
   var subArr = [];
   if (S.subText) {
     var subLines = S.subText.split('\n').filter(function(l) { return l.length > 0; });
-    for (var sl = 0; sl < subLines.length && subArr.length < SUB_MAX_LINES; sl++) {
-      var wSub = wrapLine(subLines[sl], subFS, maxW);
+    for (var si = 0; si < subLines.length && subArr.length < SUB_MAX_LINES; si++) {
+      var wSub = wrapLine(subLines[si], subFS, maxW);
       for (var ws = 0; ws < wSub.length && subArr.length < SUB_MAX_LINES; ws++) {
         subArr.push(wSub[ws]);
       }
@@ -1167,65 +1185,89 @@ $bA.addEventListener('click', function() {
     return;
   }
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
-  scheduleDraw();
-  requestAnimationFrame(function() {
-    var promises = [];
-    // Compress images
-    for (var i = 0; i < 2; i++) {
-      if (S.imgs[i]) {
-        promises.push(compressImage(S.imgs[i]));
-      } else {
-        promises.push(Promise.resolve(null));
-      }
+  draw();
+  var promises = [];
+  // Compress images
+  for (var i = 0; i < 2; i++) {
+    if (S.imgs[i]) {
+      promises.push(compressImage(S.imgs[i]));
+    } else {
+      promises.push(Promise.resolve(null));
     }
-    // Generate thumbnail
-    promises.push(canvasToThumbnail(cv));
-    Promise.all(promises).then(function(results) {
-      var post = {
-        id: Date.now(),
-        savedAt: new Date().toISOString(),
+  }
+  // Generate thumbnail
+  promises.push(canvasToThumbnail(cv));
+  Promise.all(promises).then(function(results) {
+    var post = {
+      id: Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
+      savedAt: new Date().toISOString(),
         headline: S.hlLines.join('\n'),
         subtitle: S.subText,
         date: S.dateText,
         layout: S.layout,
         format: S.format,
         allCaps: S.allCaps,
-        credits: S.creds.slice(),
-        crops: S.crop.slice(),
-        thumbnail: results[2],
-        images: [results[0], results[1]]
-      };
-      return dbAdd(post);
-    }).then(function() {
-      btn.textContent = '\u2713 Archiviert!';
-      btn.classList.add('btn-success');
-      showToast('\u2713 Post archiviert');
-      setTimeout(function() {
-        btn.disabled = false;
-        btn.textContent = 'Archivieren';
-        btn.classList.remove('btn-success');
-      }, 1500);
-    }).catch(function(err) {
-      console.warn('Archive failed:', err);
-      btn.disabled = false; btn.textContent = 'Archivieren';
-      showToast('\u26a0 Archivierung fehlgeschlagen');
-    });
+      credits: S.creds.slice(),
+      crops: S.crop.slice(),
+      thumbnail: results[2],
+      images: [results[0], results[1]]
+    };
+    return dbAdd(post);
+  }).then(function() {
+    btn.textContent = '\u2713 Archiviert!';
+    btn.classList.add('btn-success');
+    showToast('\u2713 Post archiviert');
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.textContent = 'Archivieren';
+      btn.classList.remove('btn-success');
+    }, 1500);
+  }).catch(function(err) {
+    console.warn('Archive failed:', err);
+    btn.disabled = false; btn.textContent = 'Archivieren';
+    showToast('\u26a0 Archivierung fehlgeschlagen');
   });
 });
 // ===== HISTORY: DRAWER =====
+var _drawerEscHandler = null;
+var _drawerTrapHandler = null;
 function openHistory() {
   $histOverlay.classList.add('open');
   $histDrawer.classList.add('open');
   loadHistoryGrid();
+  // Focus the close button
+  $histClose.focus();
+  // Escape key handler
+  _drawerEscHandler = function(e) {
+    if (e.key === 'Escape') { e.preventDefault(); closeHistory(); }
+  };
+  document.addEventListener('keydown', _drawerEscHandler);
+  // Focus trap
+  _drawerTrapHandler = function(e) {
+    if (e.key !== 'Tab') return;
+    var focusable = $histDrawer.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  document.addEventListener('keydown', _drawerTrapHandler);
 }
 function closeHistory() {
   $histOverlay.classList.remove('open');
   $histDrawer.classList.remove('open');
+  if (_drawerEscHandler) { document.removeEventListener('keydown', _drawerEscHandler); _drawerEscHandler = null; }
+  if (_drawerTrapHandler) { document.removeEventListener('keydown', _drawerTrapHandler); _drawerTrapHandler = null; }
+  $bH.focus();
 }
 $bH.addEventListener('click', openHistory);
 $histClose.addEventListener('click', closeHistory);
 $histOverlay.addEventListener('click', closeHistory);
+let activeThumbUrls = [];
 function loadHistoryGrid() {
+  // Vorherige Blob-URLs aufräumen bevor DOM zerstört wird
+  activeThumbUrls.forEach(function(u) { URL.revokeObjectURL(u); });
+  activeThumbUrls = [];
   dbGetAll().then(function(posts) {
     $histGrid.innerHTML = '';
     $histEmpty.style.display = posts.length ? 'none' : 'block';
@@ -1239,8 +1281,8 @@ function loadHistoryGrid() {
       var img = document.createElement('img');
       if (post.thumbnail) {
         var thumbUrl = URL.createObjectURL(post.thumbnail);
+        activeThumbUrls.push(thumbUrl);
         img.src = thumbUrl;
-        img.onload = function() { URL.revokeObjectURL(thumbUrl); };
       }
       img.alt = post.headline || 'Post';
       item.appendChild(img);
@@ -1259,7 +1301,7 @@ function loadHistoryGrid() {
       // Delete button
       var del = document.createElement('button');
       del.className = 'hist-del';
-      del.innerHTML = '&times;';
+      del.textContent = '\u00d7';
       del.setAttribute('aria-label', 'Post löschen');
       del.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -1297,8 +1339,8 @@ function loadArchivedPost(post) {
   S.subText = post.subtitle || '';
   S.dateText = post.date || todayDE();
   S.allCaps = !!post.allCaps;
-  S.creds = Array.isArray(post.credits) ? post.credits.slice() : ['', ''];
-  S.crop = Array.isArray(post.crops) ? post.crops.slice() : [50, 50];
+  S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
+  S.crop = (Array.isArray(post.crops) && post.crops.length === 2) ? post.crops.slice() : [50, 50];
   // Update text inputs
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
@@ -1359,12 +1401,14 @@ function init() {
     $EP.style.display = S.editing ? 'block' : 'none';
     $segEdit.classList.toggle('active', S.editing);
     $segPreview.classList.toggle('active', !S.editing);
+    $segEdit.setAttribute('aria-selected', String(S.editing));
+    $segPreview.setAttribute('aria-selected', String(!S.editing));
   }
   autoSize($hl);
   autoSize($sub);
   draw();
 }
-var initialized = false;
+let initialized = false;
 function safeInit(fontOk) {
   if (initialized) return;
   initialized = true;
