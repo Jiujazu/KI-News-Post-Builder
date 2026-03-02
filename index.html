@@ -175,8 +175,11 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .swap-btn.show{display:flex}
 /* ===== CROP SLIDERS ===== */
 .crop-ctrl{margin-bottom:12px}
-.crop-ctrl label{font-size:13px;color:var(--text-dim);display:block;margin-bottom:6px}
-.crop-ctrl .sr{display:flex;align-items:center;gap:10px}
+.crop-ctrl .crop-title{font-size:12px;color:var(--text-dim);display:block;margin-bottom:8px;font-weight:600}
+.crop-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.crop-row:last-child{margin-bottom:0}
+.crop-lbl{font-size:12px;color:var(--text-muted);min-width:70px;flex-shrink:0}
+.crop-ctrl .sr{display:flex;align-items:center;gap:10px;flex:1}
 .crop-ctrl input[type=range]{
   flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none;
   touch-action:none;
@@ -185,7 +188,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   -webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);
   border:2px solid #fff;cursor:pointer;
 }
-.crop-ctrl .vl{font-size:13px;color:var(--text-muted);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+.crop-ctrl .vl{font-size:13px;color:var(--text-muted);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
 /* ===== LAYOUT BUTTONS ===== */
 .lbtns{display:flex;gap:6px;margin-bottom:14px}
 .lb{
@@ -343,17 +346,51 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       </div>
     </div>
     <div class="crop-ctrl" id="cc0" style="display:none">
-      <label>Bildausschnitt 1</label>
-      <div class="sr">
-        <input type="range" id="sl0" min="0" max="100" value="50" aria-label="Bildausschnitt 1">
-        <span class="vl" id="vl0">50%</span>
+      <span class="crop-title">Bildausschnitt 1</span>
+      <div class="crop-row">
+        <span class="crop-lbl">Zoom</span>
+        <div class="sr">
+          <input type="range" id="sz0" min="25" max="200" value="100" aria-label="Zoom Bild 1">
+          <span class="vl" id="vz0">100%</span>
+        </div>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Horizontal</span>
+        <div class="sr">
+          <input type="range" id="sx0" min="0" max="100" value="50" aria-label="Horizontale Position Bild 1">
+          <span class="vl" id="vx0">50%</span>
+        </div>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Vertikal</span>
+        <div class="sr">
+          <input type="range" id="sy0" min="0" max="100" value="50" aria-label="Vertikale Position Bild 1">
+          <span class="vl" id="vy0">50%</span>
+        </div>
       </div>
     </div>
     <div class="crop-ctrl" id="cc1" style="display:none">
-      <label>Bildausschnitt 2</label>
-      <div class="sr">
-        <input type="range" id="sl1" min="0" max="100" value="50" aria-label="Bildausschnitt 2">
-        <span class="vl" id="vl1">50%</span>
+      <span class="crop-title">Bildausschnitt 2</span>
+      <div class="crop-row">
+        <span class="crop-lbl">Zoom</span>
+        <div class="sr">
+          <input type="range" id="sz1" min="25" max="200" value="100" aria-label="Zoom Bild 2">
+          <span class="vl" id="vz1">100%</span>
+        </div>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Horizontal</span>
+        <div class="sr">
+          <input type="range" id="sx1" min="0" max="100" value="50" aria-label="Horizontale Position Bild 2">
+          <span class="vl" id="vx1">50%</span>
+        </div>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Vertikal</span>
+        <div class="sr">
+          <input type="range" id="sy1" min="0" max="100" value="50" aria-label="Vertikale Position Bild 2">
+          <span class="vl" id="vy1">50%</span>
+        </div>
       </div>
     </div>
   </div>
@@ -434,11 +471,12 @@ function todayDE() {
   return d.getDate() + '. ' + MONTHS_DE[d.getMonth()] + ' ' + d.getFullYear();
 }
 // ===== STATE =====
+function defaultCrop() { return {x:50, y:50, z:100}; }
 const S = {
   imgs: [null, null],
   blobs: [null, null],
   creds: ['', ''],
-  crop: [50, 50],
+  crop: [defaultCrop(), defaultCrop()],
   layout: 'one',
   format: '4:5',
   editing: true,
@@ -475,8 +513,12 @@ const $ph = [document.getElementById('ph0'), document.getElementById('ph1')];
 const $f  = [document.getElementById('f0'),  document.getElementById('f1')];
 const $rm = [document.getElementById('rm0'), document.getElementById('rm1')];
 const $cr = [document.getElementById('cr0'), document.getElementById('cr1')];
-const $sl = [document.getElementById('sl0'), document.getElementById('sl1')];
-const $vl = [document.getElementById('vl0'), document.getElementById('vl1')];
+const $sz = [document.getElementById('sz0'), document.getElementById('sz1')];
+const $sx = [document.getElementById('sx0'), document.getElementById('sx1')];
+const $sy = [document.getElementById('sy0'), document.getElementById('sy1')];
+const $vz = [document.getElementById('vz0'), document.getElementById('vz1')];
+const $vx = [document.getElementById('vx0'), document.getElementById('vx1')];
+const $vy = [document.getElementById('vy0'), document.getElementById('vy1')];
 const $cc = [document.getElementById('cc0'), document.getElementById('cc1')];
 const $bA   = document.getElementById('bA');
 const $bH   = document.getElementById('bH');
@@ -690,26 +732,9 @@ function wrapLine(text, fs, maxWidth) {
   return lines;
 }
 // ===== UI SYNC =====
-function getCropDirection(idx) {
-  var img = S.imgs[idx];
-  if (!img) return '';
-  var srcR = img.naturalWidth / img.naturalHeight;
-  var destR = W / H;
-  if (S.layout === 'two') {
-    var imgW = Math.round((W - MX * 2 - IMG_GAP) / 2);
-    destR = imgW / (H - FOOTER_H);
-  }
-  return srcR > destR ? 'Horizontaler' : 'Vertikaler';
-}
 function updateCropVis() {
   $cc[0].style.display = (S.layout !== 'none' && S.imgs[0]) ? 'block' : 'none';
   $cc[1].style.display = (S.layout === 'two' && S.imgs[1]) ? 'block' : 'none';
-  for (var ci = 0; ci < 2; ci++) {
-    if (S.imgs[ci]) {
-      var dir = getCropDirection(ci);
-      $cc[ci].querySelector('label').textContent = dir + ' Ausschnitt ' + (ci + 1);
-    }
-  }
 }
 function updateSwapBtn() {
   $swapBtn.classList.toggle('show', !!(S.layout === 'two' && S.imgs[0] && S.imgs[1]));
@@ -727,8 +752,12 @@ function renderUI() {
       $z[i].classList.remove('has');
     }
     $cr[i].value = S.creds[i];
-    $sl[i].value = S.crop[i];
-    $vl[i].textContent = S.crop[i] + '%';
+    $sz[i].value = S.crop[i].z;
+    $vz[i].textContent = S.crop[i].z + '%';
+    $sx[i].value = S.crop[i].x;
+    $vx[i].textContent = S.crop[i].x + '%';
+    $sy[i].value = S.crop[i].y;
+    $vy[i].textContent = S.crop[i].y + '%';
   }
   updateCropVis();
   updateSwapBtn();
@@ -761,7 +790,7 @@ $bN.addEventListener('click', function() {
   if (hasContent && !confirm('Aktuellen Post verwerfen und neu beginnen?')) return;
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.creds = ['', ''];
-  S.crop = [50, 50]; S.allCaps = false;
+  S.crop = [defaultCrop(), defaultCrop()]; S.allCaps = false;
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
   $hl.value = ''; $sub.value = ''; $date.value = S.dateText;
@@ -957,7 +986,7 @@ function loadImageFile(i, file) {
   im.onload = function() {
     S.imgs[i] = im;
     S.blobs[i] = blobUrl;
-    S.crop[i] = 50;
+    S.crop[i] = defaultCrop();
     renderUI();
   };
   im.onerror = function() {
@@ -1005,15 +1034,25 @@ function loadImageFile(i, file) {
   $rm[i].addEventListener('click', function(e) {
     e.stopPropagation();
     revokeBlob(i);
-    S.imgs[i] = null; S.creds[i] = ''; S.crop[i] = 50;
+    S.imgs[i] = null; S.creds[i] = ''; S.crop[i] = defaultCrop();
     $f[i].value = '';
     saveState();
     renderUI();
   });
-  // Crop slider
-  $sl[i].addEventListener('input', function() {
-    S.crop[i] = +this.value;
-    $vl[i].textContent = this.value + '%';
+  // Crop sliders (zoom, horizontal, vertical)
+  $sz[i].addEventListener('input', function() {
+    S.crop[i].z = +this.value;
+    $vz[i].textContent = this.value + '%';
+    scheduleDraw();
+  });
+  $sx[i].addEventListener('input', function() {
+    S.crop[i].x = +this.value;
+    $vx[i].textContent = this.value + '%';
+    scheduleDraw();
+  });
+  $sy[i].addEventListener('input', function() {
+    S.crop[i].y = +this.value;
+    $vy[i].textContent = this.value + '%';
     scheduleDraw();
   });
   // Credit input
@@ -1145,8 +1184,8 @@ function draw() {
 // ===== DRAW CROPPED IMAGE =====
 function drawCroppedImage(idx, dx, dy, dw, dh) {
   var img = S.imgs[idx];
-  cx.save();
   if (!img) {
+    cx.save();
     cx.fillStyle = '#f0f0f0';
     cx.fillRect(dx, dy, dw, dh);
     cx.fillStyle = '#bbb';
@@ -1157,25 +1196,37 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
     cx.restore();
     return;
   }
+  var crop = S.crop[idx];
   var iw = img.naturalWidth, ih = img.naturalHeight;
-  var destR = dw / dh, srcR = iw / ih;
-  var sx, sy, sw, sh;
-  if (srcR > destR) {
-    sh = ih; sw = ih * destR; sy = 0;
-    sx = (iw - sw) * (S.crop[idx] / 100);
-  } else {
-    sw = iw; sh = iw / destR; sx = 0;
-    sy = (ih - sh) * (S.crop[idx] / 100);
-  }
-  cx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+  // fillScale = scale at which image exactly covers destination (object-fit: cover)
+  var fillScale = Math.max(dw / iw, dh / ih);
+  // z=100 → fill, z<100 → zoom out (show more), z>100 → zoom in
+  var scale = fillScale * (crop.z / 100);
+  var drawW = iw * scale;
+  var drawH = ih * scale;
+  // How much the drawn image overflows (positive) or underflows (negative) the dest
+  var overflowX = drawW - dw;
+  var overflowY = drawH - dh;
+  // Position: at 0% align left/top edge, at 50% center, at 100% align right/bottom edge
+  var imgX = dx - overflowX * (crop.x / 100);
+  var imgY = dy - overflowY * (crop.y / 100);
+  // Clip to destination rect and draw
+  cx.save();
+  cx.beginPath();
+  cx.rect(dx, dy, dw, dh);
+  cx.clip();
+  cx.drawImage(img, imgX, imgY, drawW, drawH);
+  cx.restore();
+  // Credit text (drawn outside clip)
   if (S.creds[idx]) {
+    cx.save();
     cx.font = '500 20px ' + SYS_FONT;
     cx.fillStyle = 'rgba(255,255,255,0.85)';
     cx.textAlign = 'right';
     cx.textBaseline = 'bottom';
     cx.fillText(S.creds[idx], dx + dw - 10, dy + dh - 10);
+    cx.restore();
   }
-  cx.restore();
 }
 // ===== HISTORY: ARCHIVE POST =====
 $bA.addEventListener('click', function() {
@@ -1208,7 +1259,7 @@ $bA.addEventListener('click', function() {
         format: S.format,
         allCaps: S.allCaps,
       credits: S.creds.slice(),
-      crops: S.crop.slice(),
+      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
       thumbnail: results[2],
       images: [results[0], results[1]]
     };
@@ -1340,7 +1391,13 @@ function loadArchivedPost(post) {
   S.dateText = post.date || todayDE();
   S.allCaps = !!post.allCaps;
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
-  S.crop = (Array.isArray(post.crops) && post.crops.length === 2) ? post.crops.slice() : [50, 50];
+  S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
+    ? post.crops.map(function(c) {
+        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z};
+        if (typeof c === 'number') return {x:c, y:c, z:100};
+        return defaultCrop();
+      })
+    : [defaultCrop(), defaultCrop()];
   // Update text inputs
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
