@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KI News">
 <meta name="theme-color" content="#0a0a1a">
+<link rel="manifest" href="manifest.json">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob:;">
 <title>KI News Post Generator</title>
 <style>
@@ -402,7 +403,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <div class="hist-overlay" id="histOverlay"></div>
 <div class="hist-drawer" id="histDrawer" role="dialog" aria-modal="true" aria-label="Post-Archiv">
   <div class="hist-header">
-    <h2>Archiv</h2>
+    <div><h2 style="margin:0">Archiv</h2><span id="histCount" style="font-size:12px;color:var(--text-dim)"></span></div>
     <button class="hist-close" id="histClose" aria-label="Archiv schließen">&times;</button>
   </div>
   <div class="hist-body" id="histBody">
@@ -532,6 +533,7 @@ const $histGrid    = document.getElementById('histGrid');
 const DB_NAME = 'ki-news-history';
 const DB_VER = 1;
 const DB_STORE = 'posts';
+const DRAFT_ID = '__draft__';
 let _dbPromise = null;
 function dbOpen() {
   if (_dbPromise) return _dbPromise;
@@ -549,6 +551,7 @@ function dbOpen() {
   });
   return _dbPromise;
 }
+const MAX_ARCHIVE_POSTS = 50;
 function dbAdd(post) {
   return dbOpen().then(function(db) {
     return new Promise(function(resolve, reject) {
@@ -557,6 +560,13 @@ function dbAdd(post) {
       tx.oncomplete = function() { resolve(); };
       tx.onerror = function(e) { reject(e.target.error); };
     });
+  }).then(function() {
+    if (post.id === DRAFT_ID) return;
+    return dbGetAll().then(function(posts) {
+      if (posts.length <= MAX_ARCHIVE_POSTS) return;
+      var toDelete = posts.slice(MAX_ARCHIVE_POSTS);
+      return Promise.all(toDelete.map(function(p) { return dbDelete(p.id); }));
+    });
   });
 }
 function dbGetAll() {
@@ -564,7 +574,10 @@ function dbGetAll() {
     return new Promise(function(resolve, reject) {
       var tx = db.transaction(DB_STORE, 'readonly');
       var req = tx.objectStore(DB_STORE).index('savedAt').getAll();
-      req.onsuccess = function() { resolve(req.result.reverse()); };
+      req.onsuccess = function() {
+        var posts = req.result.filter(function(p) { return p.id !== DRAFT_ID; });
+        resolve(posts.reverse());
+      };
       req.onerror = function(e) { reject(e.target.error); };
     });
   });
@@ -578,6 +591,49 @@ function dbDelete(id) {
       tx.onerror = function(e) { reject(e.target.error); };
     });
   });
+}
+// ===== DRAFT PERSISTENCE =====
+let draftTimer = null;
+function saveDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(function() {
+    var promises = [];
+    for (var i = 0; i < 2; i++) {
+      if (S.imgs[i]) {
+        promises.push(compressImage(S.imgs[i], 2000, 0.85));
+      } else {
+        promises.push(Promise.resolve(null));
+      }
+    }
+    Promise.all(promises).then(function(blobs) {
+      return dbAdd({
+        id: DRAFT_ID,
+        savedAt: new Date().toISOString(),
+        headline: S.hlLines.join('\n'),
+        subtitle: S.subText,
+        date: S.dateText,
+        layout: S.layout,
+        format: S.format,
+        allCaps: S.allCaps,
+        credits: S.creds.slice(),
+        crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
+        images: [blobs[0], blobs[1]]
+      });
+    }).catch(function(e) { console.warn('saveDraft failed:', e); });
+  }, 1500);
+}
+function loadDraft() {
+  return dbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction(DB_STORE, 'readonly');
+      var req = tx.objectStore(DB_STORE).get(DRAFT_ID);
+      req.onsuccess = function() { resolve(req.result || null); };
+      req.onerror = function() { resolve(null); };
+    });
+  }).catch(function() { return null; });
+}
+function deleteDraft() {
+  return dbDelete(DRAFT_ID).catch(function() {});
 }
 // ===== IMAGE COMPRESSION =====
 function compressImage(img, maxSide, quality) {
@@ -802,6 +858,7 @@ $bN.addEventListener('click', function() {
   autoSize($hl);
   renderUI();
   saveState();
+  deleteDraft();
   $bN.textContent = '\u2713 Zur\u00fcckgesetzt';
   $bN.classList.add('btn-success-outline');
   showToast('\u2713 Neuer Post \u2013 alles zur\u00fcckgesetzt');
@@ -968,6 +1025,7 @@ $swapBtn.addEventListener('click', function(e) {
   t = S.crop[0];  S.crop[0]  = S.crop[1];  S.crop[1]  = t;
   saveState();
   renderUI();
+  saveDraft();
 });
 // Image loading
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8 MB
@@ -988,6 +1046,7 @@ function loadImageFile(i, file) {
     S.blobs[i] = blobUrl;
     S.crop[i] = defaultCrop();
     renderUI();
+    saveDraft();
   };
   im.onerror = function() {
     URL.revokeObjectURL(blobUrl);
@@ -1038,6 +1097,7 @@ function loadImageFile(i, file) {
     $f[i].value = '';
     saveState();
     renderUI();
+    saveDraft();
   });
   // Crop sliders (zoom, horizontal, vertical)
   $sz[i].addEventListener('input', function() {
@@ -1045,20 +1105,24 @@ function loadImageFile(i, file) {
     $vz[i].textContent = this.value + '%';
     scheduleDraw();
   });
+  $sz[i].addEventListener('change', function() { saveDraft(); });
   $sx[i].addEventListener('input', function() {
     S.crop[i].x = +this.value;
     $vx[i].textContent = this.value + '%';
     scheduleDraw();
   });
+  $sx[i].addEventListener('change', function() { saveDraft(); });
   $sy[i].addEventListener('input', function() {
     S.crop[i].y = +this.value;
     $vy[i].textContent = this.value + '%';
     scheduleDraw();
   });
+  $sy[i].addEventListener('change', function() { saveDraft(); });
   // Credit input
   $cr[i].addEventListener('input', function() {
     S.creds[i] = this.value;
     debouncedSave();
+    saveDraft();
     scheduleDraw();
   });
 });
@@ -1070,7 +1134,10 @@ function prepareText(maxW) {
   var isNone = (S.layout === 'none');
   var isLandscape = W > H;
   var hlFS, subFS;
-  if (isNone) {
+  if (isNone && isLandscape) {
+    hlFS = S.hlLines.length > 1 ? 140 : 160;
+    subFS = 60;
+  } else if (isNone) {
     hlFS = S.hlLines.length > 1 ? 230 : 260;
     subFS = 90;
   } else if (isLandscape) {
@@ -1121,13 +1188,15 @@ function drawText(t, maxW) {
   var hlBlockH = t.hlArr.length * hlLineH;
   var subLineH = Math.round(t.subFS * SUB_LINE_H_FACTOR);
   var subBlockH = t.subArr.length > 0 ? t.subArr.length * subLineH : 0;
-  var subGap = t.isNone ? 20 : t.isLandscape ? 8 : 14;
+  var subGap = t.isNone ? (t.isLandscape ? 12 : 20) : t.isLandscape ? 8 : 14;
   // Y position
   var curY;
   if (t.isNone) {
-    var availH = H - TOP_PAD - FOOTER_H;
+    var topPad = t.isLandscape ? 36 : TOP_PAD;
+    var footerH = t.isLandscape ? 70 : FOOTER_H;
+    var availH = H - topPad - footerH;
     var totalH = hlBlockH + (subBlockH > 0 ? subGap + subBlockH : 0);
-    curY = TOP_PAD + Math.round((availH - totalH) / 2);
+    curY = topPad + Math.round((availH - totalH) / 2);
   } else {
     curY = t.isLandscape ? 36 : TOP_PAD;
   }
@@ -1237,7 +1306,8 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
   // Credit text (drawn outside clip)
   if (S.creds[idx]) {
     cx.save();
-    cx.font = '500 20px ' + SYS_FONT;
+    var credFS = Math.max(16, Math.round(dh * 0.055));
+    cx.font = '500 ' + credFS + 'px ' + SYS_FONT;
     cx.fillStyle = 'rgba(255,255,255,0.85)';
     cx.textAlign = 'right';
     cx.textBaseline = 'bottom';
@@ -1269,12 +1339,12 @@ $bA.addEventListener('click', function() {
     var post = {
       id: Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
       savedAt: new Date().toISOString(),
-        headline: S.hlLines.join('\n'),
-        subtitle: S.subText,
-        date: S.dateText,
-        layout: S.layout,
-        format: S.format,
-        allCaps: S.allCaps,
+      headline: S.hlLines.join('\n'),
+      subtitle: S.subText,
+      date: S.dateText,
+      layout: S.layout,
+      format: S.format,
+      allCaps: S.allCaps,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
       thumbnail: results[2],
@@ -1339,6 +1409,8 @@ function loadHistoryGrid() {
   dbGetAll().then(function(posts) {
     $histGrid.innerHTML = '';
     $histEmpty.style.display = posts.length ? 'none' : 'block';
+    var countEl = document.getElementById('histCount');
+    if (countEl) countEl.textContent = posts.length ? posts.length + ' / ' + MAX_ARCHIVE_POSTS + ' Posts' : '';
     posts.forEach(function(post) {
       var item = document.createElement('div');
       item.className = 'hist-item';
@@ -1481,6 +1553,45 @@ function init() {
   autoSize($hl);
   autoSize($sub);
   draw();
+  // Restore draft (images, crops, credits) from IndexedDB
+  loadDraft().then(function(draft) {
+    if (!draft) return;
+    // Restore credits and crops
+    if (Array.isArray(draft.credits) && draft.credits.length === 2) S.creds = draft.credits.slice();
+    if (Array.isArray(draft.crops) && draft.crops.length === 2) {
+      S.crop = draft.crops.map(function(c) {
+        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z};
+        return defaultCrop();
+      });
+    }
+    // Restore images from blobs
+    var loaded = 0, total = 0;
+    function onDraftLoaded() {
+      renderUI();
+    }
+    for (var i = 0; i < 2; i++) {
+      if (draft.images && draft.images[i]) {
+        total++;
+        (function(idx, blob) {
+          var blobUrl = URL.createObjectURL(blob);
+          var im = new Image();
+          im.onload = function() {
+            S.imgs[idx] = im;
+            S.blobs[idx] = blobUrl;
+            loaded++;
+            if (loaded >= total) onDraftLoaded();
+          };
+          im.onerror = function() {
+            URL.revokeObjectURL(blobUrl);
+            loaded++;
+            if (loaded >= total) onDraftLoaded();
+          };
+          im.src = blobUrl;
+        })(i, draft.images[i]);
+      }
+    }
+    if (total === 0) onDraftLoaded();
+  });
 }
 let initialized = false;
 function safeInit(fontOk) {
@@ -1507,6 +1618,9 @@ window.addEventListener('resize', function() {
   scheduleDraw();
 });
 })();
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function(e) { console.warn('SW registration failed:', e); });
+}
 </script>
 </body>
 </html>
