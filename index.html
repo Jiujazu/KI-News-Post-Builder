@@ -74,6 +74,10 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .btn-e.on{background:var(--accent-dark)}
 .btn-x{background:var(--btn-secondary-bg);color:var(--btn-secondary-text)}
 .btn-x:active{transform:scale(.96)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:active{transform:scale(.96);background:var(--accent-dark)}
+.btn-danger{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
+.btn-danger:active{transform:scale(.96)}
 /* ===== PREVIEW ===== */
 .preview-col{
   margin-bottom:12px;
@@ -200,10 +204,10 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   <h1>KI News</h1>
   <div class="btn-row">
     <button class="btn-e on" id="bE" aria-label="Vorschau anzeigen">Vorschau</button>
-    <button class="btn-x" id="bX" aria-label="Als JPG speichern">JPG speichern</button>
+    <button class="btn-primary" id="bX" aria-label="Als JPG speichern">JPG speichern</button>
     <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
     <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
-    <button class="btn-x" id="bN" aria-label="Neuen Post beginnen">Neu</button>
+    <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
   </div>
 </div>
 <div class="app-layout">
@@ -339,6 +343,12 @@ rebuildGradient();
 // ===== CANVAS =====
 var cv = document.getElementById('cv');
 var cx = cv.getContext('2d');
+// ===== CONSTANTS =====
+var MONTHS_DE = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+function todayDE() {
+  var d = new Date();
+  return d.getDate() + '. ' + MONTHS_DE[d.getMonth()] + ' ' + d.getFullYear();
+}
 // ===== STATE =====
 var S = {
   imgs: [null, null],
@@ -351,11 +361,7 @@ var S = {
   allCaps: false,
   hlLines: ['Per ChatGPT das eigene Haustier zum Menschen machen'],
   subText: '',
-  dateText: (function() {
-    var m = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-    var d = new Date();
-    return d.getDate() + '. ' + m[d.getMonth()] + ' ' + d.getFullYear();
-  })()
+  dateText: todayDE()
 };
 // ===== DOM REFS =====
 var $hl   = document.getElementById('inHL');
@@ -409,7 +415,7 @@ function saveState() {
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
       layout: S.layout, format: S.format, allCaps: S.allCaps, creds: S.creds
     }));
-  } catch(e) {}
+  } catch(e) { console.warn('saveState failed:', e); }
 }
 function loadState() {
   try {
@@ -423,7 +429,7 @@ function loadState() {
     if (saved.format && FORMATS[saved.format]) S.format = saved.format;
     if (saved.allCaps != null) S.allCaps = saved.allCaps;
     if (saved.creds) S.creds = saved.creds;
-  } catch(e) {}
+  } catch(e) { console.warn('loadState failed:', e); }
 }
 loadState();
 // Apply loaded format
@@ -549,13 +555,13 @@ $bE.addEventListener('click', function() {
 // New post
 var $bN = document.getElementById('bN');
 $bN.addEventListener('click', function() {
+  var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
+  if (hasContent && !confirm('Aktuellen Post verwerfen und neu beginnen?')) return;
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.creds = ['', ''];
   S.crop = [50, 50]; S.allCaps = false;
   S.hlLines = ['']; S.subText = '';
-  var m = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-  var d = new Date();
-  S.dateText = d.getDate() + '. ' + m[d.getMonth()] + ' ' + d.getFullYear();
+  S.dateText = todayDE();
   $hl.value = ''; $sub.value = ''; $date.value = S.dateText;
   $togCaps.classList.remove('on');
   $togCaps.setAttribute('aria-checked', 'false');
@@ -590,7 +596,7 @@ $bS.addEventListener('click', function() {
   btn.disabled = true; btn.textContent = '\u2026';
   cv.toBlob(function(blob) {
     var file = new File([blob], 'ki-news-' + new Date().toISOString().slice(0, 10) + '.jpg', { type: 'image/jpeg' });
-    navigator.share({ files: [file] }).catch(function() {}).finally(function() {
+    navigator.share({ files: [file] }).catch(function(e) { if (e.name !== 'AbortError') console.warn('Share failed:', e); }).finally(function() {
       btn.disabled = false; btn.textContent = 'Teilen';
     });
   }, 'image/jpeg', 0.95);
@@ -695,8 +701,16 @@ $swapBtn.addEventListener('click', function(e) {
   renderUI();
 });
 // Image loading
+var MAX_IMAGE_SIZE = 20 * 1024 * 1024; // 20 MB
 function loadImageFile(i, file) {
-  if (!file || !file.type.match('image.*')) return;
+  if (!file || !/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+    if (file) showToast('\u26a0 Nur JPG, PNG, WebP oder GIF');
+    return;
+  }
+  if (file.size > MAX_IMAGE_SIZE) {
+    showToast('\u26a0 Bild zu gro\u00df (max. 20 MB)');
+    return;
+  }
   revokeBlob(i);
   var blobUrl = URL.createObjectURL(file);
   var im = new Image();
