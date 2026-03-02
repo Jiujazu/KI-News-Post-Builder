@@ -47,8 +47,8 @@
     --border-hover: #bbb;
     --text: #1a1a2e;
     --text-muted: #666;
-    --text-dim: #999;
-    --text-faint: #aaa;
+    --text-dim: #707070;
+    --text-faint: #767676;
     --input-bg: rgba(0,0,0,.04);
     --input-bg-focus: rgba(0,0,0,.07);
     --title-color: #1a1a2e;
@@ -87,35 +87,37 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 /* ===== PREVIEW ===== */
 .preview-col{
   margin-bottom:12px;
-  position:sticky;top:8px;z-index:50;
   background:var(--bg);padding-bottom:8px;
 }
 .pw{display:flex;justify-content:center;overflow:hidden;border-radius:var(--radius-md)}
-.pw canvas{width:100%;max-width:280px;border-radius:var(--radius-md);display:block}
+.pw canvas{width:100%;max-width:clamp(280px,75vw,360px);border-radius:var(--radius-md);display:block}
 /* ===== DESKTOP LAYOUT ===== */
 @media (min-width:1024px) {
   .app{max-width:1200px;padding:12px 24px 40px}
   .app-layout{display:flex;gap:24px;align-items:flex-start}
   .preview-col{
     flex:0 0 auto;width:480px;
-    top:12px;padding-bottom:0;
+    position:sticky;top:12px;z-index:50;padding-bottom:0;
   }
   .pw canvas{max-width:100%}
   .editor-col{flex:1;min-width:0}
   .editor-col{display:block !important} /* always visible on desktop */
   #segCtrl{display:none} /* toggle not needed on desktop */
 }
-/* ===== TABLET (medium screens) ===== */
-@media (min-width:600px) and (max-width:1023px) {
-  .pw canvas{max-width:360px}
+/* ===== MOBILE TOPBAR ===== */
+@media (max-width:1023px) {
+  .topbar{flex-wrap:wrap}
+  .btn-row{width:100%;justify-content:flex-start}
+  .btn-row button{padding:8px 10px;font-size:13px}
+  .seg{padding:6px 12px;font-size:12px}
 }
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px}
-.ed-t{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px}
+.ed-t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px}
 .fld{margin-bottom:14px;position:relative}
 .fld:last-child{margin-bottom:0}
-.fld label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:5px}
-.fld .charcount{float:right;font-size:11px;color:var(--text-faint);font-variant-numeric:tabular-nums}
+.fld label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px}
+.fld .charcount{float:right;font-size:12px;color:var(--text-faint);font-variant-numeric:tabular-nums}
 .fld .charcount.warn{color:#e85d4a}
 .fld input,.fld textarea{
   width:100%;background:var(--input-bg);border:1px solid var(--border-hover);
@@ -173,7 +175,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .swap-btn.show{display:flex}
 /* ===== CROP SLIDERS ===== */
 .crop-ctrl{margin-bottom:12px}
-.crop-ctrl label{font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px}
+.crop-ctrl label{font-size:13px;color:var(--text-dim);display:block;margin-bottom:6px}
 .crop-ctrl .sr{display:flex;align-items:center;gap:10px}
 .crop-ctrl input[type=range]{
   flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none;
@@ -193,7 +195,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 }
 .lb.on{border-color:var(--accent);color:var(--accent);background:var(--accent-glow)}
 /* ===== HINT ===== */
-.hint{text-align:center;font-size:12px;color:var(--text-dim);padding:8px 0 20px}
+.hint{text-align:center;font-size:13px;color:var(--text-dim);padding:8px 0 20px}
 /* ===== TOAST ===== */
 .toast{
   position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -250,16 +252,24 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .hist-item:hover .hist-del,.hist-item:focus-within .hist-del{opacity:1}
 @media (hover:none){.hist-item .hist-del{opacity:1}}
 .hist-del:hover,.hist-del:focus-visible{background:rgba(220,50,50,.9)}
+/* ===== FOCUS INDICATORS ===== */
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.img-zone .crd:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.crop-ctrl input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
+/* ===== TOUCH TARGET IMPROVEMENTS ===== */
+.tog::before{content:'';position:absolute;inset:-8px}
+.hist-del::before{content:'';position:absolute;inset:-6px}
+.crop-ctrl input[type=range]::-webkit-slider-thumb{width:32px;height:32px}
 </style>
 </head>
 <body>
 <div class="app">
-<div class="topbar">
+<header class="topbar">
   <h1>KI News</h1>
   <div class="btn-row">
-    <div class="seg-ctrl" id="segCtrl">
-      <button class="seg active" id="segEdit" aria-label="Editor anzeigen">Editor</button>
-      <button class="seg" id="segPreview" aria-label="Vorschau anzeigen">Vorschau</button>
+    <div class="seg-ctrl" id="segCtrl" role="tablist" aria-label="Ansicht">
+      <button class="seg active" id="segEdit" role="tab" aria-selected="true" aria-label="Editor anzeigen">Editor</button>
+      <button class="seg" id="segPreview" role="tab" aria-selected="false" aria-label="Vorschau anzeigen">Vorschau</button>
     </div>
     <button class="btn-primary" id="bX" aria-label="Als JPG speichern">JPG speichern</button>
     <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
@@ -268,19 +278,19 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
     <button class="btn-x" id="bH" aria-label="Archiv öffnen">Archiv</button>
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
   </div>
-</div>
-<div class="app-layout">
+</header>
+<main class="app-layout">
   <!-- ===== PREVIEW ===== -->
   <div class="preview-col">
-    <div class="pw"><canvas id="cv" width="1200" height="1500"></canvas></div>
+    <div class="pw"><canvas id="cv" width="1200" height="1500" role="img" aria-label="Vorschau des generierten Posts"></canvas></div>
   </div>
   <!-- ===== EDITOR ===== -->
   <div class="editor-col" id="EP">
   <!-- TEXT -->
   <div class="ed">
-    <div class="ed-t">Text</div>
+    <h2 class="ed-t">Text</h2>
     <div class="fld">
-      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount"></span></label>
+      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
       <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
     </div>
     <div class="tog-row">
@@ -288,7 +298,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
       <span>GROSSBUCHSTABEN</span>
     </div>
     <div class="fld">
-      <label>Untertitel (Enter = Umbruch) <span class="charcount" id="subCount"></span></label>
+      <label>Untertitel (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
       <textarea id="inSub" rows="1" placeholder="optional"></textarea>
     </div>
     <div class="fld">
@@ -298,23 +308,23 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   </div>
   <!-- LAYOUT -->
   <div class="ed">
-    <div class="ed-t">Layout</div>
-    <div class="lbtns" style="margin-bottom:8px">
-      <button class="lb on" id="lbOne" aria-label="Layout: 1 Bild">1 Bild</button>
-      <button class="lb" id="lbTwo" aria-label="Layout: 2 Bilder">2 Bilder</button>
-      <button class="lb" id="lbNone" aria-label="Layout: Kein Bild">Kein Bild</button>
+    <h2 class="ed-t">Layout</h2>
+    <div class="lbtns" style="margin-bottom:8px" role="radiogroup" aria-label="Bild-Layout">
+      <button class="lb on" id="lbOne" role="radio" aria-checked="true" aria-label="Layout: 1 Bild">1 Bild</button>
+      <button class="lb" id="lbTwo" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder">2 Bilder</button>
+      <button class="lb" id="lbNone" role="radio" aria-checked="false" aria-label="Layout: Kein Bild">Kein Bild</button>
     </div>
-    <label style="display:block;font-size:12px;color:var(--text-dim);margin-bottom:5px">Format</label>
-    <div class="lbtns">
-      <button class="lb fmt on" data-fmt="4:5" aria-label="Format 4:5" title="Instagram Post">4:5</button>
-      <button class="lb fmt" data-fmt="1:1" aria-label="Format 1:1" title="Quadratisch">1:1</button>
-      <button class="lb fmt" data-fmt="16:9" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
-      <button class="lb fmt" data-fmt="9:16" aria-label="Format 9:16" title="Story / Reel">9:16</button>
+    <label style="display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px">Format</label>
+    <div class="lbtns" role="radiogroup" aria-label="Bildformat">
+      <button class="lb fmt on" data-fmt="4:5" role="radio" aria-checked="true" aria-label="Format 4:5" title="Instagram Post">4:5</button>
+      <button class="lb fmt" data-fmt="1:1" role="radio" aria-checked="false" aria-label="Format 1:1" title="Quadratisch">1:1</button>
+      <button class="lb fmt" data-fmt="16:9" role="radio" aria-checked="false" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
+      <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
     </div>
   </div>
   <!-- IMAGES -->
   <div class="ed" id="imgEd">
-    <div class="ed-t">Bilder</div>
+    <h2 class="ed-t">Bilder</h2>
     <div class="img-zones">
       <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
@@ -348,12 +358,12 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
     </div>
   </div>
   </div><!-- /editor-col -->
-</div><!-- /app-layout -->
+</main><!-- /app-layout -->
 <div class="hint" id="hint">4:5 Format &middot; 1200 &times; 1500 px</div>
 </div>
 <!-- HISTORY DRAWER -->
 <div class="hist-overlay" id="histOverlay"></div>
-<div class="hist-drawer" id="histDrawer" role="dialog" aria-label="Post-Archiv">
+<div class="hist-drawer" id="histDrawer" role="dialog" aria-modal="true" aria-label="Post-Archiv">
   <div class="hist-header">
     <h2>Archiv</h2>
     <button class="hist-close" id="histClose" aria-label="Archiv schließen">&times;</button>
@@ -364,7 +374,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   </div>
 </div>
 <!-- TOAST -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
 "use strict";
@@ -733,6 +743,8 @@ function setView(editing) {
   $EP.style.display = S.editing ? 'block' : 'none';
   $segEdit.classList.toggle('active', S.editing);
   $segPreview.classList.toggle('active', !S.editing);
+  $segEdit.setAttribute('aria-selected', String(S.editing));
+  $segPreview.setAttribute('aria-selected', String(!S.editing));
   if (!S.editing) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     scheduleDraw();
@@ -880,6 +892,7 @@ function setLayout(l) {
   S.layout = l;
   Object.keys(LAYOUT_BTNS).forEach(function(k) {
     LAYOUT_BTNS[k].classList.toggle('on', k === l);
+    LAYOUT_BTNS[k].setAttribute('aria-checked', String(k === l));
   });
   $imgEd.style.display = (l === 'none') ? 'none' : 'block';
   $z[1].style.display = (l === 'two') ? 'flex' : 'none';
@@ -902,7 +915,9 @@ function setFormat(fmt) {
     rebuildGradient();
   }
   for (var i = 0; i < $fmtBtns.length; i++) {
-    $fmtBtns[i].classList.toggle('on', $fmtBtns[i].getAttribute('data-fmt') === fmt);
+    var isOn = $fmtBtns[i].getAttribute('data-fmt') === fmt;
+    $fmtBtns[i].classList.toggle('on', isOn);
+    $fmtBtns[i].setAttribute('aria-checked', String(isOn));
   }
   $hint.textContent = fmt + ' Format \u00b7 ' + W + ' \u00d7 ' + H + ' px';
   refreshCounts();
@@ -1214,14 +1229,36 @@ $bA.addEventListener('click', function() {
   });
 });
 // ===== HISTORY: DRAWER =====
+var _drawerEscHandler = null;
+var _drawerTrapHandler = null;
 function openHistory() {
   $histOverlay.classList.add('open');
   $histDrawer.classList.add('open');
   loadHistoryGrid();
+  // Focus the close button
+  $histClose.focus();
+  // Escape key handler
+  _drawerEscHandler = function(e) {
+    if (e.key === 'Escape') { e.preventDefault(); closeHistory(); }
+  };
+  document.addEventListener('keydown', _drawerEscHandler);
+  // Focus trap
+  _drawerTrapHandler = function(e) {
+    if (e.key !== 'Tab') return;
+    var focusable = $histDrawer.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])');
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  document.addEventListener('keydown', _drawerTrapHandler);
 }
 function closeHistory() {
   $histOverlay.classList.remove('open');
   $histDrawer.classList.remove('open');
+  if (_drawerEscHandler) { document.removeEventListener('keydown', _drawerEscHandler); _drawerEscHandler = null; }
+  if (_drawerTrapHandler) { document.removeEventListener('keydown', _drawerTrapHandler); _drawerTrapHandler = null; }
+  $bH.focus();
 }
 $bH.addEventListener('click', openHistory);
 $histClose.addEventListener('click', closeHistory);
@@ -1364,6 +1401,8 @@ function init() {
     $EP.style.display = S.editing ? 'block' : 'none';
     $segEdit.classList.toggle('active', S.editing);
     $segPreview.classList.toggle('active', !S.editing);
+    $segEdit.setAttribute('aria-selected', String(S.editing));
+    $segPreview.setAttribute('aria-selected', String(!S.editing));
   }
   autoSize($hl);
   autoSize($sub);
