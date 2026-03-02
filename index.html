@@ -79,6 +79,8 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .btn-x:active{transform:scale(.96)}
 .btn-primary{background:var(--accent);color:#fff}
 .btn-primary:active{transform:scale(.96);background:var(--accent-dark)}
+.btn-success{background:#2ea043 !important;color:#fff !important;pointer-events:none}
+.btn-success-outline{border-color:#2ea043 !important;color:#2ea043 !important;pointer-events:none}
 .btn-danger{background:transparent;color:var(--text-muted);border:1px solid var(--border)}
 .btn-danger:active{transform:scale(.96)}
 /* ===== PREVIEW ===== */
@@ -606,12 +608,18 @@ $bN.addEventListener('click', function() {
   autoSize($hl);
   renderUI();
   saveState();
-  showToast('Neuer Post');
+  $bN.textContent = '\u2713 Zur\u00fcckgesetzt';
+  $bN.classList.add('btn-success-outline');
+  showToast('\u2713 Neuer Post \u2013 alles zur\u00fcckgesetzt');
+  setTimeout(function() {
+    $bN.textContent = 'Neu';
+    $bN.classList.remove('btn-success-outline');
+  }, 1500);
 });
 // Export (async toBlob)
 $bX.addEventListener('click', function() {
   var btn = this;
-  btn.disabled = true; btn.textContent = '\u2026';
+  btn.disabled = true; btn.textContent = 'Speichert\u2026';
   scheduleDraw();
   requestAnimationFrame(function() {
     cv.toBlob(function(blob) {
@@ -626,15 +634,21 @@ $bX.addEventListener('click', function() {
       a.href = url;
       a.click();
       setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-      btn.disabled = false; btn.textContent = 'JPG speichern';
-      showToast('\u2713 JPG gespeichert');
+      btn.textContent = '\u2713 Gespeichert!';
+      btn.classList.add('btn-success');
+      showToast('\u2713 JPG in Downloads gespeichert');
+      setTimeout(function() {
+        btn.disabled = false;
+        btn.textContent = 'JPG speichern';
+        btn.classList.remove('btn-success');
+      }, 1500);
     }, 'image/jpeg', 0.95);
   });
 });
 // Web Share API
 $bS.addEventListener('click', function() {
   var btn = this;
-  btn.disabled = true; btn.textContent = '\u2026';
+  btn.disabled = true; btn.textContent = 'Teilen\u2026';
   scheduleDraw();
   requestAnimationFrame(function() {
     cv.toBlob(function(blob) {
@@ -653,7 +667,7 @@ $bS.addEventListener('click', function() {
 // Copy to clipboard
 $bC.addEventListener('click', function() {
   var btn = this;
-  btn.disabled = true; btn.textContent = '\u2026';
+  btn.disabled = true; btn.textContent = 'Kopiert\u2026';
   scheduleDraw();
   requestAnimationFrame(function() {
     cv.toBlob(function(blob) {
@@ -663,11 +677,17 @@ $bC.addEventListener('click', function() {
         return;
       }
       navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
-        showToast('\u2713 In Zwischenablage kopiert');
+        btn.textContent = '\u2713 Kopiert!';
+        btn.classList.add('btn-success');
+        showToast('\u2713 Bild in Zwischenablage kopiert');
+        setTimeout(function() {
+          btn.disabled = false;
+          btn.textContent = 'Kopieren';
+          btn.classList.remove('btn-success');
+        }, 1500);
       }).catch(function() {
-        showToast('\u26a0 Kopieren fehlgeschlagen');
-      }).finally(function() {
         btn.disabled = false; btn.textContent = 'Kopieren';
+        showToast('\u26a0 Kopieren fehlgeschlagen');
       });
     }, 'image/png');
   });
