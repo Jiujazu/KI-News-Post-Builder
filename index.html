@@ -309,7 +309,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
     <div class="fld">
       <label>Datum</label>
-      <input id="inDate" type="text" placeholder="z.B. 2. M\u00e4rz 2026">
+      <input id="inDate" type="date">
     </div>
   </div>
   <!-- LAYOUT -->
@@ -470,9 +470,26 @@ const cv = document.getElementById('cv');
 const cx = cv.getContext('2d');
 // ===== CONSTANTS =====
 const MONTHS_DE = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-function todayDE() {
+function todayISO() {
   var d = new Date();
-  return d.getDate() + '. ' + MONTHS_DE[d.getMonth()] + ' ' + d.getFullYear();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function isoToDE(iso) {
+  var p = iso.split('-');
+  if (p.length !== 3) return iso;
+  var day = parseInt(p[2],10), m = parseInt(p[1],10)-1;
+  if (m < 0 || m > 11) return iso;
+  return day + '. ' + MONTHS_DE[m] + ' ' + parseInt(p[0],10);
+}
+function deToISO(de) {
+  var match = de.match(/^(\d{1,2})\.\s*(\S+)\s+(\d{4})$/);
+  if (!match) return '';
+  var m = MONTHS_DE.indexOf(match[2]);
+  if (m === -1) return '';
+  return match[3] + '-' + String(m+1).padStart(2,'0') + '-' + String(parseInt(match[1],10)).padStart(2,'0');
+}
+function todayDE() {
+  return isoToDE(todayISO());
 }
 // ===== STATE =====
 function defaultCrop() { return {x:50, y:50, z:100}; }
@@ -854,7 +871,7 @@ $bN.addEventListener('click', function() {
   S.crop = [defaultCrop(), defaultCrop()]; S.allCaps = false;
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
-  $hl.value = ''; $sub.value = ''; $date.value = S.dateText;
+  $hl.value = ''; $sub.value = ''; $date.value = todayISO();
   $togCaps.classList.remove('on');
   $togCaps.setAttribute('aria-checked', 'false');
   $f[0].value = ''; $f[1].value = '';
@@ -972,8 +989,8 @@ $sub.addEventListener('input', function() {
   scheduleDraw();
 });
 // Date input
-$date.addEventListener('input', function() {
-  S.dateText = this.value;
+$date.addEventListener('change', function() {
+  S.dateText = this.value ? isoToDE(this.value) : '';
   debouncedSave();
   scheduleDraw();
 });
@@ -1515,7 +1532,7 @@ function loadArchivedPost(post) {
   // Update text inputs
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
-  $date.value = S.dateText;
+  $date.value = deToISO(S.dateText) || todayISO();
   $togCaps.classList.toggle('on', S.allCaps);
   $togCaps.setAttribute('aria-checked', String(S.allCaps));
   $f[0].value = ''; $f[1].value = '';
@@ -1560,7 +1577,7 @@ function init() {
   }
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
-  $date.value = S.dateText;
+  $date.value = deToISO(S.dateText) || todayISO();
   $togCaps.classList.toggle('on', S.allCaps);
   $togCaps.setAttribute('aria-checked', String(S.allCaps));
   setLayout(S.layout);
