@@ -357,13 +357,13 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
     <div class="fs-row">
       <label>Headline Gr&ouml;&szlig;e</label>
-      <input type="range" id="fsSlider" min="60" max="300" value="0">
+      <input type="range" id="fsSlider" min="60" max="300" value="60">
       <span class="vl" id="fsVal">Auto</span>
       <button id="fsReset">Auto</button>
     </div>
     <div class="fs-row">
       <label>Untertitel Gr&ouml;&szlig;e</label>
-      <input type="range" id="subFsSlider" min="20" max="150" value="0">
+      <input type="range" id="subFsSlider" min="20" max="150" value="20">
       <span class="vl" id="subFsVal">Auto</span>
       <button id="subFsReset">Auto</button>
     </div>
@@ -1866,14 +1866,14 @@ function updateFSSlider() {
     $fsSlider.value = S.hlFSOverride;
     $fsVal.textContent = S.hlFSOverride + 'px';
   } else {
-    $fsSlider.value = 130;
+    $fsSlider.value = $fsSlider.min;
     $fsVal.textContent = 'Auto';
   }
   if (S.subFSOverride > 0) {
     $subFsSlider.value = S.subFSOverride;
     $subFsVal.textContent = S.subFSOverride + 'px';
   } else {
-    $subFsSlider.value = 60;
+    $subFsSlider.value = $subFsSlider.min;
     $subFsVal.textContent = 'Auto';
   }
 }
