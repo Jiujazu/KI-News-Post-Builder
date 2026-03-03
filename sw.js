@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ki-news-v2';
+const CACHE_NAME = 'ki-news-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,14 @@ self.addEventListener('activate', function(e) {
 });
 
 self.addEventListener('fetch', function(e) {
+  // Skip Firebase/Google API requests — let them go directly to network
+  var url = e.request.url;
+  if (url.indexOf('googleapis.com') !== -1 ||
+      url.indexOf('firebaseio.com') !== -1 ||
+      url.indexOf('firebasestorage.app') !== -1 ||
+      url.indexOf('accounts.google.com') !== -1) {
+    return;
+  }
   e.respondWith(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.match(e.request).then(function(cached) {

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="KI News">
 <meta name="theme-color" content="#0a0a1a">
 <link rel="manifest" href="manifest.json">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
 <title>KI News Post Generator</title>
 <style>
 @font-face {
@@ -304,6 +304,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tog::before{content:'';position:absolute;inset:-8px}
 .hist-del::before{content:'';position:absolute;inset:-6px}
 .crop-ctrl input[type=range]::-webkit-slider-thumb{width:32px;height:32px}
+/* ===== AUTH UI ===== */
+.login-btn{font-size:13px}
+.user-info{display:flex;align-items:center;gap:6px}
+.user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid var(--accent)}
+.logout-btn{padding:6px 8px;font-size:12px;background:transparent;color:var(--text-muted);border:1px solid var(--border)}
 </style>
 </head>
 <body>
@@ -323,6 +328,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <button class="btn-primary" id="bXpng" aria-label="Als PNG speichern">PNG</button>
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
     <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dark/Light Mode">&#9790;</button>
+    <button class="btn-x login-btn" id="loginBtn" aria-label="Mit Google anmelden">Anmelden</button>
+    <div class="user-info" id="userInfo" style="display:none">
+      <img class="user-avatar" id="userAvatar" src="" alt="">
+      <button class="btn-x logout-btn" id="logoutBtn" aria-label="Abmelden" title="Abmelden">&#10005;</button>
+    </div>
   </div>
 </header>
 <main class="app-layout">
@@ -357,13 +367,13 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
     <div class="fs-row">
       <label>Headline Gr&ouml;&szlig;e</label>
-      <input type="range" id="fsSlider" min="60" max="300" value="0">
+      <input type="range" id="fsSlider" min="60" max="300" value="60">
       <span class="vl" id="fsVal">Auto</span>
       <button id="fsReset">Auto</button>
     </div>
     <div class="fs-row">
       <label>Untertitel Gr&ouml;&szlig;e</label>
-      <input type="range" id="subFsSlider" min="20" max="150" value="0">
+      <input type="range" id="subFsSlider" min="20" max="150" value="20">
       <span class="vl" id="subFsVal">Auto</span>
       <button id="subFsReset">Auto</button>
     </div>
@@ -495,6 +505,10 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <div class="drop-overlay" id="dropOverlay"><span>Bild hier ablegen</span></div>
 <!-- TOAST -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <script>
 (function(){
 "use strict";
@@ -1596,8 +1610,9 @@ $bA.addEventListener('click', function() {
       thumbnail: results[2],
       images: [results[0], results[1]]
     };
-    return dbAdd(post);
-  }).then(function() {
+    return dbAdd(post).then(function() { return post; });
+  }).then(function(post) {
+    syncToCloud(post);
     btn.textContent = '\u2713 Archiviert!';
     btn.classList.add('btn-success');
     showToast('\u2713 Post archiviert');
@@ -1658,6 +1673,7 @@ $histGrid.addEventListener('click', function(e) {
     var post = _histPosts[idx];
     if (!post || !confirm('Post aus Archiv l\u00f6schen?')) return;
     dbDelete(post.id).then(function() {
+      deleteFromCloud(post.id);
       loadHistoryGrid();
       showToast('\u2713 Post gel\u00f6scht');
     });
@@ -1866,14 +1882,14 @@ function updateFSSlider() {
     $fsSlider.value = S.hlFSOverride;
     $fsVal.textContent = S.hlFSOverride + 'px';
   } else {
-    $fsSlider.value = 130;
+    $fsSlider.value = $fsSlider.min;
     $fsVal.textContent = 'Auto';
   }
   if (S.subFSOverride > 0) {
     $subFsSlider.value = S.subFSOverride;
     $subFsVal.textContent = S.subFSOverride + 'px';
   } else {
-    $subFsSlider.value = 60;
+    $subFsSlider.value = $subFsSlider.min;
     $subFsVal.textContent = 'Auto';
   }
 }
@@ -2124,6 +2140,168 @@ var _origHlHandler = $hl.oninput;
 $hl.addEventListener('input', function() { pushUndo(); });
 $sub.addEventListener('input', function() { pushUndo(); });
 $date.addEventListener('change', function() { pushUndo(); });
+// ===== FIREBASE CLOUD SYNC =====
+var fbEnabled = typeof firebase !== 'undefined';
+var fbUser = null;
+if (fbEnabled) {
+  firebase.initializeApp({
+    apiKey: "AIzaSyBuE_T6Uxvwnm4nCNHrRfdWb27zmjboUPk",
+    authDomain: "ki-news-post-builder.firebaseapp.com",
+    projectId: "ki-news-post-builder",
+    storageBucket: "ki-news-post-builder.firebasestorage.app",
+    messagingSenderId: "826867698843",
+    appId: "1:826867698843:web:df93b3539e9ff959030a3e"
+  });
+  var fbAuth = firebase.auth();
+  var fbDb = firebase.firestore();
+  var fbStorage = firebase.storage();
+  var $loginBtn = document.getElementById('loginBtn');
+  var $userInfo = document.getElementById('userInfo');
+  var $userAvatar = document.getElementById('userAvatar');
+  var $logoutBtn = document.getElementById('logoutBtn');
+  fbAuth.onAuthStateChanged(function(user) {
+    fbUser = user;
+    if (user) {
+      $loginBtn.style.display = 'none';
+      $userInfo.style.display = 'flex';
+      if (user.photoURL) $userAvatar.src = user.photoURL;
+      $userAvatar.alt = user.displayName || '';
+      showToast('\u2713 Angemeldet als ' + (user.displayName || user.email));
+      syncCloud();
+    } else {
+      $loginBtn.style.display = '';
+      $userInfo.style.display = 'none';
+    }
+  });
+  $loginBtn.addEventListener('click', function() {
+    fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function(err) {
+      if (err.code !== 'auth/popup-closed-by-user') {
+        showToast('\u26a0 Login fehlgeschlagen');
+        console.warn('Login error:', err);
+      }
+    });
+  });
+  $logoutBtn.addEventListener('click', function() {
+    fbAuth.signOut();
+    fbUser = null;
+    showToast('\u2713 Abgemeldet');
+  });
+} else {
+  var $loginBtnHide = document.getElementById('loginBtn');
+  if ($loginBtnHide) $loginBtnHide.style.display = 'none';
+}
+function syncToCloud(post) {
+  if (!fbUser || !fbEnabled) return Promise.resolve();
+  var uid = fbUser.uid;
+  var pid = post.id;
+  var uploads = [];
+  for (var i = 0; i < 2; i++) {
+    if (post.images && post.images[i]) {
+      (function(idx) {
+        var ref = fbStorage.ref('users/' + uid + '/posts/' + pid + '/img' + idx + '.jpg');
+        uploads.push(ref.put(post.images[idx]).then(function(s) { return s.ref.getDownloadURL(); }));
+      })(i);
+    } else {
+      uploads.push(Promise.resolve(null));
+    }
+  }
+  if (post.thumbnail) {
+    var tRef = fbStorage.ref('users/' + uid + '/posts/' + pid + '/thumb.jpg');
+    uploads.push(tRef.put(post.thumbnail).then(function(s) { return s.ref.getDownloadURL(); }));
+  } else {
+    uploads.push(Promise.resolve(null));
+  }
+  return Promise.all(uploads).then(function(urls) {
+    return fbDb.collection('users').doc(uid).collection('posts').doc(pid).set({
+      headline: post.headline || '',
+      subtitle: post.subtitle || '',
+      date: post.date || '',
+      layout: post.layout || 'one',
+      format: post.format || '4:5',
+      hlCaps: !!post.hlCaps,
+      subCaps: !!post.subCaps,
+      hlFSOverride: post.hlFSOverride || 0,
+      subFSOverride: post.subFSOverride || 0,
+      textPos: post.textPos || 'top',
+      credits: post.credits || ['', ''],
+      crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
+      savedAt: post.savedAt,
+      imageUrls: [urls[0], urls[1]],
+      thumbnailUrl: urls[2]
+    });
+  }).catch(function(err) { console.warn('syncToCloud failed:', err); });
+}
+function deleteFromCloud(postId) {
+  if (!fbUser || !fbEnabled) return Promise.resolve();
+  var uid = fbUser.uid;
+  return Promise.all([
+    fbDb.collection('users').doc(uid).collection('posts').doc(postId).delete().catch(function() {}),
+    fbStorage.ref('users/' + uid + '/posts/' + postId + '/img0.jpg').delete().catch(function() {}),
+    fbStorage.ref('users/' + uid + '/posts/' + postId + '/img1.jpg').delete().catch(function() {}),
+    fbStorage.ref('users/' + uid + '/posts/' + postId + '/thumb.jpg').delete().catch(function() {})
+  ]);
+}
+function downloadCloudPost(id, data) {
+  var fetches = [];
+  for (var i = 0; i < 2; i++) {
+    if (data.imageUrls && data.imageUrls[i]) {
+      fetches.push(fetch(data.imageUrls[i]).then(function(r) { return r.blob(); }).catch(function() { return null; }));
+    } else {
+      fetches.push(Promise.resolve(null));
+    }
+  }
+  if (data.thumbnailUrl) {
+    fetches.push(fetch(data.thumbnailUrl).then(function(r) { return r.blob(); }).catch(function() { return null; }));
+  } else {
+    fetches.push(Promise.resolve(null));
+  }
+  return Promise.all(fetches).then(function(blobs) {
+    return dbAdd({
+      id: id,
+      savedAt: data.savedAt,
+      headline: data.headline,
+      subtitle: data.subtitle,
+      date: data.date,
+      layout: data.layout,
+      format: data.format,
+      hlCaps: data.hlCaps,
+      subCaps: data.subCaps,
+      hlFSOverride: data.hlFSOverride || 0,
+      subFSOverride: data.subFSOverride || 0,
+      textPos: data.textPos || 'top',
+      credits: data.credits || ['', ''],
+      crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
+      images: [blobs[0], blobs[1]],
+      thumbnail: blobs[2]
+    });
+  });
+}
+function syncCloud() {
+  if (!fbUser || !fbEnabled) return;
+  var uid = fbUser.uid;
+  Promise.all([
+    dbGetAll(),
+    fbDb.collection('users').doc(uid).collection('posts').orderBy('savedAt', 'desc').get()
+  ]).then(function(res) {
+    var localPosts = res[0], cloudSnap = res[1];
+    var localById = {};
+    localPosts.forEach(function(p) { localById[p.id] = true; });
+    var cloudById = {};
+    cloudSnap.forEach(function(doc) { cloudById[doc.id] = true; });
+    var toDownload = [];
+    cloudSnap.forEach(function(doc) {
+      if (!localById[doc.id]) toDownload.push({id: doc.id, data: doc.data()});
+    });
+    var toUpload = localPosts.filter(function(p) { return !cloudById[p.id]; });
+    if (!toDownload.length && !toUpload.length) return;
+    var ops = [];
+    toDownload.forEach(function(item) { ops.push(downloadCloudPost(item.id, item.data)); });
+    toUpload.forEach(function(post) { ops.push(syncToCloud(post)); });
+    return Promise.all(ops).then(function() {
+      showToast('\u2713 ' + (toDownload.length + toUpload.length) + ' Post(s) synchronisiert');
+    });
+  }).catch(function(err) { console.warn('syncCloud failed:', err); });
+}
 // ===== INIT =====
 function init() {
   if (document.fonts && !document.fonts.check('12px Festivo')) {
