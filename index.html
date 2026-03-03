@@ -258,6 +258,44 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .hist-item:hover .hist-del,.hist-item:focus-within .hist-del{opacity:1}
 @media (hover:none){.hist-item .hist-del{opacity:1}}
 .hist-del:hover,.hist-del:focus-visible{background:rgba(220,50,50,.9)}
+/* ===== GLOBAL DROP OVERLAY ===== */
+.drop-overlay{
+  position:fixed;inset:0;z-index:9999;background:rgba(140,80,200,.18);
+  display:none;align-items:center;justify-content:center;
+  border:4px dashed var(--accent);pointer-events:none;
+}
+.drop-overlay.show{display:flex}
+.drop-overlay span{font-size:22px;font-weight:700;color:var(--accent);background:var(--surface);padding:16px 32px;border-radius:var(--radius-lg)}
+/* ===== DARK MODE TOGGLE ===== */
+html.light{color-scheme:light}
+html.light body,html.light :root{
+  --bg:#f5f5f8;--surface:#fff;--border:#ddd;--border-hover:#bbb;
+  --text:#1a1a2e;--text-muted:#666;--text-dim:#707070;--text-faint:#767676;
+  --input-bg:rgba(0,0,0,.04);--input-bg-focus:rgba(0,0,0,.07);
+  --title-color:#1a1a2e;--btn-secondary-bg:#e8e8ee;--btn-secondary-text:#1a1a2e;
+  --toast-bg:#333;--toast-text:#fff;
+}
+html.dark{color-scheme:dark}
+html.dark body,html.dark :root{
+  --bg:#0a0a1a;--surface:#111125;--border:#1e1e3a;--border-hover:#2a2a4a;
+  --text:#e0e0f0;--text-muted:#999;--text-dim:#777;--text-faint:#aaa;
+  --input-bg:rgba(255,255,255,.06);--input-bg-focus:rgba(255,255,255,.08);
+  --title-color:#e0e0f0;--btn-secondary-bg:#1a1a2e;--btn-secondary-text:#fff;
+  --toast-bg:#1a1a2e;--toast-text:#fff;
+}
+.theme-btn{font-size:18px;line-height:1;padding:8px 10px}
+/* ===== TEMPLATE PANEL ===== */
+.tpl-row{display:flex;gap:6px;align-items:center;margin-bottom:10px}
+.tpl-row select{flex:1;background:var(--input-bg);border:1px solid var(--border-hover);border-radius:var(--radius-md);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+.tpl-row select:focus{border-color:rgba(140,100,220,.5)}
+.tpl-row button{padding:10px 12px;font-size:13px}
+/* ===== FONT SIZE / TEXT POS ===== */
+.fs-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.fs-row label{font-size:13px;color:var(--text-dim);min-width:90px;flex-shrink:0}
+.fs-row input[type=range]{flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none}
+.fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer}
+.fs-row .vl{font-size:13px;color:var(--text-muted);min-width:45px;text-align:right;font-variant-numeric:tabular-nums}
+.fs-row button{padding:6px 10px;font-size:12px;border-radius:var(--radius-md);background:var(--btn-secondary-bg);color:var(--btn-secondary-text);border:1px solid var(--border)}
 /* ===== FOCUS INDICATORS ===== */
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .img-zone .crd:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -282,7 +320,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
     <button class="btn-x" id="bA" aria-label="Post archivieren">Archivieren</button>
     <button class="btn-x" id="bH" aria-label="Archiv öffnen">Archiv</button>
+    <button class="btn-primary" id="bXpng" aria-label="Als PNG speichern">PNG</button>
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
+    <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dark/Light Mode">&#9790;</button>
   </div>
 </header>
 <main class="app-layout">
@@ -309,7 +349,21 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
     <div class="fld">
       <label>Datum</label>
-      <input id="inDate" type="text" placeholder="z.B. 2. M\u00e4rz 2026">
+      <input id="inDate" type="date">
+    </div>
+    <div class="fs-row">
+      <label>Schriftgr&ouml;&szlig;e</label>
+      <input type="range" id="fsSlider" min="60" max="300" value="0">
+      <span class="vl" id="fsVal">Auto</span>
+      <button id="fsReset">Auto</button>
+    </div>
+    <div class="fld">
+      <label>Textposition</label>
+      <div class="lbtns" role="radiogroup" aria-label="Textposition">
+        <button class="lb on" id="tpTop" role="radio" aria-checked="true">Oben</button>
+        <button class="lb" id="tpCenter" role="radio" aria-checked="false">Mitte</button>
+        <button class="lb" id="tpBottom" role="radio" aria-checked="false">Unten</button>
+      </div>
     </div>
   </div>
   <!-- LAYOUT -->
@@ -327,6 +381,19 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <button class="lb fmt" data-fmt="1:1" role="radio" aria-checked="false" aria-label="Format 1:1" title="Quadratisch">1:1</button>
       <button class="lb fmt" data-fmt="16:9" role="radio" aria-checked="false" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
       <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
+    </div>
+  </div>
+  <!-- TEMPLATES -->
+  <div class="ed">
+    <h2 class="ed-t">Vorlagen</h2>
+    <div class="tpl-row">
+      <select id="tplSelect"><option value="">Vorlage w&auml;hlen&hellip;</option></select>
+      <button class="btn-x" id="tplLoad">Laden</button>
+      <button class="btn-x" id="tplDel">&#215;</button>
+    </div>
+    <div class="tpl-row">
+      <input id="tplName" type="text" placeholder="Name der Vorlage" style="flex:1;background:var(--input-bg);border:1px solid var(--border-hover);border-radius:var(--radius-md);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none">
+      <button class="btn-primary" id="tplSave">Speichern</button>
     </div>
   </div>
   <!-- IMAGES -->
@@ -414,6 +481,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="hist-grid" id="histGrid"></div>
   </div>
 </div>
+<!-- DROP OVERLAY -->
+<div class="drop-overlay" id="dropOverlay"><span>Bild hier ablegen</span></div>
 <!-- TOAST -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
@@ -470,9 +539,26 @@ const cv = document.getElementById('cv');
 const cx = cv.getContext('2d');
 // ===== CONSTANTS =====
 const MONTHS_DE = ['Januar','Februar','M\u00e4rz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-function todayDE() {
+function todayISO() {
   var d = new Date();
-  return d.getDate() + '. ' + MONTHS_DE[d.getMonth()] + ' ' + d.getFullYear();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function isoToDE(iso) {
+  var p = iso.split('-');
+  if (p.length !== 3) return iso;
+  var day = parseInt(p[2],10), m = parseInt(p[1],10)-1;
+  if (m < 0 || m > 11) return iso;
+  return day + '. ' + MONTHS_DE[m] + ' ' + parseInt(p[0],10);
+}
+function deToISO(de) {
+  var match = de.match(/^(\d{1,2})\.\s*(\S+)\s+(\d{4})$/);
+  if (!match) return '';
+  var m = MONTHS_DE.indexOf(match[2]);
+  if (m === -1) return '';
+  return match[3] + '-' + String(m+1).padStart(2,'0') + '-' + String(parseInt(match[1],10)).padStart(2,'0');
+}
+function todayDE() {
+  return isoToDE(todayISO());
 }
 // ===== STATE =====
 function defaultCrop() { return {x:50, y:50, z:100}; }
@@ -487,7 +573,9 @@ const S = {
   allCaps: false,
   hlLines: ['Per ChatGPT das eigene Haustier zum Menschen machen'],
   subText: '',
-  dateText: todayDE()
+  dateText: todayDE(),
+  hlFSOverride: 0,
+  textPos: 'top'
 };
 // ===== DOM REFS =====
 const $hl   = document.getElementById('inHL');
@@ -525,6 +613,20 @@ const $vz = [document.getElementById('vz0'), document.getElementById('vz1')];
 const $vx = [document.getElementById('vx0'), document.getElementById('vx1')];
 const $vy = [document.getElementById('vy0'), document.getElementById('vy1')];
 const $cc = [document.getElementById('cc0'), document.getElementById('cc1')];
+const $fsSlider = document.getElementById('fsSlider');
+const $fsVal = document.getElementById('fsVal');
+const $fsReset = document.getElementById('fsReset');
+const $tpTop = document.getElementById('tpTop');
+const $tpCenter = document.getElementById('tpCenter');
+const $tpBottom = document.getElementById('tpBottom');
+const $dropOverlay = document.getElementById('dropOverlay');
+const $themeToggle = document.getElementById('themeToggle');
+const $bXpng = document.getElementById('bXpng');
+const $tplSelect = document.getElementById('tplSelect');
+const $tplLoad = document.getElementById('tplLoad');
+const $tplDel = document.getElementById('tplDel');
+const $tplName = document.getElementById('tplName');
+const $tplSave = document.getElementById('tplSave');
 const $bA   = document.getElementById('bA');
 const $bH   = document.getElementById('bH');
 const $histOverlay = document.getElementById('histOverlay');
@@ -619,6 +721,8 @@ function saveDraft() {
         layout: S.layout,
         format: S.format,
         allCaps: S.allCaps,
+        hlFSOverride: S.hlFSOverride,
+        textPos: S.textPos,
         credits: S.creds.slice(),
         crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
         images: [blobs[0], blobs[1]]
@@ -689,7 +793,8 @@ function saveState() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
-      layout: S.layout, format: S.format, allCaps: S.allCaps
+      layout: S.layout, format: S.format, allCaps: S.allCaps,
+      hlFSOverride: S.hlFSOverride, textPos: S.textPos
     }));
   } catch(e) { console.warn('saveState failed:', e); }
 }
@@ -709,6 +814,8 @@ function loadState() {
     if (typeof saved.layout === 'string' && LAYOUT_KEYS[saved.layout]) S.layout = saved.layout;
     if (typeof saved.format === 'string' && FORMATS[saved.format]) S.format = saved.format;
     if (typeof saved.allCaps === 'boolean') S.allCaps = saved.allCaps;
+    if (typeof saved.hlFSOverride === 'number') S.hlFSOverride = saved.hlFSOverride;
+    if (typeof saved.textPos === 'string') S.textPos = saved.textPos;
     // Credits werden nicht im localStorage gespeichert (nur in IndexedDB mit den Bildern)
   } catch(e) { console.warn('loadState failed:', e); }
 }
@@ -854,12 +961,15 @@ $bN.addEventListener('click', function() {
   S.crop = [defaultCrop(), defaultCrop()]; S.allCaps = false;
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
-  $hl.value = ''; $sub.value = ''; $date.value = S.dateText;
+  S.hlFSOverride = 0; S.textPos = 'top';
+  $hl.value = ''; $sub.value = ''; $date.value = todayISO();
   $togCaps.classList.remove('on');
   $togCaps.setAttribute('aria-checked', 'false');
   $f[0].value = ''; $f[1].value = '';
   setLayout('one');
   setFormat('4:5');
+  updateFSSlider();
+  setTextPos('top');
   autoSize($hl);
   renderUI();
   saveState();
@@ -972,8 +1082,8 @@ $sub.addEventListener('input', function() {
   scheduleDraw();
 });
 // Date input
-$date.addEventListener('input', function() {
-  S.dateText = this.value;
+$date.addEventListener('change', function() {
+  S.dateText = this.value ? isoToDE(this.value) : '';
   debouncedSave();
   scheduleDraw();
 });
@@ -1146,21 +1256,22 @@ function prepareText(maxW) {
   var isStacked = (S.layout === 'stacked');
   var isLandscape = W > H;
   var hlFS, subFS;
-  if (isNone && isLandscape) {
+  if (S.hlFSOverride > 0) {
+    hlFS = S.hlFSOverride;
+    subFS = Math.round(hlFS * 0.46);
+  } else if (isNone && isLandscape) {
     hlFS = S.hlLines.length > 1 ? 140 : 160;
     subFS = 60;
   } else if (isNone) {
     hlFS = S.hlLines.length > 1 ? 230 : 260;
     subFS = 90;
   } else if (isStacked && isLandscape) {
-    // Stacked + landscape: text must be very compact
     hlFS = S.hlLines.length > 1 ? 64 : 74;
     subFS = 36;
   } else if (isLandscape) {
     hlFS = S.hlLines.length > 1 ? 78 : 88;
     subFS = 42;
   } else if (isStacked) {
-    // Stacked + portrait: slightly smaller than 1-image
     hlFS = S.hlLines.length > 1 ? 110 : 120;
     subFS = 54;
   } else {
@@ -1211,14 +1322,19 @@ function drawText(t, maxW) {
   var subGap = t.isNone ? (t.isLandscape ? 12 : 20) : t.isLandscape ? 8 : 14;
   // Y position
   var curY;
-  if (t.isNone) {
-    var topPad = t.isLandscape ? 36 : TOP_PAD;
-    var footerH = t.isLandscape ? 70 : FOOTER_H;
+  var topPad = t.isLandscape ? 36 : TOP_PAD;
+  var footerH = t.isLandscape ? 70 : FOOTER_H;
+  var totalH = hlBlockH + (subBlockH > 0 ? subGap + subBlockH : 0);
+  if (S.textPos === 'center') {
     var availH = H - topPad - footerH;
-    var totalH = hlBlockH + (subBlockH > 0 ? subGap + subBlockH : 0);
     curY = topPad + Math.round((availH - totalH) / 2);
+  } else if (S.textPos === 'bottom') {
+    curY = H - footerH - totalH - (t.isLandscape ? 14 : IMG_TOP_GAP);
+  } else if (t.isNone) {
+    var availH2 = H - topPad - footerH;
+    curY = topPad + Math.round((availH2 - totalH) / 2);
   } else {
-    curY = t.isLandscape ? 36 : TOP_PAD;
+    curY = topPad;
   }
   // Headline (centered)
   cx.font = 'bold ' + t.hlFS + 'px Festivo, serif';
@@ -1370,6 +1486,8 @@ $bA.addEventListener('click', function() {
       layout: S.layout,
       format: S.format,
       allCaps: S.allCaps,
+      hlFSOverride: S.hlFSOverride,
+      textPos: S.textPos,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
       thumbnail: results[2],
@@ -1504,6 +1622,8 @@ function loadArchivedPost(post) {
   S.subText = post.subtitle || '';
   S.dateText = post.date || todayDE();
   S.allCaps = !!post.allCaps;
+  S.hlFSOverride = post.hlFSOverride || 0;
+  S.textPos = post.textPos || 'top';
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
     ? post.crops.map(function(c) {
@@ -1515,13 +1635,18 @@ function loadArchivedPost(post) {
   // Update text inputs
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
-  $date.value = S.dateText;
+  $date.value = deToISO(S.dateText) || todayISO();
   $togCaps.classList.toggle('on', S.allCaps);
   $togCaps.setAttribute('aria-checked', String(S.allCaps));
   $f[0].value = ''; $f[1].value = '';
-  // Set layout and format
+  // Set layout, format, font size, text position
   setLayout(post.layout || 'one');
   setFormat(post.format || '4:5');
+  updateFSSlider();
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === S.textPos);
+    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
+  });
   // Load images from blobs
   var loaded = 0, total = 0;
   function onAllLoaded() {
@@ -1553,6 +1678,279 @@ function loadArchivedPost(post) {
   }
   if (total === 0) onAllLoaded();
 }
+// ===== GLOBAL DRAG & DROP =====
+var dragCounter = 0;
+document.addEventListener('dragover', function(e) { e.preventDefault(); });
+document.addEventListener('dragenter', function(e) {
+  e.preventDefault();
+  if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.indexOf('Files') !== -1) {
+    dragCounter++;
+    $dropOverlay.classList.add('show');
+  }
+});
+document.addEventListener('dragleave', function(e) {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) { dragCounter = 0; $dropOverlay.classList.remove('show'); }
+});
+document.addEventListener('drop', function(e) {
+  e.preventDefault();
+  dragCounter = 0;
+  $dropOverlay.classList.remove('show');
+  var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!file || !/^image\//.test(file.type)) return;
+  // Load into first empty slot, or slot 0 if single layout
+  var slot = 0;
+  if (hasTwoImages() && S.imgs[0] && !S.imgs[1]) slot = 1;
+  loadImageFile(slot, file);
+});
+// ===== PNG EXPORT =====
+$bXpng.addEventListener('click', function() {
+  var btn = this;
+  btn.disabled = true; btn.textContent = 'Speichert\u2026';
+  draw();
+  cv.toBlob(function(blob) {
+    if (!blob) {
+      btn.disabled = false; btn.textContent = 'PNG';
+      showToast('\u26a0 Export fehlgeschlagen');
+      return;
+    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.download = 'ki-news-' + new Date().toISOString().slice(0, 10) + '.png';
+    a.href = url;
+    a.click();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    btn.textContent = '\u2713 PNG!';
+    btn.classList.add('btn-success');
+    showToast('\u2713 PNG in Downloads gespeichert');
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.textContent = 'PNG';
+      btn.classList.remove('btn-success');
+    }, 1500);
+  }, 'image/png');
+});
+// ===== FONT SIZE SLIDER =====
+function updateFSSlider() {
+  if (S.hlFSOverride > 0) {
+    $fsSlider.value = S.hlFSOverride;
+    $fsVal.textContent = S.hlFSOverride + 'px';
+  } else {
+    $fsSlider.value = 130;
+    $fsVal.textContent = 'Auto';
+  }
+}
+$fsSlider.addEventListener('input', function() {
+  S.hlFSOverride = +this.value;
+  $fsVal.textContent = this.value + 'px';
+  pushUndo();
+  debouncedSave();
+  scheduleDraw();
+});
+$fsReset.addEventListener('click', function() {
+  S.hlFSOverride = 0;
+  updateFSSlider();
+  pushUndo();
+  debouncedSave();
+  scheduleDraw();
+});
+// ===== TEXT POSITION =====
+var TP_BTNS = { top: $tpTop, center: $tpCenter, bottom: $tpBottom };
+function setTextPos(pos) {
+  S.textPos = pos;
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === pos);
+    TP_BTNS[k].setAttribute('aria-checked', String(k === pos));
+  });
+  pushUndo();
+  debouncedSave();
+  scheduleDraw();
+}
+$tpTop.addEventListener('click', function() { setTextPos('top'); });
+$tpCenter.addEventListener('click', function() { setTextPos('center'); });
+$tpBottom.addEventListener('click', function() { setTextPos('bottom'); });
+// ===== DARK MODE TOGGLE =====
+var THEME_KEY = 'ki-news-theme';
+function applyTheme(theme) {
+  document.documentElement.classList.remove('light', 'dark');
+  if (theme === 'light' || theme === 'dark') {
+    document.documentElement.classList.add(theme);
+  }
+  $themeToggle.textContent = theme === 'light' ? '\u2600' : '\u263e';
+  try { localStorage.setItem(THEME_KEY, theme); } catch(e) {}
+}
+(function() {
+  var saved = '';
+  try { saved = localStorage.getItem(THEME_KEY) || ''; } catch(e) {}
+  if (saved === 'light' || saved === 'dark') applyTheme(saved);
+})();
+$themeToggle.addEventListener('click', function() {
+  var cur = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  applyTheme(cur === 'dark' ? 'light' : 'dark');
+});
+// ===== UNDO / REDO =====
+var undoStack = [];
+var redoStack = [];
+var MAX_UNDO = 40;
+function stateSnapshot() {
+  return JSON.stringify({
+    hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
+    allCaps: S.allCaps, layout: S.layout, format: S.format,
+    creds: S.creds, crop: S.crop,
+    hlFSOverride: S.hlFSOverride, textPos: S.textPos
+  });
+}
+function restoreSnapshot(json) {
+  var snap = JSON.parse(json);
+  S.hlLines = snap.hlLines; S.subText = snap.subText; S.dateText = snap.dateText;
+  S.allCaps = snap.allCaps; S.layout = snap.layout; S.format = snap.format;
+  S.creds = snap.creds; S.crop = snap.crop;
+  S.hlFSOverride = snap.hlFSOverride || 0;
+  S.textPos = snap.textPos || 'top';
+  // Sync UI
+  $hl.value = S.hlLines.join('\n');
+  $sub.value = S.subText;
+  $date.value = deToISO(S.dateText) || todayISO();
+  $togCaps.classList.toggle('on', S.allCaps);
+  $togCaps.setAttribute('aria-checked', String(S.allCaps));
+  setLayout(S.layout);
+  setFormat(S.format);
+  updateFSSlider();
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === S.textPos);
+    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
+  });
+  for (var i = 0; i < 2; i++) {
+    $cr[i].value = S.creds[i];
+    $sz[i].value = S.crop[i].z; $vz[i].textContent = S.crop[i].z + '%';
+    $sx[i].value = S.crop[i].x; $vx[i].textContent = S.crop[i].x + '%';
+    $sy[i].value = S.crop[i].y; $vy[i].textContent = S.crop[i].y + '%';
+  }
+  autoSize($hl); autoSize($sub);
+  saveState();
+  scheduleDraw();
+}
+var lastSnap = stateSnapshot();
+function pushUndo() {
+  var snap = stateSnapshot();
+  if (snap === lastSnap) return;
+  undoStack.push(lastSnap);
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack = [];
+  lastSnap = snap;
+}
+function undo() {
+  if (!undoStack.length) { showToast('Nichts zum R\u00fcckg\u00e4ngig machen'); return; }
+  redoStack.push(stateSnapshot());
+  var snap = undoStack.pop();
+  lastSnap = snap;
+  restoreSnapshot(snap);
+  showToast('R\u00fcckg\u00e4ngig');
+}
+function redo() {
+  if (!redoStack.length) { showToast('Nichts zum Wiederherstellen'); return; }
+  undoStack.push(stateSnapshot());
+  var snap = redoStack.pop();
+  lastSnap = snap;
+  restoreSnapshot(snap);
+  showToast('Wiederhergestellt');
+}
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function(e) {
+  // Skip when typing in inputs/textareas
+  var tag = e.target.tagName;
+  var isInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    $bX.click();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    if (isInput) return; // let browser handle undo in inputs
+    e.preventDefault();
+    undo();
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    if (isInput) return;
+    e.preventDefault();
+    redo();
+  }
+});
+// ===== TEMPLATE SYSTEM =====
+var TPL_KEY = 'ki-news-templates';
+function loadTemplates() {
+  try {
+    var raw = localStorage.getItem(TPL_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+function saveTemplates(templates) {
+  try { localStorage.setItem(TPL_KEY, JSON.stringify(templates)); } catch(e) {}
+}
+function refreshTplSelect() {
+  var templates = loadTemplates();
+  var names = Object.keys(templates).sort();
+  $tplSelect.innerHTML = '<option value="">Vorlage w\u00e4hlen\u2026</option>';
+  names.forEach(function(name) {
+    var opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    $tplSelect.appendChild(opt);
+  });
+}
+$tplSave.addEventListener('click', function() {
+  var name = $tplName.value.trim();
+  if (!name) { showToast('\u26a0 Bitte Vorlagenname eingeben'); return; }
+  var templates = loadTemplates();
+  templates[name] = {
+    layout: S.layout, format: S.format, allCaps: S.allCaps,
+    hlFSOverride: S.hlFSOverride, textPos: S.textPos
+  };
+  saveTemplates(templates);
+  refreshTplSelect();
+  $tplSelect.value = name;
+  $tplName.value = '';
+  showToast('\u2713 Vorlage "' + name + '" gespeichert');
+});
+$tplLoad.addEventListener('click', function() {
+  var name = $tplSelect.value;
+  if (!name) { showToast('\u26a0 Bitte Vorlage w\u00e4hlen'); return; }
+  var templates = loadTemplates();
+  var tpl = templates[name];
+  if (!tpl) return;
+  pushUndo();
+  if (tpl.layout) setLayout(tpl.layout);
+  if (tpl.format) setFormat(tpl.format);
+  if (typeof tpl.allCaps === 'boolean') {
+    S.allCaps = tpl.allCaps;
+    $togCaps.classList.toggle('on', S.allCaps);
+    $togCaps.setAttribute('aria-checked', String(S.allCaps));
+  }
+  S.hlFSOverride = tpl.hlFSOverride || 0;
+  updateFSSlider();
+  S.textPos = tpl.textPos || 'top';
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === S.textPos);
+    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
+  });
+  saveState();
+  scheduleDraw();
+  showToast('\u2713 Vorlage "' + name + '" geladen');
+});
+$tplDel.addEventListener('click', function() {
+  var name = $tplSelect.value;
+  if (!name) { showToast('\u26a0 Bitte Vorlage w\u00e4hlen'); return; }
+  if (!confirm('Vorlage "' + name + '" l\u00f6schen?')) return;
+  var templates = loadTemplates();
+  delete templates[name];
+  saveTemplates(templates);
+  refreshTplSelect();
+  showToast('\u2713 Vorlage gel\u00f6scht');
+});
+// Hook undo into existing input handlers
+var _origHlHandler = $hl.oninput;
+$hl.addEventListener('input', function() { pushUndo(); });
+$sub.addEventListener('input', function() { pushUndo(); });
+$date.addEventListener('change', function() { pushUndo(); });
 // ===== INIT =====
 function init() {
   if (document.fonts && !document.fonts.check('12px Festivo')) {
@@ -1560,11 +1958,18 @@ function init() {
   }
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
-  $date.value = S.dateText;
+  $date.value = deToISO(S.dateText) || todayISO();
   $togCaps.classList.toggle('on', S.allCaps);
   $togCaps.setAttribute('aria-checked', String(S.allCaps));
   setLayout(S.layout);
   setFormat(S.format);
+  updateFSSlider();
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === S.textPos);
+    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
+  });
+  refreshTplSelect();
+  lastSnap = stateSnapshot();
   // On desktop: always show editor; on mobile: respect S.editing
   if (isDesktop()) {
     $EP.style.display = 'block';
@@ -1581,8 +1986,16 @@ function init() {
   // Restore draft (images, crops, credits) from IndexedDB
   loadDraft().then(function(draft) {
     if (!draft) return;
-    // Restore credits and crops
+    // Restore credits, crops, and new settings
     if (Array.isArray(draft.credits) && draft.credits.length === 2) S.creds = draft.credits.slice();
+    if (typeof draft.hlFSOverride === 'number') { S.hlFSOverride = draft.hlFSOverride; updateFSSlider(); }
+    if (typeof draft.textPos === 'string') {
+      S.textPos = draft.textPos;
+      Object.keys(TP_BTNS).forEach(function(k) {
+        TP_BTNS[k].classList.toggle('on', k === S.textPos);
+        TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
+      });
+    }
     if (Array.isArray(draft.crops) && draft.crops.length === 2) {
       S.crop = draft.crops.map(function(c) {
         if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z};
