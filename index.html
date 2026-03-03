@@ -88,12 +88,12 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 /* ===== SPLIT BUTTON ===== */
 .split-btn{position:relative;display:inline-flex;border-radius:var(--radius-md);overflow:visible}
 .split-main{border-radius:var(--radius-md) 0 0 var(--radius-md) !important;padding-right:10px}
-.split-arrow{border-radius:0 var(--radius-md) var(--radius-md) 0 !important;padding:10px 8px;border-left:1px solid rgba(255,255,255,.2);font-size:11px;min-width:0;line-height:1}
+.split-arrow{border-radius:0 var(--radius-md) var(--radius-md) 0 !important;padding:10px 12px;border-left:1px solid rgba(0,0,0,.15);font-size:11px;min-width:36px;line-height:1;text-align:center}
 .split-arrow:active{transform:none;background:var(--accent-dark)}
-.split-menu{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:100;min-width:160px;overflow:hidden}
+.split-menu{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:100;min-width:160px;overflow:hidden;max-width:calc(100vw - 24px)}
 .split-menu.open{display:block}
-.split-opt{display:block;width:100%;text-align:left;padding:10px 14px;font-size:13px;font-weight:600;background:transparent;color:var(--text);border:none;border-radius:0;cursor:pointer;transition:background .1s}
-.split-opt:hover{background:var(--accent-glow)}
+.split-opt{display:block;width:100%;text-align:left;padding:14px 14px;font-size:13px;font-weight:600;background:transparent;color:var(--text);border:none;border-radius:0;cursor:pointer;transition:background .1s}
+.split-opt:hover,.split-opt:focus-visible{background:var(--accent-glow)}
 .split-opt.active{color:var(--accent)}
 .split-opt.active::before{content:'\2713 ';}
 /* ===== PREVIEW ===== */
@@ -199,7 +199,11 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   touch-action:none;
 }
 .crop-ctrl input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);
+  -webkit-appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);
+  border:2px solid #fff;cursor:pointer;
+}
+.crop-ctrl input[type=range]::-moz-range-thumb{
+  width:32px;height:32px;border-radius:50%;background:var(--accent);
   border:2px solid #fff;cursor:pointer;
 }
 .crop-ctrl .vl{font-size:13px;color:var(--text-muted);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
@@ -314,7 +318,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* ===== TOUCH TARGET IMPROVEMENTS ===== */
 .tog::before{content:'';position:absolute;inset:-8px}
 .hist-del::before{content:'';position:absolute;inset:-6px}
-.crop-ctrl input[type=range]::-webkit-slider-thumb{width:32px;height:32px}
 /* ===== AUTH UI ===== */
 .login-btn{font-size:13px}
 .user-info{display:flex;align-items:center;gap:6px}
@@ -334,7 +337,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <!-- Export -->
     <div class="split-btn" id="saveGroup">
       <button class="btn-primary split-main" id="bSave" aria-label="Als PNG speichern">PNG speichern</button>
-      <button class="btn-primary split-arrow" id="bSaveArrow" aria-label="Format wählen" aria-haspopup="true">&#9662;</button>
+      <button class="btn-primary split-arrow" id="bSaveArrow" aria-label="Format wählen" aria-haspopup="true" aria-expanded="false">&#9662;</button>
       <div class="split-menu" id="saveMenu" role="menu">
         <button class="split-opt active" data-fmt="png" role="menuitem">PNG speichern</button>
         <button class="split-opt" data-fmt="jpg" role="menuitem">JPG speichern</button>
@@ -347,10 +350,10 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <button class="btn-x" id="bH" aria-label="Archiv öffnen">Archiv</button>
     <!-- Utility -->
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
-    <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dark/Light Mode">&#9790;</button>
+    <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dunkel/Hell-Modus">&#9790;</button>
     <button class="btn-x login-btn" id="loginBtn" aria-label="Mit Google anmelden">Anmelden</button>
     <div class="user-info" id="userInfo" style="display:none">
-      <img class="user-avatar" id="userAvatar" src="" alt="">
+      <img class="user-avatar" id="userAvatar" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Benutzerbild">
       <button class="btn-x logout-btn" id="logoutBtn" aria-label="Abmelden" title="Abmelden">&#10005;</button>
     </div>
   </div>
@@ -725,7 +728,10 @@ function dbAdd(post) {
       if (posts.length <= MAX_ARCHIVE_POSTS) return;
       var toDelete = posts.slice(MAX_ARCHIVE_POSTS);
       showToast('\u26a0 Archiv voll \u2013 ' + toDelete.length + ' \u00e4lteste(r) Post(s) entfernt');
-      return Promise.all(toDelete.map(function(p) { return dbDelete(p.id); }));
+      return Promise.all(toDelete.map(function(p) {
+        deleteFromCloud(p.id);
+        return dbDelete(p.id);
+      }));
     });
   });
 }
@@ -1045,7 +1051,8 @@ function updateSaveBtn() {
 updateSaveBtn();
 $bSaveArrow.addEventListener('click', function(e) {
   e.stopPropagation();
-  $saveMenu.classList.toggle('open');
+  var isOpen = $saveMenu.classList.toggle('open');
+  $bSaveArrow.setAttribute('aria-expanded', String(isOpen));
 });
 $saveMenu.addEventListener('click', function(e) {
   var opt = e.target.closest('.split-opt');
@@ -1056,7 +1063,10 @@ $saveMenu.addEventListener('click', function(e) {
   $saveMenu.classList.remove('open');
 });
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('#saveGroup')) $saveMenu.classList.remove('open');
+  if (!e.target.closest('#saveGroup')) {
+    $saveMenu.classList.remove('open');
+    $bSaveArrow.setAttribute('aria-expanded', 'false');
+  }
 });
 $bSave.addEventListener('click', function() {
   if (!fontReady && !confirm('Font nicht geladen \u2013 Export k\u00f6nnte fehlerhaft aussehen. Trotzdem exportieren?')) return;
@@ -1773,6 +1783,7 @@ function loadHistoryGrid() {
   dbGetAll().then(function(posts) {
     _histPosts = posts;
     while ($histGrid.firstChild) $histGrid.removeChild($histGrid.firstChild);
+    $histEmpty.textContent = 'Noch keine Posts archiviert.';
     $histEmpty.style.display = posts.length ? 'none' : 'block';
     var countEl = document.getElementById('histCount');
     if (countEl) countEl.textContent = posts.length ? posts.length + ' / ' + MAX_ARCHIVE_POSTS + ' Posts' : '';
@@ -2086,6 +2097,12 @@ document.addEventListener('keydown', function(e) {
   // Skip when typing in inputs/textareas
   var tag = e.target.tagName;
   var isInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+  if (e.key === 'Escape' && $saveMenu.classList.contains('open')) {
+    $saveMenu.classList.remove('open');
+    $bSaveArrow.setAttribute('aria-expanded', 'false');
+    $bSaveArrow.focus();
+    return;
+  }
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault();
     $bSave.click();
@@ -2177,10 +2194,14 @@ $tplDel.addEventListener('click', function() {
   refreshTplSelect();
   showToast('\u2713 Vorlage gel\u00f6scht');
 });
-// Hook undo into existing input handlers
-var _origHlHandler = $hl.oninput;
-$hl.addEventListener('input', function() { pushUndo(); });
-$sub.addEventListener('input', function() { pushUndo(); });
+// Hook undo into existing input handlers (debounced to avoid flooding undo stack per-keystroke)
+var _undoTimer = null;
+function debouncedUndo() {
+  clearTimeout(_undoTimer);
+  _undoTimer = setTimeout(pushUndo, 600);
+}
+$hl.addEventListener('input', debouncedUndo);
+$sub.addEventListener('input', debouncedUndo);
 $date.addEventListener('change', function() { pushUndo(); });
 // ===== FIREBASE CLOUD SYNC =====
 var fbEnabled = typeof firebase !== 'undefined';
@@ -2247,9 +2268,12 @@ if (fbEnabled) {
     });
   });
   $logoutBtn.addEventListener('click', function() {
-    fbAuth.signOut();
-    fbUser = null;
-    showToast('\u2713 Abgemeldet');
+    fbAuth.signOut().then(function() {
+      showToast('\u2713 Abgemeldet');
+    }).catch(function(err) {
+      console.warn('Sign out error:', err);
+      showToast('\u26a0 Abmeldung fehlgeschlagen');
+    });
   });
 } else {
   var $loginBtnHide = document.getElementById('loginBtn');
@@ -2294,7 +2318,10 @@ function syncToCloud(post) {
       imageUrls: [urls[0], urls[1]],
       thumbnailUrl: urls[2]
     });
-  }).catch(function(err) { console.warn('syncToCloud failed:', err); });
+  }).catch(function(err) {
+    console.warn('syncToCloud failed:', err);
+    showToast('\u26a0 Cloud-Sync fehlgeschlagen');
+  });
 }
 function deleteFromCloud(postId) {
   if (!fbUser || !fbEnabled) return Promise.resolve();
@@ -2310,13 +2337,13 @@ function downloadCloudPost(id, data) {
   var fetches = [];
   for (var i = 0; i < 2; i++) {
     if (data.imageUrls && data.imageUrls[i]) {
-      fetches.push(fetch(data.imageUrls[i]).then(function(r) { return r.blob(); }).catch(function() { return null; }));
+      fetches.push(fetch(data.imageUrls[i]).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; }));
     } else {
       fetches.push(Promise.resolve(null));
     }
   }
   if (data.thumbnailUrl) {
-    fetches.push(fetch(data.thumbnailUrl).then(function(r) { return r.blob(); }).catch(function() { return null; }));
+    fetches.push(fetch(data.thumbnailUrl).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; }));
   } else {
     fetches.push(Promise.resolve(null));
   }
@@ -2365,7 +2392,10 @@ function syncCloud() {
     return Promise.all(ops).then(function() {
       showToast('\u2713 ' + (toDownload.length + toUpload.length) + ' Post(s) synchronisiert');
     });
-  }).catch(function(err) { console.warn('syncCloud failed:', err); });
+  }).catch(function(err) {
+    console.warn('syncCloud failed:', err);
+    showToast('\u26a0 Cloud-Sync fehlgeschlagen');
+  });
 }
 // ===== INIT =====
 function init() {
@@ -2406,7 +2436,9 @@ function init() {
     if (!draft) return;
     // Restore credits, crops, and new settings
     if (Array.isArray(draft.credits) && draft.credits.length === 2) S.creds = draft.credits.slice();
-    if (typeof draft.hlFSOverride === 'number') { S.hlFSOverride = draft.hlFSOverride; updateFSSlider(); }
+    if (typeof draft.hlFSOverride === 'number') S.hlFSOverride = draft.hlFSOverride;
+    if (typeof draft.subFSOverride === 'number') S.subFSOverride = draft.subFSOverride;
+    updateFSSlider();
     if (typeof draft.textPos === 'string') {
       S.textPos = draft.textPos;
       Object.keys(TP_BTNS).forEach(function(k) {
