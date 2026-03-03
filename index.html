@@ -340,22 +340,32 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
     </div>
     <div class="tog-row">
-      <button class="tog" id="togCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben umschalten"></button>
+      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
       <span>GROSSBUCHSTABEN</span>
     </div>
     <div class="fld">
       <label>Untertitel (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
       <textarea id="inSub" rows="1" placeholder="optional"></textarea>
     </div>
+    <div class="tog-row">
+      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Untertitel Grossbuchstaben"></button>
+      <span>GROSSBUCHSTABEN</span>
+    </div>
     <div class="fld">
       <label>Datum</label>
       <input id="inDate" type="date">
     </div>
     <div class="fs-row">
-      <label>Schriftgr&ouml;&szlig;e</label>
+      <label>Headline Gr&ouml;&szlig;e</label>
       <input type="range" id="fsSlider" min="60" max="300" value="0">
       <span class="vl" id="fsVal">Auto</span>
       <button id="fsReset">Auto</button>
+    </div>
+    <div class="fs-row">
+      <label>Untertitel Gr&ouml;&szlig;e</label>
+      <input type="range" id="subFsSlider" min="20" max="150" value="0">
+      <span class="vl" id="subFsVal">Auto</span>
+      <button id="subFsReset">Auto</button>
     </div>
     <div class="fld">
       <label>Textposition</label>
@@ -570,11 +580,13 @@ const S = {
   layout: 'one',
   format: '4:5',
   editing: true,
-  allCaps: false,
+  hlCaps: false,
+  subCaps: false,
   hlLines: ['Per ChatGPT das eigene Haustier zum Menschen machen'],
   subText: '',
   dateText: todayDE(),
   hlFSOverride: 0,
+  subFSOverride: 0,
   textPos: 'top'
 };
 // ===== DOM REFS =====
@@ -588,7 +600,8 @@ const $segPreview = document.getElementById('segPreview');
 const $bX   = document.getElementById('bX');
 const $bC   = document.getElementById('bC');
 const $bS   = document.getElementById('bS');
-const $togCaps = document.getElementById('togCaps');
+const $togHlCaps = document.getElementById('togHlCaps');
+const $togSubCaps = document.getElementById('togSubCaps');
 const $swapBtn = document.getElementById('swapBtn');
 const $toast   = document.getElementById('toast');
 const $lbTwo     = document.getElementById('lbTwo');
@@ -616,6 +629,9 @@ const $cc = [document.getElementById('cc0'), document.getElementById('cc1')];
 const $fsSlider = document.getElementById('fsSlider');
 const $fsVal = document.getElementById('fsVal');
 const $fsReset = document.getElementById('fsReset');
+const $subFsSlider = document.getElementById('subFsSlider');
+const $subFsVal = document.getElementById('subFsVal');
+const $subFsReset = document.getElementById('subFsReset');
 const $tpTop = document.getElementById('tpTop');
 const $tpCenter = document.getElementById('tpCenter');
 const $tpBottom = document.getElementById('tpBottom');
@@ -720,8 +736,10 @@ function saveDraft() {
         date: S.dateText,
         layout: S.layout,
         format: S.format,
-        allCaps: S.allCaps,
+        hlCaps: S.hlCaps,
+        subCaps: S.subCaps,
         hlFSOverride: S.hlFSOverride,
+        subFSOverride: S.subFSOverride,
         textPos: S.textPos,
         credits: S.creds.slice(),
         crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
@@ -793,8 +811,8 @@ function saveState() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
-      layout: S.layout, format: S.format, allCaps: S.allCaps,
-      hlFSOverride: S.hlFSOverride, textPos: S.textPos
+      layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
+      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
     }));
   } catch(e) { console.warn('saveState failed:', e); }
 }
@@ -813,8 +831,11 @@ function loadState() {
     if (typeof saved.dateText === 'string') S.dateText = saved.dateText;
     if (typeof saved.layout === 'string' && LAYOUT_KEYS[saved.layout]) S.layout = saved.layout;
     if (typeof saved.format === 'string' && FORMATS[saved.format]) S.format = saved.format;
-    if (typeof saved.allCaps === 'boolean') S.allCaps = saved.allCaps;
+    if (typeof saved.hlCaps === 'boolean') S.hlCaps = saved.hlCaps;
+    else if (typeof saved.allCaps === 'boolean') S.hlCaps = saved.allCaps;
+    if (typeof saved.subCaps === 'boolean') S.subCaps = saved.subCaps;
     if (typeof saved.hlFSOverride === 'number') S.hlFSOverride = saved.hlFSOverride;
+    if (typeof saved.subFSOverride === 'number') S.subFSOverride = saved.subFSOverride;
     if (typeof saved.textPos === 'string') S.textPos = saved.textPos;
     // Credits werden nicht im localStorage gespeichert (nur in IndexedDB mit den Bildern)
   } catch(e) { console.warn('loadState failed:', e); }
@@ -958,13 +979,13 @@ $bN.addEventListener('click', function() {
   if (hasContent && !confirm('Aktuellen Post verwerfen und neu beginnen?')) return;
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.creds = ['', ''];
-  S.crop = [defaultCrop(), defaultCrop()]; S.allCaps = false;
+  S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
-  S.hlFSOverride = 0; S.textPos = 'top';
+  S.hlFSOverride = 0; S.subFSOverride = 0; S.textPos = 'top';
   $hl.value = ''; $sub.value = ''; $date.value = todayISO();
-  $togCaps.classList.remove('on');
-  $togCaps.setAttribute('aria-checked', 'false');
+  $togHlCaps.classList.remove('on'); $togHlCaps.setAttribute('aria-checked', 'false');
+  $togSubCaps.classList.remove('on'); $togSubCaps.setAttribute('aria-checked', 'false');
   $f[0].value = ''; $f[1].value = '';
   setLayout('one');
   setFormat('4:5');
@@ -1053,10 +1074,19 @@ $bC.addEventListener('click', function() {
     }, 'image/png');
 });
 // ALL CAPS toggle
-$togCaps.addEventListener('click', function() {
-  S.allCaps = !S.allCaps;
-  this.classList.toggle('on', S.allCaps);
-  this.setAttribute('aria-checked', String(S.allCaps));
+$togHlCaps.addEventListener('click', function() {
+  S.hlCaps = !S.hlCaps;
+  this.classList.toggle('on', S.hlCaps);
+  this.setAttribute('aria-checked', String(S.hlCaps));
+  pushUndo();
+  saveState();
+  scheduleDraw();
+});
+$togSubCaps.addEventListener('click', function() {
+  S.subCaps = !S.subCaps;
+  this.classList.toggle('on', S.subCaps);
+  this.setAttribute('aria-checked', String(S.subCaps));
+  pushUndo();
   saveState();
   scheduleDraw();
 });
@@ -1251,15 +1281,13 @@ function loadImageFile(i, file) {
 function prepareText(maxW) {
   cx.save(); // isolate font side-effects from measurement phase
   var headlineText = S.hlLines.join('\n');
-  if (S.allCaps) headlineText = headlineText.toUpperCase();
+  if (S.hlCaps) headlineText = headlineText.toUpperCase();
   var isNone = (S.layout === 'none');
   var isStacked = (S.layout === 'stacked');
   var isLandscape = W > H;
   var hlFS, subFS;
-  if (S.hlFSOverride > 0) {
-    hlFS = S.hlFSOverride;
-    subFS = Math.round(hlFS * 0.46);
-  } else if (isNone && isLandscape) {
+  // Auto font sizes based on layout
+  if (isNone && isLandscape) {
     hlFS = S.hlLines.length > 1 ? 140 : 160;
     subFS = 60;
   } else if (isNone) {
@@ -1278,6 +1306,9 @@ function prepareText(maxW) {
     hlFS = S.hlLines.length > 1 ? 120 : 130;
     subFS = 60;
   }
+  // Manual overrides
+  if (S.hlFSOverride > 0) hlFS = S.hlFSOverride;
+  if (S.subFSOverride > 0) subFS = S.subFSOverride;
   // Auto-shrink headline
   var rawLines = headlineText.split('\n');
   cx.font = 'bold ' + hlFS + 'px Festivo, serif';
@@ -1303,7 +1334,8 @@ function prepareText(maxW) {
   // Subtitle — manual line breaks via Enter
   var subArr = [];
   if (S.subText) {
-    var subLines = S.subText.split('\n').filter(function(l) { return l.length > 0; });
+    var subTextFinal = S.subCaps ? S.subText.toUpperCase() : S.subText;
+    var subLines = subTextFinal.split('\n').filter(function(l) { return l.length > 0; });
     for (var si = 0; si < subLines.length && subArr.length < SUB_MAX_LINES; si++) {
       var wSub = wrapLine(subLines[si], subFS, maxW);
       for (var ws = 0; ws < wSub.length && subArr.length < SUB_MAX_LINES; ws++) {
@@ -1378,6 +1410,67 @@ function drawImages(curY) {
     drawCroppedImage(0, MX, imgTop, fullW, imgH);
   }
 }
+function drawImagesAtTop(t) {
+  var isLandscape = W > H;
+  var topPad = isLandscape ? 36 : TOP_PAD;
+  var footerH = isLandscape ? 70 : FOOTER_H;
+  var imgTopGap = isLandscape ? 14 : IMG_TOP_GAP;
+  // Calculate text block height to reserve space at bottom
+  var hlLineH = Math.round(t.hlFS * HL_LINE_H_FACTOR);
+  var hlBlockH = t.hlArr.length * hlLineH;
+  var subLineH = Math.round(t.subFS * SUB_LINE_H_FACTOR);
+  var subBlockH = t.subArr.length > 0 ? t.subArr.length * subLineH : 0;
+  var subGap = t.isNone ? (isLandscape ? 12 : 20) : isLandscape ? 8 : 14;
+  var textBlockH = hlBlockH + (subBlockH > 0 ? subGap + subBlockH : 0);
+  var imgTop = topPad;
+  var imgH = Math.max(H - footerH - imgTop - imgTopGap - textBlockH - imgTopGap, IMG_MIN_H);
+  var fullW = W - MX * 2;
+  if (S.layout === 'two') {
+    var imgW = Math.round((fullW - IMG_GAP) / 2);
+    drawCroppedImage(0, MX, imgTop, imgW, imgH);
+    drawCroppedImage(1, MX + imgW + IMG_GAP, imgTop, imgW, imgH);
+  } else if (S.layout === 'stacked') {
+    var eachH = Math.max(Math.round((imgH - IMG_GAP) / 2), IMG_MIN_H);
+    drawCroppedImage(0, MX, imgTop, fullW, eachH);
+    drawCroppedImage(1, MX, imgTop + eachH + IMG_GAP, fullW, eachH);
+    return imgTop + eachH * 2 + IMG_GAP;
+  } else {
+    drawCroppedImage(0, MX, imgTop, fullW, imgH);
+  }
+  return imgTop + imgH;
+}
+function drawTextAtBottom(t, maxW, imgEndY) {
+  var isLandscape = W > H;
+  var footerH = isLandscape ? 70 : FOOTER_H;
+  var imgTopGap = isLandscape ? 14 : IMG_TOP_GAP;
+  var hlLineH = Math.round(t.hlFS * HL_LINE_H_FACTOR);
+  var hlBlockH = t.hlArr.length * hlLineH;
+  var subLineH = Math.round(t.subFS * SUB_LINE_H_FACTOR);
+  var subBlockH = t.subArr.length > 0 ? t.subArr.length * subLineH : 0;
+  var subGap = t.isNone ? (isLandscape ? 12 : 20) : isLandscape ? 8 : 14;
+  var totalH = hlBlockH + (subBlockH > 0 ? subGap + subBlockH : 0);
+  var curY = H - footerH - totalH - imgTopGap;
+  // Headline (centered)
+  cx.font = 'bold ' + t.hlFS + 'px Festivo, serif';
+  cx.fillStyle = '#ffffff';
+  cx.textBaseline = 'top';
+  cx.textAlign = 'center';
+  var centerX = W / 2;
+  for (var li = 0; li < t.hlArr.length; li++) {
+    cx.fillText(t.hlArr[li], centerX, curY + li * hlLineH);
+  }
+  curY += hlBlockH;
+  // Subtitle (centered)
+  if (t.subArr.length > 0) {
+    curY += subGap;
+    cx.font = '700 ' + t.subFS + 'px Festivo, serif';
+    cx.fillStyle = 'rgba(210,225,240,0.9)';
+    for (var sj = 0; sj < t.subArr.length; sj++) {
+      cx.fillText(t.subArr[sj], centerX, curY + sj * subLineH);
+    }
+  }
+  cx.textAlign = 'left';
+}
 function drawFooter() {
   var isLandscape = W > H;
   var fFS = isLandscape ? 28 : FOOTER_FS;
@@ -1404,8 +1497,14 @@ function draw() {
   cx.drawImage(gradCV, 0, 0, 1, H, 0, 0, W, H);
   var maxW = W - MX * 2;
   var t = prepareText(maxW);
-  var curY = drawText(t, maxW);
-  if (!t.isNone) drawImages(curY);
+  if (S.textPos === 'bottom' && !t.isNone) {
+    // Images at top, text at bottom
+    var imgEndY = drawImagesAtTop(t);
+    drawTextAtBottom(t, maxW, imgEndY);
+  } else {
+    var curY = drawText(t, maxW);
+    if (!t.isNone) drawImages(curY);
+  }
   drawFooter();
 }
 // ===== DRAW CROPPED IMAGE =====
@@ -1485,8 +1584,10 @@ $bA.addEventListener('click', function() {
       date: S.dateText,
       layout: S.layout,
       format: S.format,
-      allCaps: S.allCaps,
+      hlCaps: S.hlCaps,
+      subCaps: S.subCaps,
       hlFSOverride: S.hlFSOverride,
+      subFSOverride: S.subFSOverride,
       textPos: S.textPos,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
@@ -1621,8 +1722,10 @@ function loadArchivedPost(post) {
   S.hlLines = post.headline ? post.headline.split('\n') : [''];
   S.subText = post.subtitle || '';
   S.dateText = post.date || todayDE();
-  S.allCaps = !!post.allCaps;
+  S.hlCaps = !!(post.hlCaps || post.allCaps);
+  S.subCaps = !!post.subCaps;
   S.hlFSOverride = post.hlFSOverride || 0;
+  S.subFSOverride = post.subFSOverride || 0;
   S.textPos = post.textPos || 'top';
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
@@ -1636,8 +1739,10 @@ function loadArchivedPost(post) {
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
   $date.value = deToISO(S.dateText) || todayISO();
-  $togCaps.classList.toggle('on', S.allCaps);
-  $togCaps.setAttribute('aria-checked', String(S.allCaps));
+  $togHlCaps.classList.toggle('on', S.hlCaps);
+  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
+  $togSubCaps.classList.toggle('on', S.subCaps);
+  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
   $f[0].value = ''; $f[1].value = '';
   // Set layout, format, font size, text position
   setLayout(post.layout || 'one');
@@ -1731,7 +1836,7 @@ $bXpng.addEventListener('click', function() {
     }, 1500);
   }, 'image/png');
 });
-// ===== FONT SIZE SLIDER =====
+// ===== FONT SIZE SLIDERS =====
 function updateFSSlider() {
   if (S.hlFSOverride > 0) {
     $fsSlider.value = S.hlFSOverride;
@@ -1739,6 +1844,13 @@ function updateFSSlider() {
   } else {
     $fsSlider.value = 130;
     $fsVal.textContent = 'Auto';
+  }
+  if (S.subFSOverride > 0) {
+    $subFsSlider.value = S.subFSOverride;
+    $subFsVal.textContent = S.subFSOverride + 'px';
+  } else {
+    $subFsSlider.value = 60;
+    $subFsVal.textContent = 'Auto';
   }
 }
 $fsSlider.addEventListener('input', function() {
@@ -1750,6 +1862,20 @@ $fsSlider.addEventListener('input', function() {
 });
 $fsReset.addEventListener('click', function() {
   S.hlFSOverride = 0;
+  updateFSSlider();
+  pushUndo();
+  debouncedSave();
+  scheduleDraw();
+});
+$subFsSlider.addEventListener('input', function() {
+  S.subFSOverride = +this.value;
+  $subFsVal.textContent = this.value + 'px';
+  pushUndo();
+  debouncedSave();
+  scheduleDraw();
+});
+$subFsReset.addEventListener('click', function() {
+  S.subFSOverride = 0;
   updateFSSlider();
   pushUndo();
   debouncedSave();
@@ -1796,24 +1922,28 @@ var MAX_UNDO = 40;
 function stateSnapshot() {
   return JSON.stringify({
     hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
-    allCaps: S.allCaps, layout: S.layout, format: S.format,
+    hlCaps: S.hlCaps, subCaps: S.subCaps, layout: S.layout, format: S.format,
     creds: S.creds, crop: S.crop,
-    hlFSOverride: S.hlFSOverride, textPos: S.textPos
+    hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
   });
 }
 function restoreSnapshot(json) {
   var snap = JSON.parse(json);
   S.hlLines = snap.hlLines; S.subText = snap.subText; S.dateText = snap.dateText;
-  S.allCaps = snap.allCaps; S.layout = snap.layout; S.format = snap.format;
+  S.hlCaps = !!snap.hlCaps; S.subCaps = !!snap.subCaps;
+  S.layout = snap.layout; S.format = snap.format;
   S.creds = snap.creds; S.crop = snap.crop;
   S.hlFSOverride = snap.hlFSOverride || 0;
+  S.subFSOverride = snap.subFSOverride || 0;
   S.textPos = snap.textPos || 'top';
   // Sync UI
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
   $date.value = deToISO(S.dateText) || todayISO();
-  $togCaps.classList.toggle('on', S.allCaps);
-  $togCaps.setAttribute('aria-checked', String(S.allCaps));
+  $togHlCaps.classList.toggle('on', S.hlCaps);
+  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
+  $togSubCaps.classList.toggle('on', S.subCaps);
+  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
   setLayout(S.layout);
   setFormat(S.format);
   updateFSSlider();
@@ -1902,8 +2032,8 @@ $tplSave.addEventListener('click', function() {
   if (!name) { showToast('\u26a0 Bitte Vorlagenname eingeben'); return; }
   var templates = loadTemplates();
   templates[name] = {
-    layout: S.layout, format: S.format, allCaps: S.allCaps,
-    hlFSOverride: S.hlFSOverride, textPos: S.textPos
+    layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
+    hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
   };
   saveTemplates(templates);
   refreshTplSelect();
@@ -1920,12 +2050,18 @@ $tplLoad.addEventListener('click', function() {
   pushUndo();
   if (tpl.layout) setLayout(tpl.layout);
   if (tpl.format) setFormat(tpl.format);
-  if (typeof tpl.allCaps === 'boolean') {
-    S.allCaps = tpl.allCaps;
-    $togCaps.classList.toggle('on', S.allCaps);
-    $togCaps.setAttribute('aria-checked', String(S.allCaps));
+  if (typeof tpl.hlCaps === 'boolean') {
+    S.hlCaps = tpl.hlCaps;
+    $togHlCaps.classList.toggle('on', S.hlCaps);
+    $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
+  }
+  if (typeof tpl.subCaps === 'boolean') {
+    S.subCaps = tpl.subCaps;
+    $togSubCaps.classList.toggle('on', S.subCaps);
+    $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
   }
   S.hlFSOverride = tpl.hlFSOverride || 0;
+  S.subFSOverride = tpl.subFSOverride || 0;
   updateFSSlider();
   S.textPos = tpl.textPos || 'top';
   Object.keys(TP_BTNS).forEach(function(k) {
@@ -1959,8 +2095,10 @@ function init() {
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
   $date.value = deToISO(S.dateText) || todayISO();
-  $togCaps.classList.toggle('on', S.allCaps);
-  $togCaps.setAttribute('aria-checked', String(S.allCaps));
+  $togHlCaps.classList.toggle('on', S.hlCaps);
+  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
+  $togSubCaps.classList.toggle('on', S.subCaps);
+  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
   setLayout(S.layout);
   setFormat(S.format);
   updateFSSlider();
