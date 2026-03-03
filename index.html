@@ -1328,11 +1328,27 @@ function prepareText(maxW) {
   var rawLines = headlineText.split('\n');
   cx.font = 'bold ' + hlFS + 'px Festivo, serif';
   var worstRatio = 1;
-  for (var k = 0; k < rawLines.length; k++) {
-    var mw = cx.measureText(rawLines[k]).width;
-    if (mw > maxW) {
-      var ratio = maxW / mw;
-      if (ratio < worstRatio) worstRatio = ratio;
+  if (S.hlFSOverride > 0) {
+    // Manual override: only shrink if a single WORD is wider than maxW
+    // (let wrapLine handle multi-word line breaks at the chosen size)
+    for (var k = 0; k < rawLines.length; k++) {
+      var words = rawLines[k].split(' ');
+      for (var wi = 0; wi < words.length; wi++) {
+        var ww = cx.measureText(words[wi]).width;
+        if (ww > maxW) {
+          var ratio = maxW / ww;
+          if (ratio < worstRatio) worstRatio = ratio;
+        }
+      }
+    }
+  } else {
+    // Auto mode: shrink if any full line is wider than maxW
+    for (var k = 0; k < rawLines.length; k++) {
+      var mw = cx.measureText(rawLines[k]).width;
+      if (mw > maxW) {
+        var ratio = maxW / mw;
+        if (ratio < worstRatio) worstRatio = ratio;
+      }
     }
   }
   if (worstRatio < 1) {
