@@ -575,6 +575,7 @@ function defaultCrop() { return {x:50, y:50, z:100}; }
 const S = {
   imgs: [null, null],
   blobs: [null, null],
+  draftBlobs: [null, null],
   creds: ['', ''],
   crop: [defaultCrop(), defaultCrop()],
   layout: 'one',
@@ -687,6 +688,7 @@ function dbAdd(post) {
     return dbGetAll().then(function(posts) {
       if (posts.length <= MAX_ARCHIVE_POSTS) return;
       var toDelete = posts.slice(MAX_ARCHIVE_POSTS);
+      showToast('\u26a0 Archiv voll \u2013 ' + toDelete.length + ' \u00e4lteste(r) Post(s) entfernt');
       return Promise.all(toDelete.map(function(p) { return dbDelete(p.id); }));
     });
   });
@@ -719,32 +721,22 @@ let draftTimer = null;
 function saveDraft() {
   clearTimeout(draftTimer);
   draftTimer = setTimeout(function() {
-    var promises = [];
-    for (var i = 0; i < 2; i++) {
-      if (S.imgs[i]) {
-        promises.push(compressImage(S.imgs[i], 2000, 0.85));
-      } else {
-        promises.push(Promise.resolve(null));
-      }
-    }
-    Promise.all(promises).then(function(blobs) {
-      return dbAdd({
-        id: DRAFT_ID,
-        savedAt: new Date().toISOString(),
-        headline: S.hlLines.join('\n'),
-        subtitle: S.subText,
-        date: S.dateText,
-        layout: S.layout,
-        format: S.format,
-        hlCaps: S.hlCaps,
-        subCaps: S.subCaps,
-        hlFSOverride: S.hlFSOverride,
-        subFSOverride: S.subFSOverride,
-        textPos: S.textPos,
-        credits: S.creds.slice(),
-        crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
-        images: [blobs[0], blobs[1]]
-      });
+    dbAdd({
+      id: DRAFT_ID,
+      savedAt: new Date().toISOString(),
+      headline: S.hlLines.join('\n'),
+      subtitle: S.subText,
+      date: S.dateText,
+      layout: S.layout,
+      format: S.format,
+      hlCaps: S.hlCaps,
+      subCaps: S.subCaps,
+      hlFSOverride: S.hlFSOverride,
+      subFSOverride: S.subFSOverride,
+      textPos: S.textPos,
+      credits: S.creds.slice(),
+      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
+      images: [S.draftBlobs[0], S.draftBlobs[1]]
     }).catch(function(e) { console.warn('saveDraft failed:', e); });
   }, 1500);
 }
@@ -889,6 +881,7 @@ function refreshCounts() {
 }
 function revokeBlob(i) {
   if (S.blobs[i]) { URL.revokeObjectURL(S.blobs[i]); S.blobs[i] = null; }
+  S.draftBlobs[i] = null;
 }
 // ===== WORD WRAP =====
 function wrapLine(text, fs, maxWidth) {
@@ -978,7 +971,7 @@ $bN.addEventListener('click', function() {
   var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
   if (hasContent && !confirm('Aktuellen Post verwerfen und neu beginnen?')) return;
   revokeBlob(0); revokeBlob(1);
-  S.imgs = [null, null]; S.blobs = [null, null]; S.creds = ['', ''];
+  S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null]; S.creds = ['', ''];
   S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
@@ -1005,6 +998,7 @@ $bN.addEventListener('click', function() {
 });
 // Export (async toBlob)
 $bX.addEventListener('click', function() {
+  if (!fontReady && !confirm('Font nicht geladen \u2013 Export k\u00f6nnte fehlerhaft aussehen. Trotzdem exportieren?')) return;
   var btn = this;
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
   draw();
@@ -1016,7 +1010,7 @@ $bX.addEventListener('click', function() {
       }
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
-      a.download = 'ki-news-' + new Date().toISOString().slice(0, 10) + '.jpg';
+      a.download = 'ki-news-' + new Date().toISOString().slice(0, 16).replace(':', '-') + '.jpg';
       a.href = url;
       a.click();
       setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
@@ -1041,7 +1035,7 @@ $bS.addEventListener('click', function() {
         showToast('\u26a0 Teilen fehlgeschlagen');
         return;
       }
-      var file = new File([blob], 'ki-news-' + new Date().toISOString().slice(0, 10) + '.jpg', { type: 'image/jpeg' });
+      var file = new File([blob], 'ki-news-' + new Date().toISOString().slice(0, 16).replace(':', '-') + '.jpg', { type: 'image/jpeg' });
       navigator.share({ files: [file] }).catch(function(e) { if (e.name !== 'AbortError') console.warn('Share failed:', e); }).finally(function() {
         btn.disabled = false; btn.textContent = 'Teilen';
       });
@@ -1196,8 +1190,15 @@ function loadImageFile(i, file) {
     S.imgs[i] = im;
     S.blobs[i] = blobUrl;
     S.crop[i] = defaultCrop();
+    // Compress once on upload for draft persistence
+    compressImage(im, 2000, 0.85).then(function(blob) {
+      S.draftBlobs[i] = blob;
+      saveDraft();
+    }).catch(function() {
+      S.draftBlobs[i] = null;
+      saveDraft();
+    });
     renderUI();
-    saveDraft();
   };
   im.onerror = function() {
     URL.revokeObjectURL(blobUrl);
@@ -1558,6 +1559,7 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
 // ===== HISTORY: ARCHIVE POST =====
 $bA.addEventListener('click', function() {
   var btn = this;
+  if (btn.disabled) return;
   if (!S.hlLines.join('').trim() && !S.subText.trim() && !S.imgs[0] && !S.imgs[1]) {
     showToast('\u26a0 Nichts zum Archivieren');
     return;
@@ -1646,20 +1648,54 @@ $bH.addEventListener('click', openHistory);
 $histClose.addEventListener('click', closeHistory);
 $histOverlay.addEventListener('click', closeHistory);
 let activeThumbUrls = [];
+var _histPosts = [];
+// Event delegation for history grid (avoids per-item listener leaks)
+$histGrid.addEventListener('click', function(e) {
+  var delBtn = e.target.closest('.hist-del');
+  if (delBtn) {
+    e.stopPropagation();
+    var idx = +delBtn.getAttribute('data-idx');
+    var post = _histPosts[idx];
+    if (!post || !confirm('Post aus Archiv l\u00f6schen?')) return;
+    dbDelete(post.id).then(function() {
+      loadHistoryGrid();
+      showToast('\u2713 Post gel\u00f6scht');
+    });
+    return;
+  }
+  var item = e.target.closest('.hist-item');
+  if (item) {
+    var idx2 = +item.getAttribute('data-idx');
+    var post2 = _histPosts[idx2];
+    if (post2) loadArchivedPost(post2);
+  }
+});
+$histGrid.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  var item = e.target.closest('.hist-item');
+  if (item) {
+    e.preventDefault();
+    var idx = +item.getAttribute('data-idx');
+    var post = _histPosts[idx];
+    if (post) loadArchivedPost(post);
+  }
+});
 function loadHistoryGrid() {
   // Vorherige Blob-URLs aufräumen bevor DOM zerstört wird
   activeThumbUrls.forEach(function(u) { URL.revokeObjectURL(u); });
   activeThumbUrls = [];
   dbGetAll().then(function(posts) {
-    $histGrid.innerHTML = '';
+    _histPosts = posts;
+    while ($histGrid.firstChild) $histGrid.removeChild($histGrid.firstChild);
     $histEmpty.style.display = posts.length ? 'none' : 'block';
     var countEl = document.getElementById('histCount');
     if (countEl) countEl.textContent = posts.length ? posts.length + ' / ' + MAX_ARCHIVE_POSTS + ' Posts' : '';
-    posts.forEach(function(post) {
+    posts.forEach(function(post, pi) {
       var item = document.createElement('div');
       item.className = 'hist-item';
       item.setAttribute('tabindex', '0');
       item.setAttribute('role', 'button');
+      item.setAttribute('data-idx', pi);
       item.setAttribute('aria-label', 'Post laden: ' + (post.headline || 'Ohne Titel'));
       // Thumbnail
       var img = document.createElement('img');
@@ -1686,23 +1722,9 @@ function loadHistoryGrid() {
       var del = document.createElement('button');
       del.className = 'hist-del';
       del.textContent = '\u00d7';
-      del.setAttribute('aria-label', 'Post löschen');
-      del.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (!confirm('Post aus Archiv löschen?')) return;
-        dbDelete(post.id).then(function() {
-          loadHistoryGrid();
-          showToast('\u2713 Post gelöscht');
-        });
-      });
+      del.setAttribute('aria-label', 'Post l\u00f6schen');
+      del.setAttribute('data-idx', pi);
       item.appendChild(del);
-      // Load on click
-      item.addEventListener('click', function() {
-        loadArchivedPost(post);
-      });
-      item.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); loadArchivedPost(post); }
-      });
       $histGrid.appendChild(item);
     });
   }).catch(function(err) {
@@ -1717,7 +1739,7 @@ function loadArchivedPost(post) {
   if (hasContent && !confirm('Aktuellen Post ersetzen und archivierten Post laden?')) return;
   // Clean up current images
   revokeBlob(0); revokeBlob(1);
-  S.imgs = [null, null]; S.blobs = [null, null];
+  S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null];
   // Restore metadata
   S.hlLines = post.headline ? post.headline.split('\n') : [''];
   S.subText = post.subtitle || '';
@@ -1764,6 +1786,7 @@ function loadArchivedPost(post) {
     if (post.images && post.images[i]) {
       total++;
       (function(idx, blob) {
+        S.draftBlobs[idx] = blob;
         var blobUrl = URL.createObjectURL(blob);
         var im = new Image();
         im.onload = function() {
@@ -1811,6 +1834,7 @@ document.addEventListener('drop', function(e) {
 });
 // ===== PNG EXPORT =====
 $bXpng.addEventListener('click', function() {
+  if (!fontReady && !confirm('Font nicht geladen \u2013 Export k\u00f6nnte fehlerhaft aussehen. Trotzdem exportieren?')) return;
   var btn = this;
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
   draw();
@@ -1822,7 +1846,7 @@ $bXpng.addEventListener('click', function() {
     }
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.download = 'ki-news-' + new Date().toISOString().slice(0, 10) + '.png';
+    a.download = 'ki-news-' + new Date().toISOString().slice(0, 16).replace(':', '-') + '.png';
     a.href = url;
     a.click();
     setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
@@ -1856,10 +1880,10 @@ function updateFSSlider() {
 $fsSlider.addEventListener('input', function() {
   S.hlFSOverride = +this.value;
   $fsVal.textContent = this.value + 'px';
-  pushUndo();
   debouncedSave();
   scheduleDraw();
 });
+$fsSlider.addEventListener('change', function() { pushUndo(); });
 $fsReset.addEventListener('click', function() {
   S.hlFSOverride = 0;
   updateFSSlider();
@@ -1870,10 +1894,10 @@ $fsReset.addEventListener('click', function() {
 $subFsSlider.addEventListener('input', function() {
   S.subFSOverride = +this.value;
   $subFsVal.textContent = this.value + 'px';
-  pushUndo();
   debouncedSave();
   scheduleDraw();
 });
+$subFsSlider.addEventListener('change', function() { pushUndo(); });
 $subFsReset.addEventListener('click', function() {
   S.subFSOverride = 0;
   updateFSSlider();
@@ -1920,22 +1944,34 @@ var undoStack = [];
 var redoStack = [];
 var MAX_UNDO = 40;
 function stateSnapshot() {
-  return JSON.stringify({
-    hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
-    hlCaps: S.hlCaps, subCaps: S.subCaps, layout: S.layout, format: S.format,
-    creds: S.creds, crop: S.crop,
-    hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
-  });
+  return {
+    json: JSON.stringify({
+      hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
+      hlCaps: S.hlCaps, subCaps: S.subCaps, layout: S.layout, format: S.format,
+      creds: S.creds, crop: S.crop,
+      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
+    }),
+    imgs: S.imgs.slice(),
+    blobs: S.blobs.slice(),
+    draftBlobs: S.draftBlobs.slice()
+  };
 }
-function restoreSnapshot(json) {
-  var snap = JSON.parse(json);
-  S.hlLines = snap.hlLines; S.subText = snap.subText; S.dateText = snap.dateText;
-  S.hlCaps = !!snap.hlCaps; S.subCaps = !!snap.subCaps;
-  S.layout = snap.layout; S.format = snap.format;
-  S.creds = snap.creds; S.crop = snap.crop;
-  S.hlFSOverride = snap.hlFSOverride || 0;
-  S.subFSOverride = snap.subFSOverride || 0;
-  S.textPos = snap.textPos || 'top';
+function snapshotsEqual(a, b) {
+  return a.json === b.json && a.imgs[0] === b.imgs[0] && a.imgs[1] === b.imgs[1];
+}
+function restoreSnapshot(snap) {
+  var data = JSON.parse(snap.json);
+  S.hlLines = data.hlLines; S.subText = data.subText; S.dateText = data.dateText;
+  S.hlCaps = !!data.hlCaps; S.subCaps = !!data.subCaps;
+  S.layout = data.layout; S.format = data.format;
+  S.creds = data.creds; S.crop = data.crop;
+  S.hlFSOverride = data.hlFSOverride || 0;
+  S.subFSOverride = data.subFSOverride || 0;
+  S.textPos = data.textPos || 'top';
+  // Restore image references
+  S.imgs = snap.imgs.slice();
+  S.blobs = snap.blobs.slice();
+  S.draftBlobs = snap.draftBlobs.slice();
   // Sync UI
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
@@ -1958,13 +1994,14 @@ function restoreSnapshot(json) {
     $sy[i].value = S.crop[i].y; $vy[i].textContent = S.crop[i].y + '%';
   }
   autoSize($hl); autoSize($sub);
+  renderUI();
   saveState();
   scheduleDraw();
 }
 var lastSnap = stateSnapshot();
 function pushUndo() {
   var snap = stateSnapshot();
-  if (snap === lastSnap) return;
+  if (snapshotsEqual(snap, lastSnap)) return;
   undoStack.push(lastSnap);
   if (undoStack.length > MAX_UNDO) undoStack.shift();
   redoStack = [];
@@ -2149,6 +2186,7 @@ function init() {
       if (draft.images && draft.images[i]) {
         total++;
         (function(idx, blob) {
+          S.draftBlobs[idx] = blob;
           var blobUrl = URL.createObjectURL(blob);
           var im = new Image();
           im.onload = function() {
@@ -2170,19 +2208,31 @@ function init() {
   });
 }
 let initialized = false;
+var fontReady = false;
 function safeInit(fontOk) {
   if (initialized) return;
   initialized = true;
+  fontReady = fontOk;
   if (!fontOk) showToast('\u26a0 Font nicht verf\u00fcgbar \u2013 Fallback aktiv');
   init();
 }
 if (document.fonts && document.fonts.load) {
   document.fonts.load('bold 48px Festivo').then(function() {
+    fontReady = true;
     safeInit(true);
   }).catch(function() {
     safeInit(false);
   });
   setTimeout(function() { safeInit(false); }, 3000);
+  // Font may load after timeout — update flag and redraw
+  if (document.fonts.ready) {
+    document.fonts.ready.then(function() {
+      if (document.fonts.check('bold 48px Festivo')) {
+        fontReady = true;
+        scheduleDraw();
+      }
+    });
+  }
 } else {
   window.addEventListener('load', function() { safeInit(true); });
 }
@@ -2190,6 +2240,8 @@ window.addEventListener('resize', function() {
   // Ensure editor visibility matches layout mode
   if (isDesktop()) {
     $EP.style.display = 'block';
+  } else {
+    $EP.style.display = S.editing ? 'block' : 'none';
   }
   scheduleDraw();
 });
