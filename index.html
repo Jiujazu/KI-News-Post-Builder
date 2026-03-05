@@ -940,6 +940,7 @@ function loadState() {
     if (typeof saved.subCaps === 'boolean') S.subCaps = saved.subCaps;
     if (typeof saved.hlFSOverride === 'number') S.hlFSOverride = saved.hlFSOverride;
     if (typeof saved.subFSOverride === 'number') S.subFSOverride = saved.subFSOverride;
+    if (typeof saved.credFSOverride === 'number') S.credFSOverride = saved.credFSOverride;
     if (typeof saved.textPos === 'string') S.textPos = saved.textPos;
     if (typeof saved.credAlign === 'string') S.credAlign = saved.credAlign;
     if (typeof saved.credOffX === 'number') S.credOffX = saved.credOffX;
@@ -1105,9 +1106,15 @@ $bN.addEventListener('click', function() {
   setLayout('one');
   setFormat('4:5');
   updateFSSlider();
-  setCredAlign('right');
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === 'right');
+    CA_BTNS[k].setAttribute('aria-checked', String(k === 'right'));
+  });
   updateCredOffsetUI();
-  setTextPos('top');
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === 'top');
+    TP_BTNS[k].setAttribute('aria-checked', String(k === 'top'));
+  });
   autoSize($hl);
   renderUI();
   saveState();
