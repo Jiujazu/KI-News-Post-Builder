@@ -150,10 +150,11 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .tog.on::after{left:23px}
 /* ===== IMAGE ZONES ===== */
 .img-zones{display:flex;gap:10px;margin-bottom:12px;position:relative}
+.img-thumb .img-zone{aspect-ratio:3/2;max-height:120px}
 .img-zone{
   flex:1;border:2px dashed var(--border-hover);border-radius:var(--radius-md);aspect-ratio:1/1;
   display:flex;align-items:center;justify-content:center;
-  position:relative;overflow:hidden;transition:border .2s;min-height:100px;
+  position:relative;overflow:hidden;transition:border .2s;min-height:60px;
 }
 .img-zones[style*="column"] .img-zone{aspect-ratio:16/7;min-height:80px}
 .img-zone.has{border-style:solid;border-color:var(--border-hover)}
@@ -169,14 +170,6 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 }
 .img-zone .rm:hover,.img-zone .rm:focus-visible{background:rgba(220,50,50,.9);transform:scale(1.08)}
 .img-zone.has .rm{display:flex}
-.img-zone .crd{
-  position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);
-  border:none;border-radius:0;color:#fff;font-size:13px;padding:10px 12px;text-align:center;
-  font-family:inherit;outline:none;display:none;-webkit-appearance:none;
-  letter-spacing:.02em;
-}
-.img-zone .crd::placeholder{color:rgba(255,255,255,.5)}
-.img-zone.has .crd{display:block}
 /* ===== SWAP BUTTON ===== */
 .swap-btn{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;
@@ -199,11 +192,11 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
   touch-action:none;
 }
 .crop-ctrl input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:32px;height:32px;border-radius:50%;background:var(--accent);
+  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);
   border:2px solid #fff;cursor:pointer;
 }
 .crop-ctrl input[type=range]::-moz-range-thumb{
-  width:32px;height:32px;border-radius:50%;background:var(--accent);
+  width:20px;height:20px;border-radius:50%;background:var(--accent);
   border:2px solid #fff;cursor:pointer;
 }
 .crop-ctrl .vl{font-size:13px;color:var(--text-muted);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
@@ -310,10 +303,15 @@ html.dark body,html.dark :root{
 .fs-row input[type=range]{flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none}
 .fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer}
 .fs-row .vl{font-size:13px;color:var(--text-muted);min-width:45px;text-align:right;font-variant-numeric:tabular-nums}
-.fs-row button{padding:6px 10px;font-size:12px;border-radius:var(--radius-md);background:var(--btn-secondary-bg);color:var(--btn-secondary-text);border:1px solid var(--border)}
+.fs-row button,.fs-reset,.crop-reset{padding:6px 10px;font-size:14px;border-radius:var(--radius-md);background:var(--btn-secondary-bg);color:var(--text-muted);border:1px solid var(--border);cursor:pointer;line-height:1}
+.crop-reset{padding:4px 8px;font-size:13px;flex-shrink:0}
+.crop-hint{font-size:12px;color:var(--text-dim);margin:0}
+/* ===== CREDIT FIELDS ===== */
+#cr0Wrap input,#cr1Wrap input{font-family:Cambria,'Times New Roman',serif;font-size:14px}
+/* ===== HIDE PREVIEW TOGGLE ON DESKTOP ===== */
+@media (min-width:1024px){.seg-ctrl{display:none}}
 /* ===== FOCUS INDICATORS ===== */
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.img-zone .crd:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .crop-ctrl input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
 /* ===== TOUCH TARGET IMPROVEMENTS ===== */
 .tog::before{content:'';position:absolute;inset:-8px}
@@ -364,41 +362,87 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="pw"><canvas id="cv" width="1200" height="1500" role="img" aria-label="Vorschau des generierten Posts"></canvas></div>
   </div>
   <!-- ===== EDITOR ===== -->
+  <!-- ===== EDITOR ===== -->
   <div class="editor-col" id="EP">
-  <!-- TEXT -->
+  <!-- CROP CONTROLS (top — directly visible with preview) -->
+  <div class="ed" id="cropSection">
+    <h2 class="ed-t">Bildausschnitt</h2>
+    <div class="crop-ctrl" id="cc0" style="display:none">
+      <span class="crop-title">Bild 1</span>
+      <div class="crop-row">
+        <span class="crop-lbl">Zoom</span>
+        <div class="sr">
+          <input type="range" id="sz0" min="25" max="200" value="100" aria-label="Zoom Bild 1">
+          <span class="vl" id="vz0">100%</span>
+        </div>
+        <button class="crop-reset" data-img="0" data-prop="z" title="Zur&uuml;cksetzen" aria-label="Zoom zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Horizontal</span>
+        <div class="sr">
+          <input type="range" id="sx0" min="0" max="100" value="50" aria-label="Horizontale Position Bild 1">
+          <span class="vl" id="vx0">50%</span>
+        </div>
+        <button class="crop-reset" data-img="0" data-prop="x" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Vertikal</span>
+        <div class="sr">
+          <input type="range" id="sy0" min="0" max="100" value="50" aria-label="Vertikale Position Bild 1">
+          <span class="vl" id="vy0">50%</span>
+        </div>
+        <button class="crop-reset" data-img="0" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+    </div>
+    <div class="crop-ctrl" id="cc1" style="display:none">
+      <span class="crop-title">Bild 2</span>
+      <div class="crop-row">
+        <span class="crop-lbl">Zoom</span>
+        <div class="sr">
+          <input type="range" id="sz1" min="25" max="200" value="100" aria-label="Zoom Bild 2">
+          <span class="vl" id="vz1">100%</span>
+        </div>
+        <button class="crop-reset" data-img="1" data-prop="z" title="Zur&uuml;cksetzen" aria-label="Zoom zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Horizontal</span>
+        <div class="sr">
+          <input type="range" id="sx1" min="0" max="100" value="50" aria-label="Horizontale Position Bild 2">
+          <span class="vl" id="vx1">50%</span>
+        </div>
+        <button class="crop-reset" data-img="1" data-prop="x" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Vertikal</span>
+        <div class="sr">
+          <input type="range" id="sy1" min="0" max="100" value="50" aria-label="Vertikale Position Bild 2">
+          <span class="vl" id="vy1">50%</span>
+        </div>
+        <button class="crop-reset" data-img="1" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+    </div>
+    <p class="crop-hint" id="cropHint" style="font-size:12px;color:var(--text-dim);margin:0">Bild hochladen um Ausschnitt zu steuern</p>
+  </div>
+  <!-- VISUAL CONTROLS (font sizes + text position) -->
   <div class="ed">
-    <h2 class="ed-t">Text</h2>
-    <div class="fld">
-      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
-      <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
-    </div>
-    <div class="tog-row">
-      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
-    </div>
-    <div class="fld">
-      <label>Untertitel (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
-      <textarea id="inSub" rows="1" placeholder="optional"></textarea>
-    </div>
-    <div class="tog-row">
-      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Untertitel Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
-    </div>
-    <div class="fld">
-      <label>Datum</label>
-      <input id="inDate" type="date">
-    </div>
+    <h2 class="ed-t">Darstellung</h2>
     <div class="fs-row">
       <label>Headline Gr&ouml;&szlig;e</label>
       <input type="range" id="fsSlider" min="60" max="300" value="60">
       <span class="vl" id="fsVal">Auto</span>
-      <button id="fsReset">Auto</button>
+      <button class="fs-reset" id="fsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
     </div>
     <div class="fs-row">
-      <label>Untertitel Gr&ouml;&szlig;e</label>
+      <label>Subhead Gr&ouml;&szlig;e</label>
       <input type="range" id="subFsSlider" min="20" max="150" value="20">
       <span class="vl" id="subFsVal">Auto</span>
-      <button id="subFsReset">Auto</button>
+      <button class="fs-reset" id="subFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="fs-row">
+      <label>Credit Gr&ouml;&szlig;e</label>
+      <input type="range" id="credFsSlider" min="12" max="60" value="12">
+      <span class="vl" id="credFsVal">Auto</span>
+      <button class="fs-reset" id="credFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
     </div>
     <div class="fld">
       <label>Textposition</label>
@@ -414,8 +458,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <h2 class="ed-t">Layout</h2>
     <div class="lbtns" style="margin-bottom:8px" role="radiogroup" aria-label="Bild-Layout">
       <button class="lb on" id="lbOne" role="radio" aria-checked="true" aria-label="Layout: 1 Bild">1 Bild</button>
-      <button class="lb" id="lbTwo" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder nebeneinander">2 ↕</button>
-      <button class="lb" id="lbStacked" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder übereinander">2 ↔</button>
+      <button class="lb" id="lbTwo" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder nebeneinander">2 &#8597;</button>
+      <button class="lb" id="lbStacked" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder &uuml;bereinander">2 &#8596;</button>
       <button class="lb" id="lbNone" role="radio" aria-checked="false" aria-label="Layout: Kein Bild">Kein Bild</button>
     </div>
     <label style="display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px">Format</label>
@@ -426,7 +470,58 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
     </div>
   </div>
-  <!-- TEMPLATES -->
+  <!-- IMAGES (thumbnail-sized upload zones) -->
+  <div class="ed" id="imgEd">
+    <h2 class="ed-t">Bilder</h2>
+    <div class="img-zones img-thumb">
+      <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
+        <img id="pv0" style="display:none" alt="Vorschau Bild 1">
+        <div class="ph" id="ph0">Bild 1</div>
+        <button class="rm" id="rm0" aria-label="Bild 1 entfernen">&times;</button>
+      </div>
+      <button class="swap-btn" id="swapBtn" aria-label="Bilder tauschen">&#8644;</button>
+      <div class="img-zone" id="z1" style="display:none" tabindex="0" role="button" aria-label="Bild 2 hochladen">
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f1">
+        <img id="pv1" style="display:none" alt="Vorschau Bild 2">
+        <div class="ph" id="ph1">Bild 2</div>
+        <button class="rm" id="rm1" aria-label="Bild 2 entfernen">&times;</button>
+      </div>
+    </div>
+  </div>
+  <!-- TEXT -->
+  <div class="ed">
+    <h2 class="ed-t">Text</h2>
+    <div class="fld">
+      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
+      <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
+    </div>
+    <div class="tog-row">
+      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
+      <span>GROSSBUCHSTABEN</span>
+    </div>
+    <div class="fld">
+      <label>Subhead (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
+      <textarea id="inSub" rows="1" placeholder="optional"></textarea>
+    </div>
+    <div class="tog-row">
+      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Subhead Grossbuchstaben"></button>
+      <span>GROSSBUCHSTABEN</span>
+    </div>
+    <div class="fld" id="cr0Wrap">
+      <label>Bildunterschrift 1</label>
+      <input id="cr0" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 1">
+    </div>
+    <div class="fld" id="cr1Wrap" style="display:none">
+      <label>Bildunterschrift 2</label>
+      <input id="cr1" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 2">
+    </div>
+    <div class="fld">
+      <label>Datum</label>
+      <input id="inDate" type="date">
+    </div>
+  </div>
+  <!-- TEMPLATES (at the very end) -->
   <div class="ed">
     <h2 class="ed-t">Vorlagen</h2>
     <div class="tpl-row">
@@ -437,75 +532,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="tpl-row">
       <input id="tplName" type="text" placeholder="Name der Vorlage" style="flex:1;background:var(--input-bg);border:1px solid var(--border-hover);border-radius:var(--radius-md);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none">
       <button class="btn-primary" id="tplSave">Speichern</button>
-    </div>
-  </div>
-  <!-- IMAGES -->
-  <div class="ed" id="imgEd">
-    <h2 class="ed-t">Bilder</h2>
-    <div class="img-zones">
-      <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
-        <img id="pv0" style="display:none" alt="Vorschau Bild 1">
-        <div class="ph" id="ph0">Bild 1</div>
-        <button class="rm" id="rm0" aria-label="Bild 1 entfernen">&times;</button>
-        <input class="crd" id="cr0" placeholder="&copy; Credit" aria-label="Credit fuer Bild 1">
-      </div>
-      <button class="swap-btn" id="swapBtn" aria-label="Bilder tauschen">&#8644;</button>
-      <div class="img-zone" id="z1" style="display:none" tabindex="0" role="button" aria-label="Bild 2 hochladen">
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f1">
-        <img id="pv1" style="display:none" alt="Vorschau Bild 2">
-        <div class="ph" id="ph1">Bild 2</div>
-        <button class="rm" id="rm1" aria-label="Bild 2 entfernen">&times;</button>
-        <input class="crd" id="cr1" placeholder="&copy; Credit" aria-label="Credit fuer Bild 2">
-      </div>
-    </div>
-    <div class="crop-ctrl" id="cc0" style="display:none">
-      <span class="crop-title">Bildausschnitt 1</span>
-      <div class="crop-row">
-        <span class="crop-lbl">Zoom</span>
-        <div class="sr">
-          <input type="range" id="sz0" min="25" max="200" value="100" aria-label="Zoom Bild 1">
-          <span class="vl" id="vz0">100%</span>
-        </div>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Horizontal</span>
-        <div class="sr">
-          <input type="range" id="sx0" min="0" max="100" value="50" aria-label="Horizontale Position Bild 1">
-          <span class="vl" id="vx0">50%</span>
-        </div>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Vertikal</span>
-        <div class="sr">
-          <input type="range" id="sy0" min="0" max="100" value="50" aria-label="Vertikale Position Bild 1">
-          <span class="vl" id="vy0">50%</span>
-        </div>
-      </div>
-    </div>
-    <div class="crop-ctrl" id="cc1" style="display:none">
-      <span class="crop-title">Bildausschnitt 2</span>
-      <div class="crop-row">
-        <span class="crop-lbl">Zoom</span>
-        <div class="sr">
-          <input type="range" id="sz1" min="25" max="200" value="100" aria-label="Zoom Bild 2">
-          <span class="vl" id="vz1">100%</span>
-        </div>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Horizontal</span>
-        <div class="sr">
-          <input type="range" id="sx1" min="0" max="100" value="50" aria-label="Horizontale Position Bild 2">
-          <span class="vl" id="vx1">50%</span>
-        </div>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Vertikal</span>
-        <div class="sr">
-          <input type="range" id="sy1" min="0" max="100" value="50" aria-label="Vertikale Position Bild 2">
-          <span class="vl" id="vy1">50%</span>
-        </div>
-      </div>
     </div>
   </div>
   </div><!-- /editor-col -->
@@ -625,6 +651,7 @@ const S = {
   dateText: todayDE(),
   hlFSOverride: 0,
   subFSOverride: 0,
+  credFSOverride: 0,
   textPos: 'top'
 };
 // ===== DOM REFS =====
@@ -673,6 +700,12 @@ const $fsReset = document.getElementById('fsReset');
 const $subFsSlider = document.getElementById('subFsSlider');
 const $subFsVal = document.getElementById('subFsVal');
 const $subFsReset = document.getElementById('subFsReset');
+const $credFsSlider = document.getElementById('credFsSlider');
+const $credFsVal = document.getElementById('credFsVal');
+const $credFsReset = document.getElementById('credFsReset');
+const $cr0Wrap = document.getElementById('cr0Wrap');
+const $cr1Wrap = document.getElementById('cr1Wrap');
+const $cropHint = document.getElementById('cropHint');
 const $tpTop = document.getElementById('tpTop');
 const $tpCenter = document.getElementById('tpCenter');
 const $tpBottom = document.getElementById('tpBottom');
@@ -775,6 +808,7 @@ function saveDraft() {
       subCaps: S.subCaps,
       hlFSOverride: S.hlFSOverride,
       subFSOverride: S.subFSOverride,
+      credFSOverride: S.credFSOverride,
       textPos: S.textPos,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
@@ -846,7 +880,7 @@ function saveState() {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
       layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
-      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
+      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride, textPos: S.textPos
     }));
   } catch(e) { console.warn('saveState failed:', e); }
 }
@@ -957,8 +991,14 @@ function wrapLine(text, fs, maxWidth) {
 // ===== UI SYNC =====
 function hasTwoImages() { return S.layout === 'two' || S.layout === 'stacked'; }
 function updateCropVis() {
-  $cc[0].style.display = (S.layout !== 'none' && S.imgs[0]) ? 'block' : 'none';
-  $cc[1].style.display = (hasTwoImages() && S.imgs[1]) ? 'block' : 'none';
+  var show0 = S.layout !== 'none' && S.imgs[0];
+  var show1 = hasTwoImages() && S.imgs[1];
+  $cc[0].style.display = show0 ? 'block' : 'none';
+  $cc[1].style.display = show1 ? 'block' : 'none';
+  $cropHint.style.display = (!show0 && !show1) ? 'block' : 'none';
+  // Credit field visibility
+  $cr0Wrap.style.display = (S.layout !== 'none') ? 'block' : 'none';
+  $cr1Wrap.style.display = hasTwoImages() ? 'block' : 'none';
 }
 function updateSwapBtn() {
   $swapBtn.classList.toggle('show', !!(hasTwoImages() && S.imgs[0] && S.imgs[1]));
@@ -1017,7 +1057,7 @@ $bN.addEventListener('click', function() {
   S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
-  S.hlFSOverride = 0; S.subFSOverride = 0; S.textPos = 'top';
+  S.hlFSOverride = 0; S.subFSOverride = 0; S.credFSOverride = 0; S.textPos = 'top';
   $hl.value = ''; $sub.value = ''; $date.value = todayISO();
   $togHlCaps.classList.remove('on'); $togHlCaps.setAttribute('aria-checked', 'false');
   $togSubCaps.classList.remove('on'); $togSubCaps.setAttribute('aria-checked', 'false');
@@ -1291,7 +1331,7 @@ function loadImageFile(i, file) {
     $f[i].click();
   }
   $z[i].addEventListener('click', function(e) {
-    if (e.target === $rm[i] || e.target.classList.contains('crd')) return;
+    if (e.target === $rm[i]) return;
     openFilePicker();
   });
   // Keyboard support for image zones
@@ -1638,11 +1678,11 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
   cx.clip();
   cx.drawImage(img, imgX, imgY, drawW, drawH);
   cx.restore();
-  // Credit text (drawn outside clip)
+  // Credit text (drawn outside clip) — Cambria font
   if (S.creds[idx]) {
     cx.save();
-    var credFS = Math.max(16, Math.round(dh * 0.055));
-    cx.font = '500 ' + credFS + 'px ' + SYS_FONT;
+    var credFS = S.credFSOverride > 0 ? S.credFSOverride : Math.max(16, Math.round(dh * 0.04));
+    cx.font = '500 ' + credFS + 'px Cambria,"Times New Roman",serif';
     cx.fillStyle = 'rgba(255,255,255,0.85)';
     cx.textAlign = 'right';
     cx.textBaseline = 'bottom';
@@ -1684,6 +1724,7 @@ $bA.addEventListener('click', function() {
       subCaps: S.subCaps,
       hlFSOverride: S.hlFSOverride,
       subFSOverride: S.subFSOverride,
+      credFSOverride: S.credFSOverride,
       textPos: S.textPos,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
@@ -1845,6 +1886,7 @@ function loadArchivedPost(post) {
   S.subCaps = !!post.subCaps;
   S.hlFSOverride = post.hlFSOverride || 0;
   S.subFSOverride = post.subFSOverride || 0;
+  S.credFSOverride = post.credFSOverride || 0;
   S.textPos = post.textPos || 'top';
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
@@ -1945,6 +1987,13 @@ function updateFSSlider() {
     $subFsSlider.value = $subFsSlider.min;
     $subFsVal.textContent = 'Auto';
   }
+  if (S.credFSOverride > 0) {
+    $credFsSlider.value = S.credFSOverride;
+    $credFsVal.textContent = S.credFSOverride + 'px';
+  } else {
+    $credFsSlider.value = $credFsSlider.min;
+    $credFsVal.textContent = 'Auto';
+  }
 }
 $fsSlider.addEventListener('input', function() {
   S.hlFSOverride = +this.value;
@@ -1973,6 +2022,36 @@ $subFsReset.addEventListener('click', function() {
   pushUndo();
   debouncedSave();
   scheduleDraw();
+});
+// Credit font size slider
+$credFsSlider.addEventListener('input', function() {
+  S.credFSOverride = +this.value;
+  $credFsVal.textContent = this.value + 'px';
+  debouncedSave();
+  scheduleDraw();
+});
+$credFsSlider.addEventListener('change', function() { pushUndo(); });
+$credFsReset.addEventListener('click', function() {
+  S.credFSOverride = 0;
+  updateFSSlider();
+  pushUndo();
+  debouncedSave();
+  scheduleDraw();
+});
+// ===== CROP RESET BUTTONS =====
+document.querySelectorAll('.crop-reset').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var imgIdx = +this.getAttribute('data-img');
+    var prop = this.getAttribute('data-prop');
+    var defaults = {z: 100, x: 50, y: 50};
+    S.crop[imgIdx][prop] = defaults[prop];
+    var sliderMap = {z: $sz, x: $sx, y: $sy};
+    var valMap = {z: $vz, x: $vx, y: $vy};
+    sliderMap[prop][imgIdx].value = defaults[prop];
+    valMap[prop][imgIdx].textContent = defaults[prop] + '%';
+    saveDraft();
+    scheduleDraw();
+  });
 });
 // ===== TEXT POSITION =====
 var TP_BTNS = { top: $tpTop, center: $tpCenter, bottom: $tpBottom };
@@ -2018,7 +2097,7 @@ function stateSnapshot() {
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
       hlCaps: S.hlCaps, subCaps: S.subCaps, layout: S.layout, format: S.format,
       creds: S.creds, crop: S.crop,
-      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
+      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride, textPos: S.textPos
     }),
     imgs: S.imgs.slice(),
     blobs: S.blobs.slice(),
@@ -2036,6 +2115,7 @@ function restoreSnapshot(snap) {
   S.creds = data.creds; S.crop = data.crop;
   S.hlFSOverride = data.hlFSOverride || 0;
   S.subFSOverride = data.subFSOverride || 0;
+  S.credFSOverride = data.credFSOverride || 0;
   S.textPos = data.textPos || 'top';
   // Restore image references
   S.imgs = snap.imgs.slice();
@@ -2145,7 +2225,7 @@ $tplSave.addEventListener('click', function() {
   var templates = loadTemplates();
   templates[name] = {
     layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
-    hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, textPos: S.textPos
+    hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride, textPos: S.textPos
   };
   saveTemplates(templates);
   refreshTplSelect();
@@ -2311,6 +2391,7 @@ function syncToCloud(post) {
       subCaps: !!post.subCaps,
       hlFSOverride: post.hlFSOverride || 0,
       subFSOverride: post.subFSOverride || 0,
+      credFSOverride: post.credFSOverride || 0,
       textPos: post.textPos || 'top',
       credits: post.credits || ['', ''],
       crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
@@ -2360,6 +2441,7 @@ function downloadCloudPost(id, data) {
       subCaps: data.subCaps,
       hlFSOverride: data.hlFSOverride || 0,
       subFSOverride: data.subFSOverride || 0,
+      credFSOverride: data.credFSOverride || 0,
       textPos: data.textPos || 'top',
       credits: data.credits || ['', ''],
       crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
@@ -2438,6 +2520,7 @@ function init() {
     if (Array.isArray(draft.credits) && draft.credits.length === 2) S.creds = draft.credits.slice();
     if (typeof draft.hlFSOverride === 'number') S.hlFSOverride = draft.hlFSOverride;
     if (typeof draft.subFSOverride === 'number') S.subFSOverride = draft.subFSOverride;
+    if (typeof draft.credFSOverride === 'number') S.credFSOverride = draft.credFSOverride;
     updateFSSlider();
     if (typeof draft.textPos === 'string') {
       S.textPos = draft.textPos;
