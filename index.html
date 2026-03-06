@@ -2727,67 +2727,9 @@ function init() {
   autoSize($hl);
   autoSize($sub);
   draw();
-  // Restore draft (images, crops, credits) from IndexedDB
-  loadDraft().then(function(draft) {
-    if (!draft) return;
-    // Restore credits, crops, and new settings
-    if (Array.isArray(draft.credits) && draft.credits.length === 2) S.creds = draft.credits.slice();
-    if (typeof draft.hlFSOverride === 'number') S.hlFSOverride = draft.hlFSOverride;
-    if (typeof draft.subFSOverride === 'number') S.subFSOverride = draft.subFSOverride;
-    if (typeof draft.credFSOverride === 'number') S.credFSOverride = draft.credFSOverride;
-    updateFSSlider();
-    if (typeof draft.credAlign === 'string') {
-      S.credAlign = draft.credAlign;
-      Object.keys(CA_BTNS).forEach(function(k) {
-        CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-        CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-      });
-    }
-    if (typeof draft.credOffX === 'number') S.credOffX = draft.credOffX;
-    if (typeof draft.credOffY === 'number') S.credOffY = draft.credOffY;
-    updateCredOffsetUI();
-    if (typeof draft.textPos === 'string') {
-      S.textPos = draft.textPos;
-      Object.keys(TP_BTNS).forEach(function(k) {
-        TP_BTNS[k].classList.toggle('on', k === S.textPos);
-        TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-      });
-    }
-    if (Array.isArray(draft.crops) && draft.crops.length === 2) {
-      S.crop = draft.crops.map(function(c) {
-        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z};
-        return defaultCrop();
-      });
-    }
-    // Restore images from blobs
-    var loaded = 0, total = 0;
-    function onDraftLoaded() {
-      renderUI();
-    }
-    for (var i = 0; i < 2; i++) {
-      if (draft.images && draft.images[i]) {
-        total++;
-        (function(idx, blob) {
-          S.draftBlobs[idx] = blob;
-          var blobUrl = URL.createObjectURL(blob);
-          var im = new Image();
-          im.onload = function() {
-            S.imgs[idx] = im;
-            S.blobs[idx] = blobUrl;
-            loaded++;
-            if (loaded >= total) onDraftLoaded();
-          };
-          im.onerror = function() {
-            URL.revokeObjectURL(blobUrl);
-            loaded++;
-            if (loaded >= total) onDraftLoaded();
-          };
-          im.src = blobUrl;
-        })(i, draft.images[i]);
-      }
-    }
-    if (total === 0) onDraftLoaded();
-  });
+  // Don't restore draft – always start fresh.
+  // Delete any leftover draft from a previous session.
+  deleteDraft();
 }
 let initialized = false;
 var fontReady = false;
