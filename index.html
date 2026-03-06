@@ -316,6 +316,13 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* ===== TOUCH TARGET IMPROVEMENTS ===== */
 .tog::before{content:'';position:absolute;inset:-8px}
 .hist-del::before{content:'';position:absolute;inset:-6px}
+/* ===== COLLAPSIBLE SECTIONS ===== */
+.ed-toggle{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;-webkit-user-select:none;margin-bottom:14px}
+.ed-toggle:hover{color:var(--text)}
+.ed-arrow{font-size:10px;transition:transform .2s;line-height:1}
+.ed.collapsed .ed-arrow{transform:rotate(-90deg)}
+.ed.collapsed .ed-body{display:none}
+.ed.collapsed .ed-toggle{margin-bottom:0}
 /* ===== AUTH UI ===== */
 .login-btn{font-size:13px}
 .user-info{display:flex;align-items:center;gap:6px}
@@ -364,9 +371,136 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <!-- ===== EDITOR ===== -->
   <!-- ===== EDITOR ===== -->
   <div class="editor-col" id="EP">
-  <!-- CROP CONTROLS (top — directly visible with preview) -->
-  <div class="ed" id="cropSection">
-    <h2 class="ed-t">Bildausschnitt</h2>
+  <!-- TEXT (Headline, Subhead, Textposition, Datum) -->
+  <div class="ed collapsible" id="textSection">
+    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Text <span class="ed-arrow">&#9660;</span></h2>
+    <div class="ed-body">
+    <div class="fld">
+      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
+      <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
+    </div>
+    <div class="fs-row">
+      <label>Headline Gr&ouml;&szlig;e</label>
+      <input type="range" id="fsSlider" min="60" max="300" value="60">
+      <span class="vl" id="fsVal">Auto</span>
+      <button class="fs-reset" id="fsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="tog-row">
+      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
+      <span>GROSSBUCHSTABEN</span>
+    </div>
+    <div class="fld">
+      <label>Subhead (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
+      <textarea id="inSub" rows="1" placeholder="optional"></textarea>
+    </div>
+    <div class="fs-row">
+      <label>Subhead Gr&ouml;&szlig;e</label>
+      <input type="range" id="subFsSlider" min="20" max="150" value="20">
+      <span class="vl" id="subFsVal">Auto</span>
+      <button class="fs-reset" id="subFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="tog-row">
+      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Subhead Grossbuchstaben"></button>
+      <span>GROSSBUCHSTABEN</span>
+    </div>
+    <div class="fld">
+      <label>Textposition</label>
+      <div class="lbtns" role="radiogroup" aria-label="Textposition">
+        <button class="lb on" id="tpTop" role="radio" aria-checked="true">Oben</button>
+        <button class="lb" id="tpCenter" role="radio" aria-checked="false">Mitte</button>
+        <button class="lb" id="tpBottom" role="radio" aria-checked="false">Unten</button>
+      </div>
+    </div>
+    <div class="fld">
+      <label>Datum</label>
+      <input id="inDate" type="date">
+    </div>
+    </div>
+  </div>
+  <!-- CREDITS -->
+  <div class="ed collapsible" id="creditSection">
+    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Credits <span class="ed-arrow">&#9660;</span></h2>
+    <div class="ed-body">
+    <div class="fld" id="cr0Wrap">
+      <label>Credit 1</label>
+      <input id="cr0" type="text" placeholder="&#169; Quellenangabe" aria-label="Credit f&uuml;r Bild 1">
+    </div>
+    <div class="fld" id="cr1Wrap" style="display:none">
+      <label>Credit 2</label>
+      <input id="cr1" type="text" placeholder="&#169; Quellenangabe" aria-label="Credit f&uuml;r Bild 2">
+    </div>
+    <div class="fs-row">
+      <label>Credit Gr&ouml;&szlig;e</label>
+      <input type="range" id="credFsSlider" min="12" max="60" value="12">
+      <span class="vl" id="credFsVal">Auto</span>
+      <button class="fs-reset" id="credFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="fld">
+      <label>Credit-Ausrichtung</label>
+      <div class="lbtns" role="radiogroup" aria-label="Credit-Ausrichtung">
+        <button class="lb" id="caLeft" role="radio" aria-checked="false">Links</button>
+        <button class="lb on" id="caRight" role="radio" aria-checked="true">Rechts</button>
+        <button class="lb" id="caCenter" role="radio" aria-checked="false">Mitte</button>
+      </div>
+    </div>
+    <div class="fs-row">
+      <label>Credit X-Versatz</label>
+      <input type="range" id="credOffXSlider" min="-200" max="200" value="0">
+      <span class="vl" id="credOffXVal">0</span>
+      <button class="fs-reset" id="credOffXReset" title="Zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="fs-row">
+      <label>Credit Y-Versatz</label>
+      <input type="range" id="credOffYSlider" min="-500" max="0" value="0">
+      <span class="vl" id="credOffYVal">0</span>
+      <button class="fs-reset" id="credOffYReset" title="Zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    </div>
+  </div>
+  <!-- LAYOUT -->
+  <div class="ed collapsible" id="layoutSection">
+    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Layout <span class="ed-arrow">&#9660;</span></h2>
+    <div class="ed-body">
+    <div class="lbtns" style="margin-bottom:8px" role="radiogroup" aria-label="Bild-Layout">
+      <button class="lb on" id="lbOne" role="radio" aria-checked="true" aria-label="Layout: 1 Bild" title="Ein Bild">1 Bild</button>
+      <button class="lb" id="lbTwo" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder nebeneinander" title="2 Bilder nebeneinander">&#9612;&#9616;</button>
+      <button class="lb" id="lbStacked" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder &uuml;bereinander" title="2 Bilder &uuml;bereinander">&#9600;&#9604;</button>
+      <button class="lb" id="lbNone" role="radio" aria-checked="false" aria-label="Layout: Kein Bild" title="Kein Bild">Kein Bild</button>
+    </div>
+    <label style="display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px">Format</label>
+    <div class="lbtns" role="radiogroup" aria-label="Bildformat">
+      <button class="lb fmt on" data-fmt="4:5" role="radio" aria-checked="true" aria-label="Format 4:5" title="Instagram Post">4:5</button>
+      <button class="lb fmt" data-fmt="1:1" role="radio" aria-checked="false" aria-label="Format 1:1" title="Quadratisch">1:1</button>
+      <button class="lb fmt" data-fmt="16:9" role="radio" aria-checked="false" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
+      <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
+    </div>
+    </div>
+  </div>
+  <!-- IMAGES (thumbnail-sized upload zones) -->
+  <div class="ed collapsible" id="imgEd">
+    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Bilder <span class="ed-arrow">&#9660;</span></h2>
+    <div class="ed-body">
+    <div class="img-zones img-thumb">
+      <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
+        <img id="pv0" style="display:none" alt="Vorschau Bild 1">
+        <div class="ph" id="ph0">Bild 1</div>
+        <button class="rm" id="rm0" aria-label="Bild 1 entfernen">&times;</button>
+      </div>
+      <button class="swap-btn" id="swapBtn" aria-label="Bilder tauschen">&#8644;</button>
+      <div class="img-zone" id="z1" style="display:none" tabindex="0" role="button" aria-label="Bild 2 hochladen">
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f1">
+        <img id="pv1" style="display:none" alt="Vorschau Bild 2">
+        <div class="ph" id="ph1">Bild 2</div>
+        <button class="rm" id="rm1" aria-label="Bild 2 entfernen">&times;</button>
+      </div>
+    </div>
+    </div>
+  </div>
+  <!-- CROP CONTROLS -->
+  <div class="ed collapsible" id="cropSection">
+    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Bildausschnitt <span class="ed-arrow">&#9660;</span></h2>
+    <div class="ed-body">
     <div class="crop-ctrl" id="cc0" style="display:none">
       <span class="crop-title">Bild 1</span>
       <div class="crop-row">
@@ -422,128 +556,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       </div>
     </div>
     <p class="crop-hint" id="cropHint" style="font-size:12px;color:var(--text-dim);margin:0">Bild hochladen um Ausschnitt zu steuern</p>
-  </div>
-  <!-- VISUAL CONTROLS (font sizes + text position) -->
-  <div class="ed">
-    <h2 class="ed-t">Darstellung</h2>
-    <div class="fs-row">
-      <label>Headline Gr&ouml;&szlig;e</label>
-      <input type="range" id="fsSlider" min="60" max="300" value="60">
-      <span class="vl" id="fsVal">Auto</span>
-      <button class="fs-reset" id="fsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
-    </div>
-    <div class="fs-row">
-      <label>Subhead Gr&ouml;&szlig;e</label>
-      <input type="range" id="subFsSlider" min="20" max="150" value="20">
-      <span class="vl" id="subFsVal">Auto</span>
-      <button class="fs-reset" id="subFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
-    </div>
-    <div class="fld">
-      <label>Textposition</label>
-      <div class="lbtns" role="radiogroup" aria-label="Textposition">
-        <button class="lb on" id="tpTop" role="radio" aria-checked="true">Oben</button>
-        <button class="lb" id="tpCenter" role="radio" aria-checked="false">Mitte</button>
-        <button class="lb" id="tpBottom" role="radio" aria-checked="false">Unten</button>
-      </div>
     </div>
   </div>
-  <!-- TEXT -->
-  <div class="ed">
-    <h2 class="ed-t">Text</h2>
-    <div class="fld">
-      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
-      <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
-    </div>
-    <div class="tog-row">
-      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
-    </div>
-    <div class="fld">
-      <label>Subhead (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
-      <textarea id="inSub" rows="1" placeholder="optional"></textarea>
-    </div>
-    <div class="tog-row">
-      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Subhead Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
-    </div>
-    <div class="fld" id="cr0Wrap">
-      <label>Bildunterschrift 1</label>
-      <input id="cr0" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 1">
-    </div>
-    <div class="fld" id="cr1Wrap" style="display:none">
-      <label>Bildunterschrift 2</label>
-      <input id="cr1" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 2">
-    </div>
-    <div class="fs-row">
-      <label>Credit Gr&ouml;&szlig;e</label>
-      <input type="range" id="credFsSlider" min="12" max="60" value="12">
-      <span class="vl" id="credFsVal">Auto</span>
-      <button class="fs-reset" id="credFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
-    </div>
-    <div class="fld">
-      <label>Credit-Ausrichtung</label>
-      <div class="lbtns" role="radiogroup" aria-label="Credit-Ausrichtung">
-        <button class="lb" id="caLeft" role="radio" aria-checked="false">Links</button>
-        <button class="lb on" id="caRight" role="radio" aria-checked="true">Rechts</button>
-        <button class="lb" id="caCenter" role="radio" aria-checked="false">Mitte</button>
-      </div>
-    </div>
-    <div class="fs-row">
-      <label>Credit X-Versatz</label>
-      <input type="range" id="credOffXSlider" min="-200" max="200" value="0">
-      <span class="vl" id="credOffXVal">0</span>
-      <button class="fs-reset" id="credOffXReset" title="Zur&uuml;cksetzen">&#8634;</button>
-    </div>
-    <div class="fs-row">
-      <label>Credit Y-Versatz</label>
-      <input type="range" id="credOffYSlider" min="-500" max="0" value="0">
-      <span class="vl" id="credOffYVal">0</span>
-      <button class="fs-reset" id="credOffYReset" title="Zur&uuml;cksetzen">&#8634;</button>
-    </div>
-    <div class="fld">
-      <label>Datum</label>
-      <input id="inDate" type="date">
-    </div>
-  </div>
-  <!-- LAYOUT -->
-  <div class="ed">
-    <h2 class="ed-t">Layout</h2>
-    <div class="lbtns" style="margin-bottom:8px" role="radiogroup" aria-label="Bild-Layout">
-      <button class="lb on" id="lbOne" role="radio" aria-checked="true" aria-label="Layout: 1 Bild">1 Bild</button>
-      <button class="lb" id="lbTwo" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder nebeneinander">2 &#8597;</button>
-      <button class="lb" id="lbStacked" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder &uuml;bereinander">2 &#8596;</button>
-      <button class="lb" id="lbNone" role="radio" aria-checked="false" aria-label="Layout: Kein Bild">Kein Bild</button>
-    </div>
-    <label style="display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px">Format</label>
-    <div class="lbtns" role="radiogroup" aria-label="Bildformat">
-      <button class="lb fmt on" data-fmt="4:5" role="radio" aria-checked="true" aria-label="Format 4:5" title="Instagram Post">4:5</button>
-      <button class="lb fmt" data-fmt="1:1" role="radio" aria-checked="false" aria-label="Format 1:1" title="Quadratisch">1:1</button>
-      <button class="lb fmt" data-fmt="16:9" role="radio" aria-checked="false" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
-      <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
-    </div>
-  </div>
-  <!-- IMAGES (thumbnail-sized upload zones) -->
-  <div class="ed" id="imgEd">
-    <h2 class="ed-t">Bilder</h2>
-    <div class="img-zones img-thumb">
-      <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
-        <img id="pv0" style="display:none" alt="Vorschau Bild 1">
-        <div class="ph" id="ph0">Bild 1</div>
-        <button class="rm" id="rm0" aria-label="Bild 1 entfernen">&times;</button>
-      </div>
-      <button class="swap-btn" id="swapBtn" aria-label="Bilder tauschen">&#8644;</button>
-      <div class="img-zone" id="z1" style="display:none" tabindex="0" role="button" aria-label="Bild 2 hochladen">
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f1">
-        <img id="pv1" style="display:none" alt="Vorschau Bild 2">
-        <div class="ph" id="ph1">Bild 2</div>
-        <button class="rm" id="rm1" aria-label="Bild 2 entfernen">&times;</button>
-      </div>
-    </div>
-  </div>
-  <!-- TEMPLATES (at the very end) -->
-  <div class="ed">
-    <h2 class="ed-t">Vorlagen</h2>
+  <!-- TEMPLATES -->
+  <div class="ed collapsible" id="tplSection">
+    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Vorlagen <span class="ed-arrow">&#9660;</span></h2>
+    <div class="ed-body">
     <div class="tpl-row">
       <select id="tplSelect"><option value="">Vorlage w&auml;hlen&hellip;</option></select>
       <button class="btn-x" id="tplLoad">Laden</button>
@@ -552,6 +570,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="tpl-row">
       <input id="tplName" type="text" placeholder="Name der Vorlage" style="flex:1;background:var(--input-bg);border:1px solid var(--border-hover);border-radius:var(--radius-md);padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none">
       <button class="btn-primary" id="tplSave">Speichern</button>
+    </div>
     </div>
   </div>
   </div><!-- /editor-col -->
@@ -756,6 +775,32 @@ const $histClose   = document.getElementById('histClose');
 const $histBody    = document.getElementById('histBody');
 const $histEmpty   = document.getElementById('histEmpty');
 const $histGrid    = document.getElementById('histGrid');
+// ===== COLLAPSIBLE SECTIONS =====
+(function initCollapsible() {
+  var STORE_KEY = 'ki-collapsed';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e) {}
+  document.querySelectorAll('.ed.collapsible').forEach(function(ed) {
+    var id = ed.id;
+    var toggle = ed.querySelector('.ed-toggle');
+    if (!toggle) return;
+    // restore saved state
+    if (saved[id]) {
+      ed.classList.add('collapsed');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    toggle.addEventListener('click', function() {
+      ed.classList.toggle('collapsed');
+      var open = !ed.classList.contains('collapsed');
+      toggle.setAttribute('aria-expanded', String(open));
+      saved[id] = !open;
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch(e) {}
+    });
+    toggle.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); }
+    });
+  });
+})();
 // ===== INDEXEDDB =====
 const DB_NAME = 'ki-news-history';
 const DB_VER = 1;
