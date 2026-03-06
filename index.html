@@ -304,6 +304,8 @@ html.dark body,html.dark :root{
 .fs-row .vl{font-size:13px;color:var(--text-muted);min-width:45px;text-align:right;font-variant-numeric:tabular-nums}
 .fs-row button,.fs-reset,.crop-reset{padding:6px 10px;font-size:14px;border-radius:var(--radius-md);background:var(--btn-secondary-bg);color:var(--text-muted);border:1px solid var(--border);cursor:pointer;line-height:1}
 .crop-reset{padding:4px 8px;font-size:13px;flex-shrink:0}
+.crop-flip{padding:4px 10px;font-size:13px;border-radius:var(--radius-md);background:var(--btn-secondary-bg);color:var(--text-muted);border:1px solid var(--border);cursor:pointer;line-height:1;transition:background .15s,color .15s}
+.crop-flip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .crop-hint{font-size:12px;color:var(--text-dim);margin:0}
 /* ===== CREDIT FIELDS ===== */
 #cr0Wrap input,#cr1Wrap input{font-family:Cambria,'Times New Roman',serif;font-size:14px}
@@ -450,6 +452,11 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <span class="vl" id="credOffYVal">0</span>
       <button class="fs-reset" id="credOffYReset" title="Zur&uuml;cksetzen">&#8634;</button>
     </div>
+    <div class="fld" style="margin-top:4px">
+      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="credShadowToggle"> Credit-Schatten
+      </label>
+    </div>
     </div>
   </div>
   <!-- LAYOUT -->
@@ -522,6 +529,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
         </div>
         <button class="crop-reset" data-img="0" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
       </div>
+      <div class="crop-row">
+        <button class="crop-flip" data-img="0" aria-label="Bild 1 horizontal spiegeln">&#8596; Spiegeln</button>
+      </div>
     </div>
     <div class="crop-ctrl" id="cc1" style="display:none">
       <span class="crop-title">Bild 2</span>
@@ -548,6 +558,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
           <span class="vl" id="vy1">50%</span>
         </div>
         <button class="crop-reset" data-img="1" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <button class="crop-flip" data-img="1" aria-label="Bild 2 horizontal spiegeln">&#8596; Spiegeln</button>
       </div>
     </div>
     <p class="crop-hint" id="cropHint" style="font-size:12px;color:var(--text-dim);margin:0">Bild hochladen um Ausschnitt zu steuern</p>
@@ -668,7 +681,7 @@ function todayDE() {
   return isoToDE(todayISO());
 }
 // ===== STATE =====
-function defaultCrop() { return {x:50, y:50, z:100}; }
+function defaultCrop() { return {x:50, y:50, z:100, flip:false}; }
 const S = {
   imgs: [null, null],
   blobs: [null, null],
@@ -689,6 +702,7 @@ const S = {
   credAlign: 'right',
   credOffX: 0,
   credOffY: 0,
+  credShadow: false,
   textPos: 'top'
 };
 // ===== DOM REFS =====
@@ -755,6 +769,7 @@ const $credOffXReset = document.getElementById('credOffXReset');
 const $credOffYSlider = document.getElementById('credOffYSlider');
 const $credOffYVal = document.getElementById('credOffYVal');
 const $credOffYReset = document.getElementById('credOffYReset');
+const $credShadowToggle = document.getElementById('credShadowToggle');
 const $dropOverlay = document.getElementById('dropOverlay');
 const $themeToggle = document.getElementById('themeToggle');
 const $tplSelect = document.getElementById('tplSelect');
@@ -918,9 +933,10 @@ function saveDraft() {
       credAlign: S.credAlign,
       credOffX: S.credOffX,
       credOffY: S.credOffY,
+      credShadow: S.credShadow,
       textPos: S.textPos,
       credits: S.creds.slice(),
-      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
+      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip}; }),
       images: [S.draftBlobs[0], S.draftBlobs[1]]
     }).catch(function(e) { console.warn('saveDraft failed:', e); });
   }, 1500);
@@ -990,7 +1006,7 @@ function saveState() {
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
       layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
       hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
-      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, textPos: S.textPos
+      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, credShadow: S.credShadow, textPos: S.textPos
     }));
   } catch(e) { console.warn('saveState failed:', e); }
 }
@@ -1019,6 +1035,7 @@ function loadState() {
     if (typeof saved.credAlign === 'string') S.credAlign = saved.credAlign;
     if (typeof saved.credOffX === 'number') S.credOffX = saved.credOffX;
     if (typeof saved.credOffY === 'number') S.credOffY = saved.credOffY;
+    if (typeof saved.credShadow === 'boolean') S.credShadow = saved.credShadow;
     // Credits werden nicht im localStorage gespeichert (nur in IndexedDB mit den Bildern)
   } catch(e) { console.warn('loadState failed:', e); }
 }
@@ -1130,6 +1147,8 @@ function renderUI() {
     $vx[i].textContent = S.crop[i].x + '%';
     $sy[i].value = S.crop[i].y;
     $vy[i].textContent = S.crop[i].y + '%';
+    var flipBtn = document.querySelector('.crop-flip[data-img="' + i + '"]');
+    if (flipBtn) flipBtn.classList.toggle('on', !!S.crop[i].flip);
   }
   updateCropVis();
   updateSwapBtn();
@@ -1166,7 +1185,7 @@ $bN.addEventListener('click', function() {
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
   S.hlFSOverride = 0; S.subFSOverride = 0; S.credFSOverride = 0;
-  S.credAlign = 'right'; S.credOffX = 0; S.credOffY = 0; S.textPos = 'top';
+  S.credAlign = 'right'; S.credOffX = 0; S.credOffY = 0; S.credShadow = false; S.textPos = 'top';
   $hl.value = ''; $sub.value = ''; $date.value = todayISO();
   $togHlCaps.classList.remove('on'); $togHlCaps.setAttribute('aria-checked', 'false');
   $togSubCaps.classList.remove('on'); $togSubCaps.setAttribute('aria-checked', 'false');
@@ -1793,7 +1812,13 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
   cx.beginPath();
   cx.rect(dx, dy, dw, dh);
   cx.clip();
-  cx.drawImage(img, imgX, imgY, drawW, drawH);
+  if (crop.flip) {
+    cx.translate(dx + dw, 0);
+    cx.scale(-1, 1);
+    cx.drawImage(img, dx + dw - imgX - drawW, imgY, drawW, drawH);
+  } else {
+    cx.drawImage(img, imgX, imgY, drawW, drawH);
+  }
   cx.restore();
   // Credit text (drawn outside clip) — Cambria font
   if (S.creds[idx]) {
@@ -1814,6 +1839,12 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
       credX = dx + dw - pad;
     }
     cx.textBaseline = 'bottom';
+    if (S.credShadow) {
+      cx.shadowColor = 'rgba(0,0,0,0.5)';
+      cx.shadowBlur = 6;
+      cx.shadowOffsetX = 1;
+      cx.shadowOffsetY = 1;
+    }
     cx.fillText(S.creds[idx], credX + (S.credOffX || 0), dy + dh - pad + (S.credOffY || 0));
     cx.restore();
   }
@@ -1856,9 +1887,10 @@ $bA.addEventListener('click', function() {
       credAlign: S.credAlign,
       credOffX: S.credOffX,
       credOffY: S.credOffY,
+      credShadow: S.credShadow,
       textPos: S.textPos,
       credits: S.creds.slice(),
-      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
+      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip}; }),
       thumbnail: results[2],
       images: [results[0], results[1]]
     };
@@ -2021,11 +2053,12 @@ function loadArchivedPost(post) {
   S.credAlign = post.credAlign || 'right';
   S.credOffX = post.credOffX || 0;
   S.credOffY = post.credOffY || 0;
+  S.credShadow = !!post.credShadow;
   S.textPos = post.textPos || 'top';
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
     ? post.crops.map(function(c) {
-        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z};
+        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z, flip:!!c.flip};
         if (typeof c === 'number') return {x:c, y:c, z:100};
         return defaultCrop();
       })
@@ -2192,6 +2225,16 @@ document.querySelectorAll('.crop-reset').forEach(function(btn) {
     scheduleDraw();
   });
 });
+// ===== FLIP BUTTONS =====
+document.querySelectorAll('.crop-flip').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    var imgIdx = +this.getAttribute('data-img');
+    S.crop[imgIdx].flip = !S.crop[imgIdx].flip;
+    this.classList.toggle('on', S.crop[imgIdx].flip);
+    saveDraft();
+    scheduleDraw();
+  });
+});
 // ===== TEXT POSITION =====
 var TP_BTNS = { top: $tpTop, center: $tpCenter, bottom: $tpBottom };
 function setTextPos(pos) {
@@ -2227,6 +2270,7 @@ function updateCredOffsetUI() {
   $credOffXVal.textContent = S.credOffX;
   $credOffYSlider.value = S.credOffY;
   $credOffYVal.textContent = S.credOffY;
+  $credShadowToggle.checked = S.credShadow;
 }
 $credOffXSlider.addEventListener('input', function() {
   S.credOffX = parseInt(this.value, 10);
@@ -2250,6 +2294,11 @@ $credOffYSlider.addEventListener('change', function() { pushUndo(); });
 $credOffYReset.addEventListener('click', function() {
   S.credOffY = 0;
   updateCredOffsetUI();
+  pushUndo(); debouncedSave(); scheduleDraw();
+});
+// ===== CREDIT SHADOW TOGGLE =====
+$credShadowToggle.addEventListener('change', function() {
+  S.credShadow = this.checked;
   pushUndo(); debouncedSave(); scheduleDraw();
 });
 // ===== DARK MODE TOGGLE =====
@@ -2282,7 +2331,7 @@ function stateSnapshot() {
       hlCaps: S.hlCaps, subCaps: S.subCaps, layout: S.layout, format: S.format,
       creds: S.creds, crop: S.crop,
       hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
-      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, textPos: S.textPos
+      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, credShadow: S.credShadow, textPos: S.textPos
     }),
     imgs: S.imgs.slice(),
     blobs: S.blobs.slice(),
@@ -2304,6 +2353,7 @@ function restoreSnapshot(snap) {
   S.credAlign = data.credAlign || 'right';
   S.credOffX = data.credOffX || 0;
   S.credOffY = data.credOffY || 0;
+  S.credShadow = !!data.credShadow;
   S.textPos = data.textPos || 'top';
   // Restore image references
   S.imgs = snap.imgs.slice();
@@ -2419,7 +2469,7 @@ $tplSave.addEventListener('click', function() {
   templates[name] = {
     layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
     hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
-    credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, textPos: S.textPos
+    credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, credShadow: S.credShadow, textPos: S.textPos
   };
   saveTemplates(templates);
   refreshTplSelect();
@@ -2453,6 +2503,7 @@ $tplLoad.addEventListener('click', function() {
   S.credAlign = tpl.credAlign || 'right';
   S.credOffX = tpl.credOffX || 0;
   S.credOffY = tpl.credOffY || 0;
+  S.credShadow = !!tpl.credShadow;
   Object.keys(CA_BTNS).forEach(function(k) {
     CA_BTNS[k].classList.toggle('on', k === S.credAlign);
     CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
@@ -2598,6 +2649,7 @@ function syncToCloud(post) {
       credAlign: post.credAlign || 'right',
       credOffX: post.credOffX || 0,
       credOffY: post.credOffY || 0,
+      credShadow: !!post.credShadow,
       textPos: post.textPos || 'top',
       credits: post.credits || ['', ''],
       crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
@@ -2651,6 +2703,7 @@ function downloadCloudPost(id, data) {
       credAlign: data.credAlign || 'right',
       credOffX: data.credOffX || 0,
       credOffY: data.credOffY || 0,
+      credShadow: !!data.credShadow,
       textPos: data.textPos || 'top',
       credits: data.credits || ['', ''],
       crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
