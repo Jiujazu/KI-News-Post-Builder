@@ -438,12 +438,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <span class="vl" id="subFsVal">Auto</span>
       <button class="fs-reset" id="subFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
     </div>
-    <div class="fs-row">
-      <label>Credit Gr&ouml;&szlig;e</label>
-      <input type="range" id="credFsSlider" min="12" max="60" value="12">
-      <span class="vl" id="credFsVal">Auto</span>
-      <button class="fs-reset" id="credFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
-    </div>
     <div class="fld">
       <label>Textposition</label>
       <div class="lbtns" role="radiogroup" aria-label="Textposition">
@@ -480,6 +474,12 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <label>Bildunterschrift 2</label>
       <input id="cr1" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 2">
     </div>
+    <div class="fs-row">
+      <label>Credit Gr&ouml;&szlig;e</label>
+      <input type="range" id="credFsSlider" min="12" max="60" value="12">
+      <span class="vl" id="credFsVal">Auto</span>
+      <button class="fs-reset" id="credFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
+    </div>
     <div class="fld">
       <label>Credit-Ausrichtung</label>
       <div class="lbtns" role="radiogroup" aria-label="Credit-Ausrichtung">
@@ -496,7 +496,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
     <div class="fs-row">
       <label>Credit Y-Versatz</label>
-      <input type="range" id="credOffYSlider" min="-200" max="200" value="0">
+      <input type="range" id="credOffYSlider" min="-500" max="0" value="0">
       <span class="vl" id="credOffYVal">0</span>
       <button class="fs-reset" id="credOffYReset" title="Zur&uuml;cksetzen">&#8634;</button>
     </div>
