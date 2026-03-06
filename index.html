@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KI News">
 <meta name="theme-color" content="#0a0a1a">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
 <title>KI News Post Generator</title>
@@ -139,15 +140,13 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .fld input:focus,.fld textarea:focus{border-color:rgba(140,100,220,.5);background:var(--input-bg-focus)}
 .fld input.over,.fld textarea.over{border-color:#e85d4a;background:rgba(232,93,74,.08)}
 .fld textarea{resize:none;overflow:hidden;min-height:48px}
-.tog-row{display:flex;align-items:center;gap:12px;margin-bottom:0;padding:6px 0}
-.tog-row span{font-size:14px;color:var(--text-muted);font-weight:500}
-.tog{
-  width:48px;height:28px;border-radius:14px;position:relative;cursor:pointer;
-  background:rgba(128,128,128,.2);transition:background .2s;border:none;flex-shrink:0;
+.caps-pill{
+  display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;
+  padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;
+  background:transparent;color:var(--text-faint);border:1px solid var(--border-hover);
+  cursor:pointer;transition:all .15s;line-height:1.4;font-family:inherit;
 }
-.tog.on{background:var(--accent)}
-.tog::after{content:'';position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s}
-.tog.on::after{left:23px}
+.caps-pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 /* ===== IMAGE ZONES ===== */
 .img-zones{display:flex;gap:10px;margin-bottom:12px;position:relative}
 .img-thumb .img-zone{aspect-ratio:3/2;max-height:120px}
@@ -159,7 +158,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .img-zones[style*="column"] .img-zone{aspect-ratio:16/7;min-height:80px}
 .img-zone.has{border-style:solid;border-color:var(--border-hover)}
 .img-zone.dragover{border-color:var(--accent);background:var(--accent-glow)}
-.img-zone img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+.img-zone img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
 .img-zone .ph{color:var(--text-faint);font-size:14px;text-align:center;padding:12px;pointer-events:none}
 .img-zone input[type=file]{display:none}
 .img-zone .rm{
@@ -314,7 +313,6 @@ html.dark body,html.dark :root{
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .crop-ctrl input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px}
 /* ===== TOUCH TARGET IMPROVEMENTS ===== */
-.tog::before{content:'';position:absolute;inset:-8px}
 .hist-del::before{content:'';position:absolute;inset:-6px}
 /* ===== COLLAPSIBLE SECTIONS ===== */
 .ed-toggle{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;-webkit-user-select:none;margin-bottom:14px}
@@ -323,6 +321,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ed.collapsed .ed-arrow{transform:rotate(-90deg)}
 .ed.collapsed .ed-body{display:none}
 .ed.collapsed .ed-toggle{margin-bottom:0}
+.collapse-all-row{display:flex;justify-content:flex-end;margin-bottom:6px}
+.collapse-all-btn{background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .15s}
+.collapse-all-btn:hover{color:var(--text);border-color:var(--border-hover)}
 /* ===== AUTH UI ===== */
 .login-btn{font-size:13px}
 .user-info{display:flex;align-items:center;gap:6px}
@@ -369,14 +370,16 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="pw"><canvas id="cv" width="1200" height="1500" role="img" aria-label="Vorschau des generierten Posts"></canvas></div>
   </div>
   <!-- ===== EDITOR ===== -->
-  <!-- ===== EDITOR ===== -->
   <div class="editor-col" id="EP">
+  <div class="collapse-all-row">
+    <button class="collapse-all-btn" id="collapseAllBtn" title="Alle Sektionen ein-/ausklappen" aria-label="Alle Sektionen ein- oder ausklappen">&#9660; Alle ausklappen</button>
+  </div>
   <!-- TEXT (Headline, Subhead, Textposition, Datum) -->
   <div class="ed collapsible" id="textSection">
     <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Text <span class="ed-arrow">&#9660;</span></h2>
     <div class="ed-body">
     <div class="fld">
-      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
+      <label>Headline (Enter = Umbruch) <button class="caps-pill" id="togHlCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="hlCount" aria-live="polite"></span></label>
       <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
     </div>
     <div class="fs-row">
@@ -385,12 +388,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <span class="vl" id="fsVal">Auto</span>
       <button class="fs-reset" id="fsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
     </div>
-    <div class="tog-row">
-      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
-    </div>
     <div class="fld">
-      <label>Subhead (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
+      <label>Subhead (Enter = Umbruch) <button class="caps-pill" id="togSubCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="subCount" aria-live="polite"></span></label>
       <textarea id="inSub" rows="1" placeholder="optional"></textarea>
     </div>
     <div class="fs-row">
@@ -398,10 +397,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <input type="range" id="subFsSlider" min="20" max="150" value="20">
       <span class="vl" id="subFsVal">Auto</span>
       <button class="fs-reset" id="subFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
-    </div>
-    <div class="tog-row">
-      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Subhead Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
     </div>
     <div class="fld">
       <label>Textposition</label>
@@ -800,6 +795,40 @@ const $histGrid    = document.getElementById('histGrid');
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); }
     });
   });
+  // "Collapse/Expand all" button
+  var colBtn = document.getElementById('collapseAllBtn');
+  if (colBtn) {
+    function updateColBtn() {
+      var all = document.querySelectorAll('.ed.collapsible');
+      var collapsedCount = document.querySelectorAll('.ed.collapsible.collapsed').length;
+      var allCollapsed = collapsedCount === all.length;
+      colBtn.innerHTML = allCollapsed ? '&#9654; Alle ausklappen' : '&#9660; Alle einklappen';
+    }
+    updateColBtn();
+    colBtn.addEventListener('click', function() {
+      var all = document.querySelectorAll('.ed.collapsible');
+      var collapsedCount = document.querySelectorAll('.ed.collapsible.collapsed').length;
+      var shouldCollapse = collapsedCount < all.length;
+      all.forEach(function(ed) {
+        var toggle = ed.querySelector('.ed-toggle');
+        if (shouldCollapse) {
+          ed.classList.add('collapsed');
+          if (toggle) toggle.setAttribute('aria-expanded', 'false');
+          saved[ed.id] = true;
+        } else {
+          ed.classList.remove('collapsed');
+          if (toggle) toggle.setAttribute('aria-expanded', 'true');
+          saved[ed.id] = false;
+        }
+      });
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch(e) {}
+      updateColBtn();
+    });
+    // Update button text when individual sections are toggled
+    document.querySelectorAll('.ed-toggle').forEach(function(t) {
+      t.addEventListener('click', function() { setTimeout(updateColBtn, 0); });
+    });
+  }
 })();
 // ===== INDEXEDDB =====
 const DB_NAME = 'ki-news-history';
