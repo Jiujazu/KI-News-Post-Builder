@@ -131,16 +131,16 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 14
 }
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:none;border-left:3px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);transition:box-shadow .2s ease}
-#cropSection{border-left-color:#02778a}
-#textSection{border-left-color:#1a5a7a}
-#creditSection{border-left-color:#2e3f6e}
-#layoutSection{border-left-color:#3a2470}
-#imgEd{border-left-color:#6a30a0}
-#tplSection{border-left-color:#8C50C8}
-.ed-t{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:16px}
+#cropSection{border-left-color:#0891b2}
+#textSection{border-left-color:#7c3aed}
+#creditSection{border-left-color:#db2777}
+#layoutSection{border-left-color:#ea580c}
+#imgEd{border-left-color:#16a34a}
+#tplSection{border-left-color:#2563eb}
+.ed-t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:16px}
 .fld{margin-bottom:16px;position:relative}
 .fld:last-child{margin-bottom:0}
-.fld label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px}
+.fld label{display:block;font-size:11px;font-weight:500;letter-spacing:0;color:var(--text-dim);margin-bottom:6px}
 .fld .charcount{float:right;font-size:12px;color:var(--text-faint);font-variant-numeric:tabular-nums}
 .fld .charcount.warn{color:#e85d4a}
 .fld input,.fld textarea{
@@ -193,10 +193,11 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 14
 .swap-btn.vertical{transform:translate(-50%,-50%) rotate(90deg)}
 /* ===== CROP SLIDERS ===== */
 .crop-ctrl{margin-bottom:12px}
-.crop-ctrl .crop-title{font-size:12px;color:var(--text-dim);display:block;margin-bottom:8px;font-weight:600}
+.crop-ctrl + .crop-ctrl{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+.crop-ctrl .crop-title{font-size:13px;color:var(--text-muted);display:block;margin-bottom:10px;font-weight:600}
 .crop-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .crop-row:last-child{margin-bottom:0}
-.crop-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);min-width:70px;flex-shrink:0}
+.crop-lbl{font-size:11px;font-weight:500;color:var(--text-dim);min-width:90px;flex-shrink:0}
 .crop-ctrl .sr{display:flex;align-items:center;gap:10px;flex:1}
 .crop-ctrl input[type=range]{
   flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none;
@@ -312,7 +313,7 @@ html.dark body,html.dark :root{
 .tpl-row button{padding:10px 12px;font-size:13px}
 /* ===== FONT SIZE / TEXT POS ===== */
 .fs-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.fs-row label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);min-width:80px;flex-shrink:0}
+.fs-row label{font-size:11px;font-weight:500;color:var(--text-dim);min-width:90px;flex-shrink:0}
 .fs-row input[type=range]{flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none}
 .fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer}
 .fs-row .vl{font-size:13px;color:var(--text-muted);min-width:45px;text-align:right;font-variant-numeric:tabular-nums}
@@ -615,7 +616,7 @@ input[type=range]:active{opacity:.8}
       <button class="lb" id="lbStacked" role="radio" aria-checked="false" aria-label="Layout: 2 Bilder &uuml;bereinander" title="2 Bilder &uuml;bereinander">&#9600;&#9604;</button>
       <button class="lb" id="lbNone" role="radio" aria-checked="false" aria-label="Layout: Kein Bild" title="Kein Bild">Kein Bild</button>
     </div>
-    <label style="display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px">Format</label>
+    <label style="display:block;font-size:11px;font-weight:500;color:var(--text-dim);margin-bottom:5px">Format</label>
     <div class="lbtns" role="radiogroup" aria-label="Bildformat">
       <button class="lb fmt on" data-fmt="4:5" role="radio" aria-checked="true" aria-label="Format 4:5" title="Instagram Post">4:5</button>
       <button class="lb fmt" data-fmt="1:1" role="radio" aria-checked="false" aria-label="Format 1:1" title="Quadratisch">1:1</button>
