@@ -306,6 +306,9 @@ html.dark body,html.dark :root{
 .crop-reset{padding:4px 8px;font-size:13px;flex-shrink:0}
 .crop-flip{padding:4px 10px;font-size:13px;border-radius:var(--radius-md);background:var(--btn-secondary-bg);color:var(--text-muted);border:1px solid var(--border);cursor:pointer;line-height:1;transition:background .15s,color .15s}
 .crop-flip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.ch-btns{display:flex;gap:4px;flex-wrap:wrap}
+.ch-btn{padding:3px 8px;font-size:12px;border-radius:var(--radius-md);background:var(--btn-secondary-bg);color:var(--text-muted);border:1px solid var(--border);cursor:pointer;line-height:1;transition:background .15s,color .15s}
+.ch-btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .crop-hint{font-size:12px;color:var(--text-dim);margin:0}
 /* ===== CREDIT FIELDS ===== */
 #cr0Wrap input,#cr1Wrap input{font-family:Cambria,'Times New Roman',serif;font-size:14px}
@@ -532,6 +535,15 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <div class="crop-row">
         <button class="crop-flip" data-img="0" aria-label="Bild 1 horizontal spiegeln">&#8596; Spiegeln</button>
       </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Beschnitt</span>
+        <div class="ch-btns" data-img="0">
+          <button class="ch-btn on" data-val="100">100%</button>
+          <button class="ch-btn" data-val="85">85%</button>
+          <button class="ch-btn" data-val="70">70%</button>
+          <button class="ch-btn" data-val="55">55%</button>
+        </div>
+      </div>
     </div>
     <div class="crop-ctrl" id="cc1" style="display:none">
       <span class="crop-title">Bild 2</span>
@@ -561,6 +573,15 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       </div>
       <div class="crop-row">
         <button class="crop-flip" data-img="1" aria-label="Bild 2 horizontal spiegeln">&#8596; Spiegeln</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Beschnitt</span>
+        <div class="ch-btns" data-img="1">
+          <button class="ch-btn on" data-val="100">100%</button>
+          <button class="ch-btn" data-val="85">85%</button>
+          <button class="ch-btn" data-val="70">70%</button>
+          <button class="ch-btn" data-val="55">55%</button>
+        </div>
       </div>
     </div>
     <p class="crop-hint" id="cropHint" style="font-size:12px;color:var(--text-dim);margin:0">Bild hochladen um Ausschnitt zu steuern</p>
@@ -681,7 +702,7 @@ function todayDE() {
   return isoToDE(todayISO());
 }
 // ===== STATE =====
-function defaultCrop() { return {x:50, y:50, z:100, flip:false}; }
+function defaultCrop() { return {x:50, y:50, z:100, flip:false, cropH:100}; }
 const S = {
   imgs: [null, null],
   blobs: [null, null],
@@ -936,7 +957,7 @@ function saveDraft() {
       credShadow: S.credShadow,
       textPos: S.textPos,
       credits: S.creds.slice(),
-      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip}; }),
+      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; }),
       images: [S.draftBlobs[0], S.draftBlobs[1]]
     }).catch(function(e) { console.warn('saveDraft failed:', e); });
   }, 1500);
@@ -1149,6 +1170,13 @@ function renderUI() {
     $vy[i].textContent = S.crop[i].y + '%';
     var flipBtn = document.querySelector('.crop-flip[data-img="' + i + '"]');
     if (flipBtn) flipBtn.classList.toggle('on', !!S.crop[i].flip);
+    var chGroup = document.querySelector('.ch-btns[data-img="' + i + '"]');
+    if (chGroup) {
+      var ch = S.crop[i].cropH || 100;
+      chGroup.querySelectorAll('.ch-btn').forEach(function(b) {
+        b.classList.toggle('on', +b.getAttribute('data-val') === ch);
+      });
+    }
   }
   updateCropVis();
   updateSwapBtn();
@@ -1794,6 +1822,13 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
     return;
   }
   var crop = S.crop[idx];
+  // Apply crop-height: reduce visible area symmetrically from top/bottom
+  var ch = (crop.cropH || 100) / 100;
+  if (ch < 1) {
+    var trimmed = dh * (1 - ch);
+    dy += trimmed / 2;
+    dh = dh * ch;
+  }
   var iw = img.naturalWidth, ih = img.naturalHeight;
   // fillScale = scale at which image exactly covers destination (object-fit: cover)
   var fillScale = Math.max(dw / iw, dh / ih);
@@ -1890,7 +1925,7 @@ $bA.addEventListener('click', function() {
       credShadow: S.credShadow,
       textPos: S.textPos,
       credits: S.creds.slice(),
-      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip}; }),
+      crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; }),
       thumbnail: results[2],
       images: [results[0], results[1]]
     };
@@ -2058,7 +2093,7 @@ function loadArchivedPost(post) {
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
     ? post.crops.map(function(c) {
-        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z, flip:!!c.flip};
+        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100};
         if (typeof c === 'number') return {x:c, y:c, z:100};
         return defaultCrop();
       })
@@ -2233,6 +2268,21 @@ document.querySelectorAll('.crop-flip').forEach(function(btn) {
     this.classList.toggle('on', S.crop[imgIdx].flip);
     saveDraft();
     scheduleDraw();
+  });
+});
+// ===== CROP HEIGHT BUTTONS =====
+document.querySelectorAll('.ch-btns').forEach(function(group) {
+  var imgIdx = +group.getAttribute('data-img');
+  group.querySelectorAll('.ch-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var val = +this.getAttribute('data-val');
+      S.crop[imgIdx].cropH = val;
+      group.querySelectorAll('.ch-btn').forEach(function(b) {
+        b.classList.toggle('on', +b.getAttribute('data-val') === val);
+      });
+      saveDraft();
+      scheduleDraw();
+    });
   });
 });
 // ===== TEXT POSITION =====
