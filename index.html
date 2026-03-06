@@ -126,21 +126,21 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 }
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px}
-#cropSection{background:rgba(140,80,200,.06)}
-#textSection{background:rgba(100,60,180,.05)}
-#creditSection{background:rgba(80,50,160,.04)}
-#layoutSection{background:rgba(60,40,140,.05)}
-#imgEd{background:rgba(140,80,200,.04)}
-#tplSection{background:rgba(100,60,180,.03)}
+#cropSection{background:rgba(2,86,113,.12)}
+#textSection{background:rgba(20,70,100,.10)}
+#creditSection{background:rgba(30,50,90,.10)}
+#layoutSection{background:rgba(38,28,83,.12)}
+#imgEd{background:rgba(80,40,120,.10)}
+#tplSection{background:rgba(140,80,200,.08)}
 .ed-t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px}
 .fld{margin-bottom:14px;position:relative}
 .fld:last-child{margin-bottom:0}
-.fld label{display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px}
+.fld label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:5px}
 .fld .charcount{float:right;font-size:12px;color:var(--text-faint);font-variant-numeric:tabular-nums}
 .fld .charcount.warn{color:#e85d4a}
 .fld input,.fld textarea{
-  width:100%;background:var(--input-bg);border:1px solid var(--border-hover);
-  border-radius:var(--radius-md);padding:12px 14px;color:var(--text);font-size:16px;font-family:inherit;outline:none;
+  width:100%;background:var(--input-bg);border:2px solid var(--border-hover);
+  border-radius:var(--radius-md);padding:12px 14px;color:var(--text);font-size:17px;font-family:inherit;outline:none;
   -webkit-appearance:none;line-height:1.4;transition:border-color .2s;
 }
 .fld input:focus,.fld textarea:focus{border-color:rgba(140,100,220,.5);background:var(--input-bg-focus)}
@@ -190,7 +190,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 .crop-ctrl .crop-title{font-size:12px;color:var(--text-dim);display:block;margin-bottom:8px;font-weight:600}
 .crop-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .crop-row:last-child{margin-bottom:0}
-.crop-lbl{font-size:12px;color:var(--text-muted);min-width:70px;flex-shrink:0}
+.crop-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);min-width:70px;flex-shrink:0}
 .crop-ctrl .sr{display:flex;align-items:center;gap:10px;flex:1}
 .crop-ctrl input[type=range]{
   flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none;
@@ -304,7 +304,7 @@ html.dark body,html.dark :root{
 .tpl-row button{padding:10px 12px;font-size:13px}
 /* ===== FONT SIZE / TEXT POS ===== */
 .fs-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.fs-row label{font-size:13px;color:var(--text-dim);min-width:90px;flex-shrink:0}
+.fs-row label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);min-width:80px;flex-shrink:0}
 .fs-row input[type=range]{flex:1;-webkit-appearance:none;height:8px;border-radius:4px;background:var(--border);outline:none}
 .fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer}
 .fs-row .vl{font-size:13px;color:var(--text-muted);min-width:45px;text-align:right;font-variant-numeric:tabular-nums}
@@ -475,21 +475,21 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Text <span class="ed-arrow">&#9660;</span></h2>
     <div class="ed-body">
     <div class="fld">
-      <label>Headline (Enter = Umbruch) <button class="caps-pill" id="togHlCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="hlCount" aria-live="polite"></span></label>
+      <label>Headline <button class="caps-pill" id="togHlCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="hlCount" aria-live="polite"></span></label>
       <textarea id="inHL" rows="1" placeholder="Headline"></textarea>
     </div>
     <div class="fs-row">
-      <label>Headline Gr&ouml;&szlig;e</label>
+      <label>Gr&ouml;&szlig;e</label>
       <input type="range" id="fsSlider" min="60" max="300" value="60">
       <span class="vl" id="fsVal">Auto</span>
       <button class="fs-reset" id="fsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
     </div>
     <div class="fld">
-      <label>Subhead (Enter = Umbruch) <button class="caps-pill" id="togSubCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="subCount" aria-live="polite"></span></label>
+      <label>Subheadline <button class="caps-pill" id="togSubCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="subCount" aria-live="polite"></span></label>
       <textarea id="inSub" rows="1" placeholder="Subheadline"></textarea>
     </div>
     <div class="fs-row">
-      <label>Subhead Gr&ouml;&szlig;e</label>
+      <label>Gr&ouml;&szlig;e</label>
       <input type="range" id="subFsSlider" min="20" max="150" value="20">
       <span class="vl" id="subFsVal">Auto</span>
       <button class="fs-reset" id="subFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
@@ -2503,6 +2503,7 @@ function loadTemplates() {
 }
 function saveTemplates(templates) {
   try { localStorage.setItem(TPL_KEY, JSON.stringify(templates)); } catch(e) {}
+  syncTemplatesToCloud(templates);
 }
 function refreshTplSelect() {
   var templates = loadTemplates();
@@ -2617,6 +2618,7 @@ if (fbEnabled) {
       $userAvatar.alt = user.displayName || '';
       showToast('\u2713 Angemeldet als ' + (user.displayName || user.email));
       syncCloud();
+      syncTemplatesFromCloud();
     } else {
       $loginBtn.style.display = '';
       $userInfo.style.display = 'none';
@@ -2792,6 +2794,33 @@ function syncCloud() {
     console.warn('syncCloud failed:', err);
     showToast('\u26a0 Cloud-Sync fehlgeschlagen');
   });
+}
+// ===== FIREBASE TEMPLATE SYNC =====
+function syncTemplatesToCloud(templates) {
+  if (!fbUser || !fbEnabled) return;
+  fbDb.collection('users').doc(fbUser.uid).collection('settings').doc('templates').set({
+    data: templates
+  }).catch(function(err) { console.warn('Template cloud sync failed:', err); });
+}
+function syncTemplatesFromCloud() {
+  if (!fbUser || !fbEnabled) return;
+  fbDb.collection('users').doc(fbUser.uid).collection('settings').doc('templates').get().then(function(doc) {
+    if (!doc.exists) return;
+    var cloudTpls = doc.data().data || {};
+    var localTpls = loadTemplates();
+    var merged = false;
+    Object.keys(cloudTpls).forEach(function(name) {
+      if (!localTpls[name]) { localTpls[name] = cloudTpls[name]; merged = true; }
+    });
+    Object.keys(localTpls).forEach(function(name) {
+      if (!cloudTpls[name]) merged = true;
+    });
+    if (merged) {
+      try { localStorage.setItem(TPL_KEY, JSON.stringify(localTpls)); } catch(e) {}
+      syncTemplatesToCloud(localTpls);
+      refreshTplSelect();
+    }
+  }).catch(function(err) { console.warn('Template cloud fetch failed:', err); });
 }
 // ===== INIT =====
 function init() {
