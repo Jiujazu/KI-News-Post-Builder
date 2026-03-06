@@ -351,9 +351,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
     <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
     <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
-    <!-- Archiv -->
-    <button class="btn-x" id="bA" aria-label="Post archivieren">Archivieren</button>
-    <button class="btn-x" id="bH" aria-label="Archiv öffnen">Archiv</button>
+    <!-- Gespeicherte Posts -->
+    <button class="btn-x" id="bA" aria-label="Post speichern">Speichern</button>
+    <button class="btn-x" id="bH" aria-label="Gespeicherte Posts öffnen">Gespeicherte</button>
     <!-- Utility -->
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
     <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dunkel/Hell-Modus">&#9790;</button>
@@ -574,13 +574,13 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </div>
 <!-- HISTORY DRAWER -->
 <div class="hist-overlay" id="histOverlay"></div>
-<div class="hist-drawer" id="histDrawer" role="dialog" aria-modal="true" aria-label="Post-Archiv">
+<div class="hist-drawer" id="histDrawer" role="dialog" aria-modal="true" aria-label="Gespeicherte Posts">
   <div class="hist-header">
-    <div><h2 style="margin:0">Archiv</h2><span id="histCount" style="font-size:12px;color:var(--text-dim)"></span></div>
-    <button class="hist-close" id="histClose" aria-label="Archiv schließen">&times;</button>
+    <div><h2 style="margin:0">Gespeicherte Posts</h2><span id="histCount" style="font-size:12px;color:var(--text-dim)"></span></div>
+    <button class="hist-close" id="histClose" aria-label="Schließen">&times;</button>
   </div>
   <div class="hist-body" id="histBody">
-    <div class="hist-empty" id="histEmpty">Noch keine Posts archiviert.</div>
+    <div class="hist-empty" id="histEmpty">Noch keine Posts gespeichert.</div>
     <div class="hist-grid" id="histGrid"></div>
   </div>
 </div>
@@ -866,7 +866,7 @@ function dbAdd(post) {
     return dbGetAll().then(function(posts) {
       if (posts.length <= MAX_ARCHIVE_POSTS) return;
       var toDelete = posts.slice(MAX_ARCHIVE_POSTS);
-      showToast('\u26a0 Archiv voll \u2013 ' + toDelete.length + ' \u00e4lteste(r) Post(s) entfernt');
+      showToast('\u26a0 Speicher voll \u2013 ' + toDelete.length + ' \u00e4lteste(r) Post(s) entfernt');
       return Promise.all(toDelete.map(function(p) {
         deleteFromCloud(p.id);
         return dbDelete(p.id);
@@ -1022,14 +1022,8 @@ function loadState() {
     // Credits werden nicht im localStorage gespeichert (nur in IndexedDB mit den Bildern)
   } catch(e) { console.warn('loadState failed:', e); }
 }
-loadState();
-// Apply loaded format
-if (S.format !== '4:5') {
-  var f = FORMATS[S.format];
-  W = f.w; H = f.h;
-  cv.width = W; cv.height = H;
-  rebuildGradient();
-}
+// Don't auto-restore – always start with a fresh post.
+// Users can load saved posts from the "Gespeicherte" drawer.
 // ===== RAF THROTTLE =====
 let rafPending = false;
 function scheduleDraw() {
@@ -1829,7 +1823,7 @@ $bA.addEventListener('click', function() {
   var btn = this;
   if (btn.disabled) return;
   if (!S.hlLines.join('').trim() && !S.subText.trim() && !S.imgs[0] && !S.imgs[1]) {
-    showToast('\u26a0 Nichts zum Archivieren');
+    showToast('\u26a0 Nichts zum Speichern');
     return;
   }
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
@@ -1871,18 +1865,18 @@ $bA.addEventListener('click', function() {
     return dbAdd(post).then(function() { return post; });
   }).then(function(post) {
     syncToCloud(post);
-    btn.textContent = '\u2713 Archiviert!';
+    btn.textContent = '\u2713 Gespeichert!';
     btn.classList.add('btn-success');
-    showToast('\u2713 Post archiviert');
+    showToast('\u2713 Post gespeichert');
     setTimeout(function() {
       btn.disabled = false;
-      btn.textContent = 'Archivieren';
+      btn.textContent = 'Speichern';
       btn.classList.remove('btn-success');
     }, 1500);
   }).catch(function(err) {
-    console.warn('Archive failed:', err);
-    btn.disabled = false; btn.textContent = 'Archivieren';
-    showToast('\u26a0 Archivierung fehlgeschlagen');
+    console.warn('Save failed:', err);
+    btn.disabled = false; btn.textContent = 'Speichern';
+    showToast('\u26a0 Speichern fehlgeschlagen');
   });
 });
 // ===== HISTORY: DRAWER =====
@@ -1929,7 +1923,7 @@ $histGrid.addEventListener('click', function(e) {
     e.stopPropagation();
     var idx = +delBtn.getAttribute('data-idx');
     var post = _histPosts[idx];
-    if (!post || !confirm('Post aus Archiv l\u00f6schen?')) return;
+    if (!post || !confirm('Gespeicherten Post l\u00f6schen?')) return;
     dbDelete(post.id).then(function() {
       deleteFromCloud(post.id);
       loadHistoryGrid();
@@ -1961,7 +1955,7 @@ function loadHistoryGrid() {
   dbGetAll().then(function(posts) {
     _histPosts = posts;
     while ($histGrid.firstChild) $histGrid.removeChild($histGrid.firstChild);
-    $histEmpty.textContent = 'Noch keine Posts archiviert.';
+    $histEmpty.textContent = 'Noch keine Posts gespeichert.';
     $histEmpty.style.display = posts.length ? 'none' : 'block';
     var countEl = document.getElementById('histCount');
     if (countEl) countEl.textContent = posts.length ? posts.length + ' / ' + MAX_ARCHIVE_POSTS + ' Posts' : '';
@@ -2005,13 +1999,13 @@ function loadHistoryGrid() {
   }).catch(function(err) {
     console.warn('loadHistoryGrid failed:', err);
     $histEmpty.style.display = 'block';
-    $histEmpty.textContent = 'Fehler beim Laden des Archivs.';
+    $histEmpty.textContent = 'Fehler beim Laden der Posts.';
   });
 }
 // ===== HISTORY: LOAD POST =====
 function loadArchivedPost(post) {
   var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
-  if (hasContent && !confirm('Aktuellen Post ersetzen und archivierten Post laden?')) return;
+  if (hasContent && !confirm('Aktuellen Post ersetzen und gespeicherten Post laden?')) return;
   // Clean up current images
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null];
@@ -2733,67 +2727,9 @@ function init() {
   autoSize($hl);
   autoSize($sub);
   draw();
-  // Restore draft (images, crops, credits) from IndexedDB
-  loadDraft().then(function(draft) {
-    if (!draft) return;
-    // Restore credits, crops, and new settings
-    if (Array.isArray(draft.credits) && draft.credits.length === 2) S.creds = draft.credits.slice();
-    if (typeof draft.hlFSOverride === 'number') S.hlFSOverride = draft.hlFSOverride;
-    if (typeof draft.subFSOverride === 'number') S.subFSOverride = draft.subFSOverride;
-    if (typeof draft.credFSOverride === 'number') S.credFSOverride = draft.credFSOverride;
-    updateFSSlider();
-    if (typeof draft.credAlign === 'string') {
-      S.credAlign = draft.credAlign;
-      Object.keys(CA_BTNS).forEach(function(k) {
-        CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-        CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-      });
-    }
-    if (typeof draft.credOffX === 'number') S.credOffX = draft.credOffX;
-    if (typeof draft.credOffY === 'number') S.credOffY = draft.credOffY;
-    updateCredOffsetUI();
-    if (typeof draft.textPos === 'string') {
-      S.textPos = draft.textPos;
-      Object.keys(TP_BTNS).forEach(function(k) {
-        TP_BTNS[k].classList.toggle('on', k === S.textPos);
-        TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-      });
-    }
-    if (Array.isArray(draft.crops) && draft.crops.length === 2) {
-      S.crop = draft.crops.map(function(c) {
-        if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z};
-        return defaultCrop();
-      });
-    }
-    // Restore images from blobs
-    var loaded = 0, total = 0;
-    function onDraftLoaded() {
-      renderUI();
-    }
-    for (var i = 0; i < 2; i++) {
-      if (draft.images && draft.images[i]) {
-        total++;
-        (function(idx, blob) {
-          S.draftBlobs[idx] = blob;
-          var blobUrl = URL.createObjectURL(blob);
-          var im = new Image();
-          im.onload = function() {
-            S.imgs[idx] = im;
-            S.blobs[idx] = blobUrl;
-            loaded++;
-            if (loaded >= total) onDraftLoaded();
-          };
-          im.onerror = function() {
-            URL.revokeObjectURL(blobUrl);
-            loaded++;
-            if (loaded >= total) onDraftLoaded();
-          };
-          im.src = blobUrl;
-        })(i, draft.images[i]);
-      }
-    }
-    if (total === 0) onDraftLoaded();
-  });
+  // Don't restore draft – always start fresh.
+  // Delete any leftover draft from a previous session.
+  deleteDraft();
 }
 let initialized = false;
 var fontReady = false;
