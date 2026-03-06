@@ -126,6 +126,12 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 12
 }
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px}
+#cropSection{background:rgba(140,80,200,.06)}
+#textSection{background:rgba(100,60,180,.05)}
+#creditSection{background:rgba(80,50,160,.04)}
+#layoutSection{background:rgba(60,40,140,.05)}
+#imgEd{background:rgba(140,80,200,.04)}
+#tplSection{background:rgba(100,60,180,.03)}
 .ed-t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:14px}
 .fld{margin-bottom:14px;position:relative}
 .fld:last-child{margin-bottom:0}
@@ -341,7 +347,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <header class="topbar">
   <h1>KI-News Post-Builder</h1>
   <div class="btn-row">
-    <div class="seg-ctrl" id="segCtrl" role="tablist" aria-label="Ansicht">
+    <div class="seg-ctrl" id="segCtrl" role="tablist" aria-label="Ansicht" style="display:none">
       <button class="seg active" id="segEdit" role="tab" aria-selected="true" aria-label="Editor anzeigen">Editor</button>
       <button class="seg" id="segPreview" role="tab" aria-selected="false" aria-label="Vorschau anzeigen">Vorschau</button>
     </div>
@@ -470,7 +476,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="ed-body">
     <div class="fld">
       <label>Headline (Enter = Umbruch) <button class="caps-pill" id="togHlCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="hlCount" aria-live="polite"></span></label>
-      <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
+      <textarea id="inHL" rows="1" placeholder="Headline"></textarea>
     </div>
     <div class="fs-row">
       <label>Headline Gr&ouml;&szlig;e</label>
@@ -480,7 +486,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
     <div class="fld">
       <label>Subhead (Enter = Umbruch) <button class="caps-pill" id="togSubCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="subCount" aria-live="polite"></span></label>
-      <textarea id="inSub" rows="1" placeholder="optional"></textarea>
+      <textarea id="inSub" rows="1" placeholder="Subheadline"></textarea>
     </div>
     <div class="fs-row">
       <label>Subhead Gr&ouml;&szlig;e</label>
@@ -515,35 +521,34 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <input id="cr1" type="text" placeholder="&#169; Quellenangabe" aria-label="Credit f&uuml;r Bild 2">
     </div>
     <div class="fs-row">
-      <label>Credit Gr&ouml;&szlig;e</label>
+      <label>Gr&ouml;&szlig;e</label>
       <input type="range" id="credFsSlider" min="12" max="60" value="12">
       <span class="vl" id="credFsVal">Auto</span>
       <button class="fs-reset" id="credFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
     </div>
     <div class="fld">
-      <label>Credit-Ausrichtung</label>
-      <div class="lbtns" role="radiogroup" aria-label="Credit-Ausrichtung">
+      <label>Ausrichtung</label>
+      <div class="lbtns" role="radiogroup" aria-label="Ausrichtung">
         <button class="lb" id="caLeft" role="radio" aria-checked="false">Links</button>
-        <button class="lb on" id="caRight" role="radio" aria-checked="true">Rechts</button>
         <button class="lb" id="caCenter" role="radio" aria-checked="false">Mitte</button>
+        <button class="lb on" id="caRight" role="radio" aria-checked="true">Rechts</button>
       </div>
     </div>
     <div class="fs-row">
-      <label>Credit X-Versatz</label>
+      <label>X-Versatz</label>
       <input type="range" id="credOffXSlider" min="-200" max="200" value="0">
       <span class="vl" id="credOffXVal">0</span>
       <button class="fs-reset" id="credOffXReset" title="Zur&uuml;cksetzen">&#8634;</button>
     </div>
     <div class="fs-row">
-      <label>Credit Y-Versatz</label>
+      <label>Y-Versatz</label>
       <input type="range" id="credOffYSlider" min="-500" max="0" value="0">
       <span class="vl" id="credOffYVal">0</span>
       <button class="fs-reset" id="credOffYReset" title="Zur&uuml;cksetzen">&#8634;</button>
     </div>
     <div class="fld" style="margin-top:4px">
-      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
-        <input type="checkbox" id="credShadowToggle"> Credit-Schatten
-      </label>
+      <label>Schatten</label>
+      <button class="lb" id="credShadowToggle" role="switch" aria-checked="false">Aus</button>
     </div>
     </div>
   </div>
@@ -715,7 +720,7 @@ const S = {
   editing: true,
   hlCaps: false,
   subCaps: false,
-  hlLines: ['Per ChatGPT das eigene Haustier zum Menschen machen'],
+  hlLines: [''],
   subText: '',
   dateText: todayDE(),
   hlFSOverride: 0,
@@ -1187,19 +1192,7 @@ function renderUI() {
 // Edit toggle (mobile only — on desktop both panels are always visible)
 function isDesktop() { return window.innerWidth >= 1024; }
 function setView(editing) {
-  if (isDesktop()) return;
-  S.editing = editing;
-  $EP.style.display = S.editing ? 'block' : 'none';
-  $segEdit.classList.toggle('active', S.editing);
-  $segPreview.classList.toggle('active', !S.editing);
-  $segEdit.setAttribute('aria-selected', String(S.editing));
-  $segPreview.setAttribute('aria-selected', String(!S.editing));
-  if (!S.editing) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    scheduleDraw();
-  } else {
-    autoSize($hl);
-  }
+  // Editor panel is always visible — toggle removed
 }
 $segEdit.addEventListener('click', function() { setView(true); });
 $segPreview.addEventListener('click', function() { setView(false); });
@@ -2321,7 +2314,9 @@ function updateCredOffsetUI() {
   $credOffXVal.textContent = S.credOffX;
   $credOffYSlider.value = S.credOffY;
   $credOffYVal.textContent = S.credOffY;
-  $credShadowToggle.checked = S.credShadow;
+  $credShadowToggle.classList.toggle('on', S.credShadow);
+  $credShadowToggle.textContent = S.credShadow ? 'An' : 'Aus';
+  $credShadowToggle.setAttribute('aria-checked', String(S.credShadow));
 }
 $credOffXSlider.addEventListener('input', function() {
   S.credOffX = parseInt(this.value, 10);
@@ -2348,8 +2343,14 @@ $credOffYReset.addEventListener('click', function() {
   pushUndo(); debouncedSave(); scheduleDraw();
 });
 // ===== CREDIT SHADOW TOGGLE =====
-$credShadowToggle.addEventListener('change', function() {
-  S.credShadow = this.checked;
+function updateShadowBtn() {
+  $credShadowToggle.classList.toggle('on', S.credShadow);
+  $credShadowToggle.textContent = S.credShadow ? 'An' : 'Aus';
+  $credShadowToggle.setAttribute('aria-checked', String(S.credShadow));
+}
+$credShadowToggle.addEventListener('click', function() {
+  S.credShadow = !S.credShadow;
+  updateShadowBtn();
   pushUndo(); debouncedSave(); scheduleDraw();
 });
 // ===== DARK MODE TOGGLE =====
@@ -2818,16 +2819,8 @@ function init() {
   });
   refreshTplSelect();
   lastSnap = stateSnapshot();
-  // On desktop: always show editor; on mobile: respect S.editing
-  if (isDesktop()) {
-    $EP.style.display = 'block';
-  } else {
-    $EP.style.display = S.editing ? 'block' : 'none';
-    $segEdit.classList.toggle('active', S.editing);
-    $segPreview.classList.toggle('active', !S.editing);
-    $segEdit.setAttribute('aria-selected', String(S.editing));
-    $segPreview.setAttribute('aria-selected', String(!S.editing));
-  }
+  // Editor panel always visible
+  $EP.style.display = 'block';
   autoSize($hl);
   autoSize($sub);
   draw();
@@ -2865,12 +2858,6 @@ if (document.fonts && document.fonts.load) {
   window.addEventListener('load', function() { safeInit(true); });
 }
 window.addEventListener('resize', function() {
-  // Ensure editor visibility matches layout mode
-  if (isDesktop()) {
-    $EP.style.display = 'block';
-  } else {
-    $EP.style.display = S.editing ? 'block' : 'none';
-  }
   scheduleDraw();
 });
 })();
