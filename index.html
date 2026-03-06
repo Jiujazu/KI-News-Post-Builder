@@ -379,6 +379,91 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   <div class="collapse-all-row">
     <button class="collapse-all-btn" id="collapseAllBtn" title="Alle Sektionen ein-/ausklappen" aria-label="Alle Sektionen ein- oder ausklappen">&#9660; Alle ausklappen</button>
   </div>
+  <!-- BILDAUSSCHNITT -->
+  <div class="ed collapsible" id="cropSection">
+    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Bildausschnitt <span class="ed-arrow">&#9660;</span></h2>
+    <div class="ed-body">
+    <div class="crop-ctrl" id="cc0" style="display:none">
+      <span class="crop-title">Bild 1</span>
+      <div class="crop-row">
+        <span class="crop-lbl">Zoom</span>
+        <div class="sr">
+          <input type="range" id="sz0" min="25" max="200" value="100" aria-label="Zoom Bild 1">
+          <span class="vl" id="vz0">100%</span>
+        </div>
+        <button class="crop-reset" data-img="0" data-prop="z" title="Zur&uuml;cksetzen" aria-label="Zoom zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Horizontal</span>
+        <div class="sr">
+          <input type="range" id="sx0" min="0" max="100" value="50" aria-label="Horizontale Position Bild 1">
+          <span class="vl" id="vx0">50%</span>
+        </div>
+        <button class="crop-reset" data-img="0" data-prop="x" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Vertikal</span>
+        <div class="sr">
+          <input type="range" id="sy0" min="0" max="100" value="50" aria-label="Vertikale Position Bild 1">
+          <span class="vl" id="vy0">50%</span>
+        </div>
+        <button class="crop-reset" data-img="0" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <button class="crop-flip" data-img="0" aria-label="Bild 1 horizontal spiegeln">&#8596; Spiegeln</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Beschnitt</span>
+        <div class="ch-btns" data-img="0">
+          <button class="ch-btn on" data-val="100">100%</button>
+          <button class="ch-btn" data-val="85">85%</button>
+          <button class="ch-btn" data-val="70">70%</button>
+          <button class="ch-btn" data-val="55">55%</button>
+        </div>
+      </div>
+    </div>
+    <div class="crop-ctrl" id="cc1" style="display:none">
+      <span class="crop-title">Bild 2</span>
+      <div class="crop-row">
+        <span class="crop-lbl">Zoom</span>
+        <div class="sr">
+          <input type="range" id="sz1" min="25" max="200" value="100" aria-label="Zoom Bild 2">
+          <span class="vl" id="vz1">100%</span>
+        </div>
+        <button class="crop-reset" data-img="1" data-prop="z" title="Zur&uuml;cksetzen" aria-label="Zoom zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Horizontal</span>
+        <div class="sr">
+          <input type="range" id="sx1" min="0" max="100" value="50" aria-label="Horizontale Position Bild 2">
+          <span class="vl" id="vx1">50%</span>
+        </div>
+        <button class="crop-reset" data-img="1" data-prop="x" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Vertikal</span>
+        <div class="sr">
+          <input type="range" id="sy1" min="0" max="100" value="50" aria-label="Vertikale Position Bild 2">
+          <span class="vl" id="vy1">50%</span>
+        </div>
+        <button class="crop-reset" data-img="1" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
+      </div>
+      <div class="crop-row">
+        <button class="crop-flip" data-img="1" aria-label="Bild 2 horizontal spiegeln">&#8596; Spiegeln</button>
+      </div>
+      <div class="crop-row">
+        <span class="crop-lbl">Beschnitt</span>
+        <div class="ch-btns" data-img="1">
+          <button class="ch-btn on" data-val="100">100%</button>
+          <button class="ch-btn" data-val="85">85%</button>
+          <button class="ch-btn" data-val="70">70%</button>
+          <button class="ch-btn" data-val="55">55%</button>
+        </div>
+      </div>
+    </div>
+    <p class="crop-hint" id="cropHint" style="font-size:12px;color:var(--text-dim);margin:0">Bild hochladen um Ausschnitt zu steuern</p>
+    </div>
+  </div>
   <!-- TEXT (Headline, Subhead, Textposition, Datum) -->
   <div class="ed collapsible" id="textSection">
     <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Text <span class="ed-arrow">&#9660;</span></h2>
@@ -503,90 +588,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     </div>
   </div>
   <!-- CROP CONTROLS -->
-  <div class="ed collapsible" id="cropSection">
-    <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Bildausschnitt <span class="ed-arrow">&#9660;</span></h2>
-    <div class="ed-body">
-    <div class="crop-ctrl" id="cc0" style="display:none">
-      <span class="crop-title">Bild 1</span>
-      <div class="crop-row">
-        <span class="crop-lbl">Zoom</span>
-        <div class="sr">
-          <input type="range" id="sz0" min="25" max="200" value="100" aria-label="Zoom Bild 1">
-          <span class="vl" id="vz0">100%</span>
-        </div>
-        <button class="crop-reset" data-img="0" data-prop="z" title="Zur&uuml;cksetzen" aria-label="Zoom zur&uuml;cksetzen">&#8634;</button>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Horizontal</span>
-        <div class="sr">
-          <input type="range" id="sx0" min="0" max="100" value="50" aria-label="Horizontale Position Bild 1">
-          <span class="vl" id="vx0">50%</span>
-        </div>
-        <button class="crop-reset" data-img="0" data-prop="x" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Vertikal</span>
-        <div class="sr">
-          <input type="range" id="sy0" min="0" max="100" value="50" aria-label="Vertikale Position Bild 1">
-          <span class="vl" id="vy0">50%</span>
-        </div>
-        <button class="crop-reset" data-img="0" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
-      </div>
-      <div class="crop-row">
-        <button class="crop-flip" data-img="0" aria-label="Bild 1 horizontal spiegeln">&#8596; Spiegeln</button>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Beschnitt</span>
-        <div class="ch-btns" data-img="0">
-          <button class="ch-btn on" data-val="100">100%</button>
-          <button class="ch-btn" data-val="85">85%</button>
-          <button class="ch-btn" data-val="70">70%</button>
-          <button class="ch-btn" data-val="55">55%</button>
-        </div>
-      </div>
-    </div>
-    <div class="crop-ctrl" id="cc1" style="display:none">
-      <span class="crop-title">Bild 2</span>
-      <div class="crop-row">
-        <span class="crop-lbl">Zoom</span>
-        <div class="sr">
-          <input type="range" id="sz1" min="25" max="200" value="100" aria-label="Zoom Bild 2">
-          <span class="vl" id="vz1">100%</span>
-        </div>
-        <button class="crop-reset" data-img="1" data-prop="z" title="Zur&uuml;cksetzen" aria-label="Zoom zur&uuml;cksetzen">&#8634;</button>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Horizontal</span>
-        <div class="sr">
-          <input type="range" id="sx1" min="0" max="100" value="50" aria-label="Horizontale Position Bild 2">
-          <span class="vl" id="vx1">50%</span>
-        </div>
-        <button class="crop-reset" data-img="1" data-prop="x" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Vertikal</span>
-        <div class="sr">
-          <input type="range" id="sy1" min="0" max="100" value="50" aria-label="Vertikale Position Bild 2">
-          <span class="vl" id="vy1">50%</span>
-        </div>
-        <button class="crop-reset" data-img="1" data-prop="y" title="Zur&uuml;cksetzen" aria-label="Position zur&uuml;cksetzen">&#8634;</button>
-      </div>
-      <div class="crop-row">
-        <button class="crop-flip" data-img="1" aria-label="Bild 2 horizontal spiegeln">&#8596; Spiegeln</button>
-      </div>
-      <div class="crop-row">
-        <span class="crop-lbl">Beschnitt</span>
-        <div class="ch-btns" data-img="1">
-          <button class="ch-btn on" data-val="100">100%</button>
-          <button class="ch-btn" data-val="85">85%</button>
-          <button class="ch-btn" data-val="70">70%</button>
-          <button class="ch-btn" data-val="55">55%</button>
-        </div>
-      </div>
-    </div>
-    <p class="crop-hint" id="cropHint" style="font-size:12px;color:var(--text-dim);margin:0">Bild hochladen um Ausschnitt zu steuern</p>
-    </div>
-  </div>
   <!-- TEMPLATES -->
   <div class="ed collapsible" id="tplSection">
     <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Vorlagen <span class="ed-arrow">&#9660;</span></h2>
