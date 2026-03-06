@@ -453,6 +453,58 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       </div>
     </div>
   </div>
+  <!-- TEXT -->
+  <div class="ed">
+    <h2 class="ed-t">Text</h2>
+    <div class="fld">
+      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
+      <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
+    </div>
+    <div class="tog-row">
+      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
+      <span>GROSSBUCHSTABEN</span>
+    </div>
+    <div class="fld">
+      <label>Subhead (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
+      <textarea id="inSub" rows="1" placeholder="optional"></textarea>
+    </div>
+    <div class="tog-row">
+      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Subhead Grossbuchstaben"></button>
+      <span>GROSSBUCHSTABEN</span>
+    </div>
+    <div class="fld" id="cr0Wrap">
+      <label>Bildunterschrift 1</label>
+      <input id="cr0" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 1">
+    </div>
+    <div class="fld" id="cr1Wrap" style="display:none">
+      <label>Bildunterschrift 2</label>
+      <input id="cr1" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 2">
+    </div>
+    <div class="fld">
+      <label>Credit-Ausrichtung</label>
+      <div class="lbtns" role="radiogroup" aria-label="Credit-Ausrichtung">
+        <button class="lb" id="caLeft" role="radio" aria-checked="false">Links</button>
+        <button class="lb on" id="caRight" role="radio" aria-checked="true">Rechts</button>
+        <button class="lb" id="caCenter" role="radio" aria-checked="false">Mitte</button>
+      </div>
+    </div>
+    <div class="fs-row">
+      <label>Credit X-Versatz</label>
+      <input type="range" id="credOffXSlider" min="-200" max="200" value="0">
+      <span class="vl" id="credOffXVal">0</span>
+      <button class="fs-reset" id="credOffXReset" title="Zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="fs-row">
+      <label>Credit Y-Versatz</label>
+      <input type="range" id="credOffYSlider" min="-200" max="200" value="0">
+      <span class="vl" id="credOffYVal">0</span>
+      <button class="fs-reset" id="credOffYReset" title="Zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="fld">
+      <label>Datum</label>
+      <input id="inDate" type="date">
+    </div>
+  </div>
   <!-- LAYOUT -->
   <div class="ed">
     <h2 class="ed-t">Layout</h2>
@@ -487,38 +539,6 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
         <div class="ph" id="ph1">Bild 2</div>
         <button class="rm" id="rm1" aria-label="Bild 2 entfernen">&times;</button>
       </div>
-    </div>
-  </div>
-  <!-- TEXT -->
-  <div class="ed">
-    <h2 class="ed-t">Text</h2>
-    <div class="fld">
-      <label>Headline (Enter = Umbruch) <span class="charcount" id="hlCount" aria-live="polite"></span></label>
-      <textarea id="inHL" rows="1">Per ChatGPT das eigene Haustier zum Menschen machen</textarea>
-    </div>
-    <div class="tog-row">
-      <button class="tog" id="togHlCaps" role="switch" aria-checked="false" aria-label="Headline Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
-    </div>
-    <div class="fld">
-      <label>Subhead (Enter = Umbruch) <span class="charcount" id="subCount" aria-live="polite"></span></label>
-      <textarea id="inSub" rows="1" placeholder="optional"></textarea>
-    </div>
-    <div class="tog-row">
-      <button class="tog" id="togSubCaps" role="switch" aria-checked="false" aria-label="Subhead Grossbuchstaben"></button>
-      <span>GROSSBUCHSTABEN</span>
-    </div>
-    <div class="fld" id="cr0Wrap">
-      <label>Bildunterschrift 1</label>
-      <input id="cr0" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 1">
-    </div>
-    <div class="fld" id="cr1Wrap" style="display:none">
-      <label>Bildunterschrift 2</label>
-      <input id="cr1" type="text" placeholder="&#169; Credit / Quellenangabe" aria-label="Credit f&uuml;r Bild 2">
-    </div>
-    <div class="fld">
-      <label>Datum</label>
-      <input id="inDate" type="date">
     </div>
   </div>
   <!-- TEMPLATES (at the very end) -->
@@ -652,6 +672,9 @@ const S = {
   hlFSOverride: 0,
   subFSOverride: 0,
   credFSOverride: 0,
+  credAlign: 'right',
+  credOffX: 0,
+  credOffY: 0,
   textPos: 'top'
 };
 // ===== DOM REFS =====
@@ -709,6 +732,15 @@ const $cropHint = document.getElementById('cropHint');
 const $tpTop = document.getElementById('tpTop');
 const $tpCenter = document.getElementById('tpCenter');
 const $tpBottom = document.getElementById('tpBottom');
+const $caLeft = document.getElementById('caLeft');
+const $caRight = document.getElementById('caRight');
+const $caCenter = document.getElementById('caCenter');
+const $credOffXSlider = document.getElementById('credOffXSlider');
+const $credOffXVal = document.getElementById('credOffXVal');
+const $credOffXReset = document.getElementById('credOffXReset');
+const $credOffYSlider = document.getElementById('credOffYSlider');
+const $credOffYVal = document.getElementById('credOffYVal');
+const $credOffYReset = document.getElementById('credOffYReset');
 const $dropOverlay = document.getElementById('dropOverlay');
 const $themeToggle = document.getElementById('themeToggle');
 const $tplSelect = document.getElementById('tplSelect');
@@ -809,6 +841,9 @@ function saveDraft() {
       hlFSOverride: S.hlFSOverride,
       subFSOverride: S.subFSOverride,
       credFSOverride: S.credFSOverride,
+      credAlign: S.credAlign,
+      credOffX: S.credOffX,
+      credOffY: S.credOffY,
       textPos: S.textPos,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
@@ -880,7 +915,8 @@ function saveState() {
     localStorage.setItem(STORE_KEY, JSON.stringify({
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
       layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
-      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride, textPos: S.textPos
+      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
+      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, textPos: S.textPos
     }));
   } catch(e) { console.warn('saveState failed:', e); }
 }
@@ -904,7 +940,11 @@ function loadState() {
     if (typeof saved.subCaps === 'boolean') S.subCaps = saved.subCaps;
     if (typeof saved.hlFSOverride === 'number') S.hlFSOverride = saved.hlFSOverride;
     if (typeof saved.subFSOverride === 'number') S.subFSOverride = saved.subFSOverride;
+    if (typeof saved.credFSOverride === 'number') S.credFSOverride = saved.credFSOverride;
     if (typeof saved.textPos === 'string') S.textPos = saved.textPos;
+    if (typeof saved.credAlign === 'string') S.credAlign = saved.credAlign;
+    if (typeof saved.credOffX === 'number') S.credOffX = saved.credOffX;
+    if (typeof saved.credOffY === 'number') S.credOffY = saved.credOffY;
     // Credits werden nicht im localStorage gespeichert (nur in IndexedDB mit den Bildern)
   } catch(e) { console.warn('loadState failed:', e); }
 }
@@ -1057,7 +1097,8 @@ $bN.addEventListener('click', function() {
   S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
   S.hlLines = ['']; S.subText = '';
   S.dateText = todayDE();
-  S.hlFSOverride = 0; S.subFSOverride = 0; S.credFSOverride = 0; S.textPos = 'top';
+  S.hlFSOverride = 0; S.subFSOverride = 0; S.credFSOverride = 0;
+  S.credAlign = 'right'; S.credOffX = 0; S.credOffY = 0; S.textPos = 'top';
   $hl.value = ''; $sub.value = ''; $date.value = todayISO();
   $togHlCaps.classList.remove('on'); $togHlCaps.setAttribute('aria-checked', 'false');
   $togSubCaps.classList.remove('on'); $togSubCaps.setAttribute('aria-checked', 'false');
@@ -1065,7 +1106,15 @@ $bN.addEventListener('click', function() {
   setLayout('one');
   setFormat('4:5');
   updateFSSlider();
-  setTextPos('top');
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === 'right');
+    CA_BTNS[k].setAttribute('aria-checked', String(k === 'right'));
+  });
+  updateCredOffsetUI();
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === 'top');
+    TP_BTNS[k].setAttribute('aria-checked', String(k === 'top'));
+  });
   autoSize($hl);
   renderUI();
   saveState();
@@ -1684,9 +1733,20 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
     var credFS = S.credFSOverride > 0 ? S.credFSOverride : Math.max(16, Math.round(dh * 0.04));
     cx.font = '500 ' + credFS + 'px Cambria,"Times New Roman",serif';
     cx.fillStyle = 'rgba(255,255,255,0.85)';
-    cx.textAlign = 'right';
+    var align = S.credAlign || 'right';
+    var credX, pad = 10;
+    if (align === 'left') {
+      cx.textAlign = 'left';
+      credX = dx + pad;
+    } else if (align === 'center') {
+      cx.textAlign = 'center';
+      credX = dx + dw / 2;
+    } else {
+      cx.textAlign = 'right';
+      credX = dx + dw - pad;
+    }
     cx.textBaseline = 'bottom';
-    cx.fillText(S.creds[idx], dx + dw - 10, dy + dh - 10);
+    cx.fillText(S.creds[idx], credX + (S.credOffX || 0), dy + dh - pad + (S.credOffY || 0));
     cx.restore();
   }
 }
@@ -1725,6 +1785,9 @@ $bA.addEventListener('click', function() {
       hlFSOverride: S.hlFSOverride,
       subFSOverride: S.subFSOverride,
       credFSOverride: S.credFSOverride,
+      credAlign: S.credAlign,
+      credOffX: S.credOffX,
+      credOffY: S.credOffY,
       textPos: S.textPos,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z}; }),
@@ -1887,6 +1950,9 @@ function loadArchivedPost(post) {
   S.hlFSOverride = post.hlFSOverride || 0;
   S.subFSOverride = post.subFSOverride || 0;
   S.credFSOverride = post.credFSOverride || 0;
+  S.credAlign = post.credAlign || 'right';
+  S.credOffX = post.credOffX || 0;
+  S.credOffY = post.credOffY || 0;
   S.textPos = post.textPos || 'top';
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
@@ -1909,6 +1975,11 @@ function loadArchivedPost(post) {
   setLayout(post.layout || 'one');
   setFormat(post.format || '4:5');
   updateFSSlider();
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
+    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
+  });
+  updateCredOffsetUI();
   Object.keys(TP_BTNS).forEach(function(k) {
     TP_BTNS[k].classList.toggle('on', k === S.textPos);
     TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
@@ -2068,6 +2139,51 @@ function setTextPos(pos) {
 $tpTop.addEventListener('click', function() { setTextPos('top'); });
 $tpCenter.addEventListener('click', function() { setTextPos('center'); });
 $tpBottom.addEventListener('click', function() { setTextPos('bottom'); });
+// ===== CREDIT ALIGNMENT =====
+var CA_BTNS = { left: $caLeft, right: $caRight, center: $caCenter };
+function setCredAlign(align) {
+  S.credAlign = align;
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === align);
+    CA_BTNS[k].setAttribute('aria-checked', String(k === align));
+  });
+  pushUndo();
+  debouncedSave();
+  scheduleDraw();
+}
+$caLeft.addEventListener('click', function() { setCredAlign('left'); });
+$caRight.addEventListener('click', function() { setCredAlign('right'); });
+$caCenter.addEventListener('click', function() { setCredAlign('center'); });
+function updateCredOffsetUI() {
+  $credOffXSlider.value = S.credOffX;
+  $credOffXVal.textContent = S.credOffX;
+  $credOffYSlider.value = S.credOffY;
+  $credOffYVal.textContent = S.credOffY;
+}
+$credOffXSlider.addEventListener('input', function() {
+  S.credOffX = parseInt(this.value, 10);
+  $credOffXVal.textContent = S.credOffX;
+  debouncedSave();
+  scheduleDraw();
+});
+$credOffXSlider.addEventListener('change', function() { pushUndo(); });
+$credOffXReset.addEventListener('click', function() {
+  S.credOffX = 0;
+  updateCredOffsetUI();
+  pushUndo(); debouncedSave(); scheduleDraw();
+});
+$credOffYSlider.addEventListener('input', function() {
+  S.credOffY = parseInt(this.value, 10);
+  $credOffYVal.textContent = S.credOffY;
+  debouncedSave();
+  scheduleDraw();
+});
+$credOffYSlider.addEventListener('change', function() { pushUndo(); });
+$credOffYReset.addEventListener('click', function() {
+  S.credOffY = 0;
+  updateCredOffsetUI();
+  pushUndo(); debouncedSave(); scheduleDraw();
+});
 // ===== DARK MODE TOGGLE =====
 var THEME_KEY = 'ki-news-theme';
 function applyTheme(theme) {
@@ -2097,7 +2213,8 @@ function stateSnapshot() {
       hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
       hlCaps: S.hlCaps, subCaps: S.subCaps, layout: S.layout, format: S.format,
       creds: S.creds, crop: S.crop,
-      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride, textPos: S.textPos
+      hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
+      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, textPos: S.textPos
     }),
     imgs: S.imgs.slice(),
     blobs: S.blobs.slice(),
@@ -2116,6 +2233,9 @@ function restoreSnapshot(snap) {
   S.hlFSOverride = data.hlFSOverride || 0;
   S.subFSOverride = data.subFSOverride || 0;
   S.credFSOverride = data.credFSOverride || 0;
+  S.credAlign = data.credAlign || 'right';
+  S.credOffX = data.credOffX || 0;
+  S.credOffY = data.credOffY || 0;
   S.textPos = data.textPos || 'top';
   // Restore image references
   S.imgs = snap.imgs.slice();
@@ -2132,6 +2252,11 @@ function restoreSnapshot(snap) {
   setLayout(S.layout);
   setFormat(S.format);
   updateFSSlider();
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
+    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
+  });
+  updateCredOffsetUI();
   Object.keys(TP_BTNS).forEach(function(k) {
     TP_BTNS[k].classList.toggle('on', k === S.textPos);
     TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
@@ -2225,7 +2350,8 @@ $tplSave.addEventListener('click', function() {
   var templates = loadTemplates();
   templates[name] = {
     layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
-    hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride, textPos: S.textPos
+    hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
+    credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, textPos: S.textPos
   };
   saveTemplates(templates);
   refreshTplSelect();
@@ -2254,7 +2380,16 @@ $tplLoad.addEventListener('click', function() {
   }
   S.hlFSOverride = tpl.hlFSOverride || 0;
   S.subFSOverride = tpl.subFSOverride || 0;
+  S.credFSOverride = tpl.credFSOverride || 0;
   updateFSSlider();
+  S.credAlign = tpl.credAlign || 'right';
+  S.credOffX = tpl.credOffX || 0;
+  S.credOffY = tpl.credOffY || 0;
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
+    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
+  });
+  updateCredOffsetUI();
   S.textPos = tpl.textPos || 'top';
   Object.keys(TP_BTNS).forEach(function(k) {
     TP_BTNS[k].classList.toggle('on', k === S.textPos);
@@ -2392,6 +2527,9 @@ function syncToCloud(post) {
       hlFSOverride: post.hlFSOverride || 0,
       subFSOverride: post.subFSOverride || 0,
       credFSOverride: post.credFSOverride || 0,
+      credAlign: post.credAlign || 'right',
+      credOffX: post.credOffX || 0,
+      credOffY: post.credOffY || 0,
       textPos: post.textPos || 'top',
       credits: post.credits || ['', ''],
       crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
@@ -2442,6 +2580,9 @@ function downloadCloudPost(id, data) {
       hlFSOverride: data.hlFSOverride || 0,
       subFSOverride: data.subFSOverride || 0,
       credFSOverride: data.credFSOverride || 0,
+      credAlign: data.credAlign || 'right',
+      credOffX: data.credOffX || 0,
+      credOffY: data.credOffY || 0,
       textPos: data.textPos || 'top',
       credits: data.credits || ['', ''],
       crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
@@ -2494,6 +2635,11 @@ function init() {
   setLayout(S.layout);
   setFormat(S.format);
   updateFSSlider();
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
+    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
+  });
+  updateCredOffsetUI();
   Object.keys(TP_BTNS).forEach(function(k) {
     TP_BTNS[k].classList.toggle('on', k === S.textPos);
     TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
@@ -2522,6 +2668,16 @@ function init() {
     if (typeof draft.subFSOverride === 'number') S.subFSOverride = draft.subFSOverride;
     if (typeof draft.credFSOverride === 'number') S.credFSOverride = draft.credFSOverride;
     updateFSSlider();
+    if (typeof draft.credAlign === 'string') {
+      S.credAlign = draft.credAlign;
+      Object.keys(CA_BTNS).forEach(function(k) {
+        CA_BTNS[k].classList.toggle('on', k === S.credAlign);
+        CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
+      });
+    }
+    if (typeof draft.credOffX === 'number') S.credOffX = draft.credOffX;
+    if (typeof draft.credOffY === 'number') S.credOffY = draft.credOffY;
+    updateCredOffsetUI();
     if (typeof draft.textPos === 'string') {
       S.textPos = draft.textPos;
       Object.keys(TP_BTNS).forEach(function(k) {
