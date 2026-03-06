@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KI News">
 <meta name="theme-color" content="#0a0a1a">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
 <title>KI News Post Generator</title>
@@ -323,6 +324,9 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ed.collapsed .ed-arrow{transform:rotate(-90deg)}
 .ed.collapsed .ed-body{display:none}
 .ed.collapsed .ed-toggle{margin-bottom:0}
+.collapse-all-row{display:flex;justify-content:flex-end;margin-bottom:6px}
+.collapse-all-btn{background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius-md);cursor:pointer;transition:all .15s}
+.collapse-all-btn:hover{color:var(--text);border-color:var(--border-hover)}
 /* ===== AUTH UI ===== */
 .login-btn{font-size:13px}
 .user-info{display:flex;align-items:center;gap:6px}
@@ -369,8 +373,10 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div class="pw"><canvas id="cv" width="1200" height="1500" role="img" aria-label="Vorschau des generierten Posts"></canvas></div>
   </div>
   <!-- ===== EDITOR ===== -->
-  <!-- ===== EDITOR ===== -->
   <div class="editor-col" id="EP">
+  <div class="collapse-all-row">
+    <button class="collapse-all-btn" id="collapseAllBtn" title="Alle Sektionen ein-/ausklappen" aria-label="Alle Sektionen ein- oder ausklappen">&#9660; Alle ausklappen</button>
+  </div>
   <!-- TEXT (Headline, Subhead, Textposition, Datum) -->
   <div class="ed collapsible" id="textSection">
     <h2 class="ed-t ed-toggle" aria-expanded="true" role="button" tabindex="0">Text <span class="ed-arrow">&#9660;</span></h2>
@@ -800,6 +806,40 @@ const $histGrid    = document.getElementById('histGrid');
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); }
     });
   });
+  // "Collapse/Expand all" button
+  var colBtn = document.getElementById('collapseAllBtn');
+  if (colBtn) {
+    function updateColBtn() {
+      var all = document.querySelectorAll('.ed.collapsible');
+      var collapsedCount = document.querySelectorAll('.ed.collapsible.collapsed').length;
+      var allCollapsed = collapsedCount === all.length;
+      colBtn.innerHTML = allCollapsed ? '&#9654; Alle ausklappen' : '&#9660; Alle einklappen';
+    }
+    updateColBtn();
+    colBtn.addEventListener('click', function() {
+      var all = document.querySelectorAll('.ed.collapsible');
+      var collapsedCount = document.querySelectorAll('.ed.collapsible.collapsed').length;
+      var shouldCollapse = collapsedCount < all.length;
+      all.forEach(function(ed) {
+        var toggle = ed.querySelector('.ed-toggle');
+        if (shouldCollapse) {
+          ed.classList.add('collapsed');
+          if (toggle) toggle.setAttribute('aria-expanded', 'false');
+          saved[ed.id] = true;
+        } else {
+          ed.classList.remove('collapsed');
+          if (toggle) toggle.setAttribute('aria-expanded', 'true');
+          saved[ed.id] = false;
+        }
+      });
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch(e) {}
+      updateColBtn();
+    });
+    // Update button text when individual sections are toggled
+    document.querySelectorAll('.ed-toggle').forEach(function(t) {
+      t.addEventListener('click', function() { setTimeout(updateColBtn, 0); });
+    });
+  }
 })();
 // ===== INDEXEDDB =====
 const DB_NAME = 'ki-news-history';
