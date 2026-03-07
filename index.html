@@ -2626,7 +2626,7 @@ let draftTimer = null;
 function saveDraft() {
   clearTimeout(draftTimer);
   draftTimer = setTimeout(function() {
-    dbAdd({
+    var draft = {
       id: DRAFT_ID,
       savedAt: new Date().toISOString(),
       headline: S.hlLines.join('\n'),
@@ -2647,7 +2647,34 @@ function saveDraft() {
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; }),
       images: [S.draftBlobs[0], S.draftBlobs[1]]
-    }).catch(function(e) { console.warn('saveDraft failed:', e); });
+    };
+    // Save carousel state if active
+    if (deckActive && deck.length > 0) {
+      draft.isCarousel = true;
+      draft.currentSlideIdx = currentSlideIdx;
+      draft.slides = deck.map(function(snap) {
+        return {
+          headline: snap.hlLines.join('\n'),
+          subtitle: snap.subText,
+          date: snap.dateText,
+          layout: snap.layout,
+          hlCaps: snap.hlCaps,
+          subCaps: snap.subCaps,
+          hlFSOverride: snap.hlFSOverride,
+          subFSOverride: snap.subFSOverride,
+          credFSOverride: snap.credFSOverride,
+          credAlign: snap.credAlign,
+          credOffX: snap.credOffX,
+          credOffY: snap.credOffY,
+          credShadow: snap.credShadow,
+          textPos: snap.textPos,
+          credits: snap.creds.slice(),
+          crops: snap.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; }),
+          images: [snap.draftBlobs[0], snap.draftBlobs[1]]
+        };
+      });
+    }
+    dbAdd(draft).catch(function(e) { console.warn('saveDraft failed:', e); });
   }, 1500);
 }
 function loadDraft() {
@@ -2655,7 +2682,17 @@ function loadDraft() {
     return new Promise(function(resolve, reject) {
       var tx = db.transaction(DB_STORE, 'readonly');
       var req = tx.objectStore(DB_STORE).get(DRAFT_ID);
-      req.onsuccess = function() { resolve(req.result || null); };
+      req.onsuccess = function() {
+        var draft = req.result || null;
+        if (draft && draft.isCarousel && draft.slides) {
+          // Restore as carousel post
+          loadCarouselPost(draft);
+        } else if (draft) {
+          // Restore as single post
+          loadArchivedPost(draft);
+        }
+        resolve(draft);
+      };
       req.onerror = function() { resolve(null); };
     });
   }).catch(function() { return null; });
@@ -2911,17 +2948,8 @@ $bN.addEventListener('click', function() {
     ? 'Karussell mit ' + deck.length + ' Slides verwerfen und neu beginnen?'
     : 'Aktuellen Post verwerfen und neu beginnen?';
   if (hasContent && !confirm(msg)) return;
-  // If deck mode is active, force-stop it without a second confirm
-  if (deckActive) {
-    deckActive = false;
-    deck = [];
-    currentSlideIdx = 0;
-    $deckBar.classList.remove('active');
-    $bA.textContent = 'Speichern';
-    $bA.setAttribute('aria-label', 'Post speichern');
-  }
-  // Always reset to single-post mode
-  if (currentToolMode !== 'single') setToolMode('single');
+  // Force-reset to single-post mode (confirmation already happened above)
+  setToolMode('single', true);
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null]; S.creds = ['', ''];
   S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
@@ -3943,25 +3971,8 @@ function loadArchivedPost(post) {
     confirmMsg = 'Aktuelles Karussell (' + deck.length + ' Slides) ersetzen und gespeicherten Post laden?';
   }
   if (hasContent && !confirm(confirmMsg)) return;
-  // Stop carousel mode if active
-  if (deckActive) {
-    deckActive = false;
-    deck = [];
-    currentSlideIdx = 0;
-    $deckBar.classList.remove('active');
-    $bA.textContent = 'Speichern';
-    $bA.setAttribute('aria-label', 'Post speichern');
-  }
-  // Reset to single-post tab (will be switched to carousel if loading carousel post)
-  if (currentToolMode !== 'single') {
-    currentToolMode = 'single';
-    $appDiv.classList.remove('mode-carousel');
-    $appDiv.classList.add('mode-single');
-    $tabSingle.classList.add('active');
-    $tabCarousel.classList.remove('active');
-    $tabSingle.setAttribute('aria-selected', 'true');
-    $tabCarousel.setAttribute('aria-selected', 'false');
-  }
+  // Force-reset to single-post mode (will be switched to carousel if loading carousel post)
+  setToolMode('single', true);
   // Clean up current images
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null];
@@ -4091,22 +4102,15 @@ function loadCarouselPost(post) {
     }
   }
   function onAllCarouselImgsLoaded() {
-    // Activate carousel mode
+    // Activate carousel mode with pre-built deck
     deckActive = true;
     currentSlideIdx = 0;
     loadSlideState(deck[0]);
     refreshEditorFromState();
     $deckBar.classList.add('active');
-    // Switch to carousel tab
-    currentToolMode = 'carousel';
-    $appDiv.classList.remove('mode-single');
-    $appDiv.classList.add('mode-carousel');
-    $tabSingle.classList.remove('active');
-    $tabCarousel.classList.add('active');
-    $tabSingle.setAttribute('aria-selected', 'false');
-    $tabCarousel.setAttribute('aria-selected', 'true');
-    $bA.textContent = 'Karussell speichern';
-    $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
+    // Sync tab UI to carousel (force=true, skip confirm; reset currentToolMode first so it's not skipped)
+    currentToolMode = 'single';
+    setToolMode('carousel', true);
     _origDraw();
     renderDeckStrip();
     showToast('\u2713 Karussell mit ' + deck.length + ' Slides geladen');
@@ -4902,10 +4906,9 @@ var $bCarouselExportPdf = document.getElementById('bCarouselExportPdf');
 var $appDiv = document.querySelector('.app');
 var currentToolMode = 'single'; // 'single' or 'carousel'
 
-function setToolMode(mode) {
-  if (mode === currentToolMode) return;
-  var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
-  if (mode === 'single' && deckActive && deck.length > 1) {
+function setToolMode(mode, force) {
+  if (mode === currentToolMode && !force) return;
+  if (!force && mode === 'single' && deckActive && deck.length > 1) {
     if (!confirm('Karussell mit ' + deck.length + ' Slides verwerfen und zum Einzelpost wechseln?')) return;
   }
   currentToolMode = mode;
@@ -4921,7 +4924,6 @@ function setToolMode(mode) {
     $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
   } else {
     if (deckActive) {
-      // Force-stop without second confirm (already confirmed above)
       deckActive = false;
       deck = [];
       currentSlideIdx = 0;
@@ -5151,6 +5153,7 @@ function addSlide() {
   };
   deck.push(newSlide);
   switchToSlide(deck.length - 1);
+  saveDraft();
 }
 
 function removeSlide(idx) {
@@ -5162,6 +5165,7 @@ function removeSlide(idx) {
   refreshEditorFromState();
   _origDraw();
   renderDeckStrip();
+  saveDraft();
 }
 
 function startDeck() {
@@ -5179,22 +5183,8 @@ function startDeck() {
 
 function stopDeck() {
   if (!deckActive) return;
-  deckActive = false;
-  deck = [];
-  currentSlideIdx = 0;
-  $deckBar.classList.remove('active');
-  $bA.textContent = 'Speichern';
-  $bA.setAttribute('aria-label', 'Post speichern');
-  // Sync tab back to single
-  if (currentToolMode !== 'single') {
-    currentToolMode = 'single';
-    $appDiv.classList.remove('mode-carousel');
-    $appDiv.classList.add('mode-single');
-    $tabSingle.classList.add('active');
-    $tabCarousel.classList.remove('active');
-    $tabSingle.setAttribute('aria-selected', 'true');
-    $tabCarousel.setAttribute('aria-selected', 'false');
-  }
+  // setToolMode('single', true) will reset deckActive, deck, etc.
+  setToolMode('single', true);
   showToast('Karussell-Modus beendet');
 }
 
