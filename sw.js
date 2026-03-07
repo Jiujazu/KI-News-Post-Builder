@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ki-news-v3';
+const CACHE_NAME = 'ki-news-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -34,7 +34,8 @@ self.addEventListener('fetch', function(e) {
   if (url.indexOf('googleapis.com') !== -1 ||
       url.indexOf('firebaseio.com') !== -1 ||
       url.indexOf('firebasestorage.app') !== -1 ||
-      url.indexOf('accounts.google.com') !== -1) {
+      url.indexOf('accounts.google.com') !== -1 ||
+      url.indexOf('cdnjs.cloudflare.com') !== -1) {
     return;
   }
   e.respondWith(
