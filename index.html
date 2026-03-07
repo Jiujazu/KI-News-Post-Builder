@@ -131,12 +131,12 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 14
 }
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:none;border-top:4px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);transition:box-shadow .2s ease}
-#cropSection{border-top-color:#0891b2}
-#textSection{border-top-color:#7c3aed}
-#creditSection{border-top-color:#db2777}
-#layoutSection{border-top-color:#ea580c}
-#imgEd{border-top-color:#16a34a}
-#tplSection{border-top-color:#2563eb}
+#cropSection{border-top-color:#0891b2;background:rgba(8,145,178,.07)}
+#textSection{border-top-color:#7c3aed;background:rgba(124,58,237,.07)}
+#creditSection{border-top-color:#db2777;background:rgba(219,39,119,.07)}
+#layoutSection{border-top-color:#ea580c;background:rgba(234,88,12,.07)}
+#imgEd{border-top-color:#16a34a;background:rgba(22,163,74,.07)}
+#tplSection{border-top-color:#2563eb;background:rgba(37,99,235,.07)}
 .ed-t{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:16px}
 .fld{margin-bottom:16px;position:relative}
 .fld:last-child{margin-bottom:0}
@@ -530,7 +530,7 @@ input[type=range]:active{opacity:.8}
     <div class="ed-body">
     <div class="fld">
       <label>Headline <button class="caps-pill" id="togHlCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="hlCount" aria-live="polite"></span></label>
-      <textarea id="inHL" rows="1" placeholder="Headline"></textarea>
+      <textarea id="inHL" rows="1" placeholder=""></textarea>
     </div>
     <div class="fs-row">
       <label>Gr&ouml;&szlig;e</label>
@@ -540,7 +540,7 @@ input[type=range]:active{opacity:.8}
     </div>
     <div class="fld">
       <label>Subheadline <button class="caps-pill" id="togSubCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="subCount" aria-live="polite"></span></label>
-      <textarea id="inSub" rows="1" placeholder="Subheadline"></textarea>
+      <textarea id="inSub" rows="1" placeholder=""></textarea>
     </div>
     <div class="fs-row">
       <label>Gr&ouml;&szlig;e</label>
