@@ -1929,7 +1929,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 }
 .deck-slide:hover{border-color:var(--border-hover)}
 .deck-slide.current{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
-.deck-slide canvas{width:100%;height:100%;display:block;pointer-events:none}
+.deck-slide canvas,.deck-slide .deck-thumb-canvas{width:100%;height:100%;display:block;pointer-events:none;object-fit:cover}
 .deck-slide .slide-num{
   position:absolute;bottom:2px;right:4px;font-size:10px;font-weight:700;
   color:var(--text-faint);pointer-events:none;
@@ -4866,11 +4866,7 @@ function saveCurrentSlide() {
   S.subText = $sub.value;
   var iso = $date.value;
   if (iso) S.dateText = isoToDE(iso);
-  // Capture thumbnail before saving snapshot
-  _origDraw();
-  var snap = slideSnapshot();
-  snap.thumbDataUrl = captureCurrentThumb();
-  deck[currentSlideIdx] = snap;
+  deck[currentSlideIdx] = slideSnapshot();
 }
 
 function switchToSlide(idx) {
@@ -4885,6 +4881,7 @@ function switchToSlide(idx) {
 }
 
 function captureCurrentThumb() {
+  // Returns a canvas element (NOT a data URL) — avoids taint issues entirely
   var thumbW = 120;
   var thumbH = Math.round(120 * (H / W)) || 90;
   var offscreen = document.createElement('canvas');
@@ -4892,14 +4889,17 @@ function captureCurrentThumb() {
   offscreen.height = thumbH;
   try {
     offscreen.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-    var dataUrl = offscreen.toDataURL('image/jpeg', 0.6);
-    // Validate: must be a real data URL, not empty
-    if (!dataUrl || dataUrl === 'data:,' || dataUrl.length < 50) return null;
-    return dataUrl;
   } catch (e) {
-    // Canvas may be tainted; return null to fall back to canvas render
-    return null;
+    // Even drawImage can fail in very restricted environments
+    var fCtx = offscreen.getContext('2d');
+    var grad = fCtx.createLinearGradient(0, 0, 0, thumbH);
+    grad.addColorStop(0, '#025671');
+    grad.addColorStop(0.5, '#261c53');
+    grad.addColorStop(1, '#1f0e1d');
+    fCtx.fillStyle = grad;
+    fCtx.fillRect(0, 0, thumbW, thumbH);
   }
+  return offscreen;
 }
 
 function renderDeckStrip() {
@@ -4911,67 +4911,47 @@ function renderDeckStrip() {
   var iso = $date.value;
   if (iso) S.dateText = isoToDE(iso);
   deck[currentSlideIdx] = slideSnapshot();
-  // Ensure canvas shows current slide before capturing (guard against rAF timing)
-  _origDraw();
-  deck[currentSlideIdx].thumbDataUrl = captureCurrentThumb();
 
-  var thumbH = Math.round(120 * (H / W));
+  var thumbW = 120;
+  var thumbH = Math.round(thumbW * (H / W)) || 90;
+
   for (var i = 0; i < deck.length; i++) {
     var div = document.createElement('div');
     div.className = 'deck-slide' + (i === currentSlideIdx ? ' current' : '');
     div.setAttribute('data-idx', i);
 
-    // Use cached thumbnail image instead of re-rendering every slide
-    var thumbSrc = deck[i].thumbDataUrl;
-    if (!thumbSrc || thumbSrc === 'data:,' || thumbSrc.length < 50) {
-      // Try to render thumbnail for this slide on the fly
-      try {
-        var origSnap = slideSnapshot();
-        loadSlideState(deck[i]);
-        _origDraw();
-        var tc = document.createElement('canvas');
-        tc.width = 120;
-        tc.height = thumbH;
-        tc.getContext('2d').drawImage(cv, 0, 0, tc.width, tc.height);
-        thumbSrc = tc.toDataURL('image/jpeg', 0.6);
-        if (thumbSrc && thumbSrc !== 'data:,' && thumbSrc.length >= 50) {
-          deck[i].thumbDataUrl = thumbSrc;
-        } else {
-          thumbSrc = null;
-        }
-        loadSlideState(origSnap);
-        _origDraw();
-      } catch (e) {
-        thumbSrc = null;
-        // Restore state if fallback failed
-        try { loadSlideState(origSnap); _origDraw(); } catch (e2) {}
-      }
-    }
-    if (thumbSrc) {
-      var img = document.createElement('img');
-      img.src = thumbSrc;
-      img.alt = '';
-      img.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;object-fit:cover';
-      div.appendChild(img);
+    // Render thumbnail: load slide state, draw, capture to mini canvas
+    var origSnap = null;
+    if (i === currentSlideIdx) {
+      // Current slide is already drawn on cv
+      _origDraw();
     } else {
-      // Ultimate fallback: render a mini canvas directly (avoids toDataURL taint issues)
-      try {
-        var origSnap2 = slideSnapshot();
-        loadSlideState(deck[i]);
-        _origDraw();
-        var fc = document.createElement('canvas');
-        fc.width = 120;
-        fc.height = thumbH;
-        fc.getContext('2d').drawImage(cv, 0, 0, 120, thumbH);
-        fc.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;object-fit:cover';
-        div.appendChild(fc);
-        loadSlideState(origSnap2);
-        _origDraw();
-      } catch (e) {
-        // Complete fallback: colored placeholder
-        div.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #0a0a1a 100%)';
-        try { loadSlideState(origSnap2); _origDraw(); } catch (e2) {}
-      }
+      origSnap = slideSnapshot();
+      loadSlideState(deck[i]);
+      _origDraw();
+    }
+    var tc = document.createElement('canvas');
+    tc.width = thumbW;
+    tc.height = thumbH;
+    try {
+      tc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+    } catch (e) {
+      // Gradient fallback
+      var fCtx = tc.getContext('2d');
+      var grad = fCtx.createLinearGradient(0, 0, 0, thumbH);
+      grad.addColorStop(0, '#025671');
+      grad.addColorStop(0.5, '#261c53');
+      grad.addColorStop(1, '#1f0e1d');
+      fCtx.fillStyle = grad;
+      fCtx.fillRect(0, 0, thumbW, thumbH);
+    }
+    tc.className = 'deck-thumb-canvas';
+    div.appendChild(tc);
+
+    // Restore state if we switched away
+    if (origSnap) {
+      loadSlideState(origSnap);
+      _origDraw();
     }
 
     var num = document.createElement('span');
@@ -5195,21 +5175,15 @@ function scheduleDeckThumbUpdate() {
   clearTimeout(deckThumbTimer);
   deckThumbTimer = setTimeout(function() {
     if (!deckActive) return;
-    // Update cached thumbnail and the visible strip element
-    var dataUrl = captureCurrentThumb();
-    // Only update if we got a valid thumbnail (don't overwrite good thumb with null)
-    if (!dataUrl) return;
-    if (deck[currentSlideIdx]) deck[currentSlideIdx].thumbDataUrl = dataUrl;
-    var currentEl = $deckStrip.querySelector('.deck-slide.current img');
-    if (currentEl) currentEl.src = dataUrl;
-    // Also try updating the canvas fallback element if img isn't present
-    var currentCanvas = $deckStrip.querySelector('.deck-slide.current canvas');
-    if (currentCanvas) {
+    // Update the current slide's canvas thumbnail in-place
+    var thumbCanvas = $deckStrip.querySelector('.deck-slide.current .deck-thumb-canvas');
+    if (thumbCanvas) {
+      var thumbW = 120;
+      var thumbH = Math.round(thumbW * (H / W)) || 90;
+      thumbCanvas.width = thumbW;
+      thumbCanvas.height = thumbH;
       try {
-        var thumbH = Math.round(120 * (H / W));
-        currentCanvas.width = 120;
-        currentCanvas.height = thumbH;
-        currentCanvas.getContext('2d').drawImage(cv, 0, 0, 120, thumbH);
+        thumbCanvas.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
       } catch (e) {}
     }
   }, 300);
