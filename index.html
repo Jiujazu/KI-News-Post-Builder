@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0a0a1a">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
 <title>KI News Post Generator</title>
 <style>
 @font-face {
@@ -1938,8 +1938,8 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
   display:none;align-items:center;justify-content:center;line-height:1;
   transition:background .15s;
 }
-.deck-slide:hover .slide-rm{display:flex}
-.deck-slide .slide-rm:hover{background:rgba(220,50,50,.9)}
+.deck-slide:hover .slide-rm,.deck-slide.current .slide-rm{display:flex}
+.deck-slide .slide-rm:hover,.deck-slide .slide-rm:active{background:rgba(220,50,50,.9)}
 .deck-add{
   flex:0 0 auto;width:72px;height:90px;border-radius:8px;
   border:2px dashed var(--border-hover);background:transparent;
@@ -2007,6 +2007,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
       <div class="deck-strip" id="deckStrip"></div>
       <div class="deck-controls">
         <span class="deck-label" id="deckLabel"></span>
+        <button class="btn-primary" id="deckExportImgs" style="font-size:12px">Bilder Export</button>
         <button class="btn-x" id="deckExportPdf">PDF Export</button>
         <button class="btn-danger" id="deckClose">Karussell beenden</button>
       </div>
@@ -2832,7 +2833,19 @@ $segPreview.addEventListener('click', function() { setView(false); });
 const $bN = document.getElementById('bN');
 $bN.addEventListener('click', function() {
   var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
-  if (hasContent && !confirm('Aktuellen Post verwerfen und neu beginnen?')) return;
+  var msg = deckActive
+    ? 'Karussell mit ' + deck.length + ' Slides verwerfen und neu beginnen?'
+    : 'Aktuellen Post verwerfen und neu beginnen?';
+  if (hasContent && !confirm(msg)) return;
+  // If deck mode is active, force-stop it without a second confirm
+  if (deckActive) {
+    deckActive = false;
+    deck = [];
+    currentSlideIdx = 0;
+    $deckBar.classList.remove('active');
+    $bDeck.classList.remove('btn-success');
+    $bDeck.textContent = 'Karussell';
+  }
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null]; S.creds = ['', ''];
   S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
@@ -4529,6 +4542,7 @@ var $deckStrip = document.getElementById('deckStrip');
 var $deckLabel = document.getElementById('deckLabel');
 var $bDeck = document.getElementById('bDeck');
 var $deckExportPdf = document.getElementById('deckExportPdf');
+var $deckExportImgs = document.getElementById('deckExportImgs');
 var $deckClose = document.getElementById('deckClose');
 
 function slideSnapshot() {
@@ -4620,34 +4634,57 @@ function switchToSlide(idx) {
   renderDeckStrip();
 }
 
+function captureCurrentThumb() {
+  // Capture the current main canvas as a small data URL for the current slide
+  var thumbW = 120;
+  var thumbH = Math.round(120 * (H / W));
+  var offscreen = document.createElement('canvas');
+  offscreen.width = thumbW;
+  offscreen.height = thumbH;
+  offscreen.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+  return offscreen.toDataURL('image/jpeg', 0.6);
+}
+
 function renderDeckStrip() {
   if (!deckActive) return;
   $deckStrip.innerHTML = '';
-  // First, make sure current state is saved
+  // Sync current editor inputs into S and snapshot
   S.hlLines = $hl.value.split('\n');
   S.subText = $sub.value;
   var iso = $date.value;
   if (iso) S.dateText = isoToDE(iso);
   deck[currentSlideIdx] = slideSnapshot();
+  // Update current slide's cached thumbnail from the live canvas
+  deck[currentSlideIdx].thumbDataUrl = captureCurrentThumb();
 
-  // Render each slide thumbnail efficiently
-  var origSnap = slideSnapshot();
-
+  var thumbH = Math.round(120 * (H / W));
   for (var i = 0; i < deck.length; i++) {
     var div = document.createElement('div');
     div.className = 'deck-slide' + (i === currentSlideIdx ? ' current' : '');
     div.setAttribute('data-idx', i);
 
-    var tc = document.createElement('canvas');
-    // Render thumbnail: temporarily load slide state, draw, capture
-    loadSlideState(deck[i]);
-    draw();
-    var tCtx = tc.getContext('2d');
-    tc.width = 120;
-    tc.height = Math.round(120 * (H / W));
-    tCtx.drawImage(cv, 0, 0, tc.width, tc.height);
-
-    div.appendChild(tc);
+    // Use cached thumbnail image instead of re-rendering every slide
+    if (deck[i].thumbDataUrl) {
+      var img = document.createElement('img');
+      img.src = deck[i].thumbDataUrl;
+      img.alt = 'Slide ' + (i + 1);
+      img.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;object-fit:cover';
+      div.appendChild(img);
+    } else {
+      // Fallback for slides without a cached thumb: render once
+      var tc = document.createElement('canvas');
+      var origSnap = slideSnapshot();
+      loadSlideState(deck[i]);
+      _origDraw();
+      var tCtx = tc.getContext('2d');
+      tc.width = 120;
+      tc.height = thumbH;
+      tCtx.drawImage(cv, 0, 0, tc.width, tc.height);
+      deck[i].thumbDataUrl = tc.toDataURL('image/jpeg', 0.6);
+      loadSlideState(origSnap);
+      _origDraw();
+      div.appendChild(tc);
+    }
 
     var num = document.createElement('span');
     num.className = 'slide-num';
@@ -4674,10 +4711,6 @@ function renderDeckStrip() {
 
     $deckStrip.appendChild(div);
   }
-
-  // Restore current slide state
-  loadSlideState(origSnap);
-  draw();
 
   // Add button
   var addBtn = document.createElement('button');
@@ -4771,64 +4804,113 @@ $deckExportPdf.addEventListener('click', function() {
 
   // Load jsPDF dynamically if not already loaded
   function doExport() {
-    var origSnap = slideSnapshot();
-    var pdf = new window.jspdf.jsPDF({
-      orientation: W > H ? 'landscape' : 'portrait',
-      unit: 'px',
-      format: [W, H],
-      hotfixes: ['px_scaling']
-    });
+    try {
+      var origSnap = slideSnapshot();
+      var orient = W > H ? 'landscape' : 'portrait';
+      var pdf = new window.jspdf.jsPDF({
+        orientation: orient,
+        unit: 'px',
+        format: [W, H],
+        hotfixes: ['px_scaling']
+      });
 
-    for (var i = 0; i < deck.length; i++) {
-      if (i > 0) pdf.addPage([W, H], W > H ? 'landscape' : 'portrait');
-      loadSlideState(deck[i]);
-      draw();
-      var imgData = cv.toDataURL('image/jpeg', 0.95);
-      pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+      for (var i = 0; i < deck.length; i++) {
+        if (i > 0) pdf.addPage([W, H], orient);
+        loadSlideState(deck[i]);
+        _origDraw();
+        var imgData = cv.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+      }
+
+      // Restore current slide
+      loadSlideState(origSnap);
+      _origDraw();
+
+      pdf.save('ki-news-karussell-' + new Date().toISOString().slice(0, 10) + '.pdf');
+      btn.classList.add('btn-success');
+      showToast('\u2713 PDF mit ' + deck.length + ' Slides exportiert');
+      setTimeout(function() { btn.classList.remove('btn-success'); }, 1500);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      showToast('\u26a0 PDF-Export fehlgeschlagen: ' + err.message);
     }
-
-    // Restore current slide
-    loadSlideState(origSnap);
-    draw();
-
-    pdf.save('ki-news-karussell-' + new Date().toISOString().slice(0, 10) + '.pdf');
     btn.disabled = false;
     btn.textContent = 'PDF Export';
-    btn.classList.add('btn-success');
-    showToast('✓ PDF mit ' + deck.length + ' Slides exportiert');
-    setTimeout(function() { btn.classList.remove('btn-success'); }, 1500);
   }
 
   if (window.jspdf) {
     doExport();
   } else {
     var script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+    script.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
     script.onload = doExport;
     script.onerror = function() {
       btn.disabled = false;
       btn.textContent = 'PDF Export';
-      showToast('⚠ jsPDF konnte nicht geladen werden');
+      showToast('\u26a0 jsPDF konnte nicht geladen werden');
     };
     document.head.appendChild(script);
   }
 });
 
-// Hook into draw to update deck strip after edits (debounced)
+// Batch image export (individual PNG/JPG files for Instagram)
+$deckExportImgs.addEventListener('click', function() {
+  if (!deckActive || !deck.length) return;
+  saveCurrentSlide();
+  var btn = $deckExportImgs;
+  btn.disabled = true;
+  btn.textContent = 'Exportiert\u2026';
+  var isJpg = saveFmt === 'jpg';
+  var mime = isJpg ? 'image/jpeg' : 'image/png';
+  var ext = isJpg ? '.jpg' : '.png';
+  var origSnap = slideSnapshot();
+  var ts = new Date().toISOString().slice(0, 10);
+  var exported = 0;
+
+  function exportSlide(i) {
+    if (i >= deck.length) {
+      // Done — restore state
+      loadSlideState(origSnap);
+      _origDraw();
+      btn.disabled = false;
+      btn.textContent = 'Bilder Export';
+      btn.classList.add('btn-success');
+      showToast('\u2713 ' + deck.length + ' Slides als ' + (isJpg ? 'JPG' : 'PNG') + ' exportiert');
+      setTimeout(function() { btn.classList.remove('btn-success'); }, 1500);
+      return;
+    }
+    loadSlideState(deck[i]);
+    _origDraw();
+    var args = [function(blob) {
+      if (blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.download = 'ki-news-karussell-' + ts + '-slide-' + (i + 1) + ext;
+        a.href = url;
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+      }
+      // Small delay between downloads so browser doesn't block them
+      setTimeout(function() { exportSlide(i + 1); }, 300);
+    }, mime];
+    if (isJpg) args.push(0.95);
+    cv.toBlob.apply(cv, args);
+  }
+  exportSlide(0);
+});
+
+// Hook into draw to update current slide thumbnail (debounced)
 var deckThumbTimer = null;
 function scheduleDeckThumbUpdate() {
   if (!deckActive) return;
   clearTimeout(deckThumbTimer);
   deckThumbTimer = setTimeout(function() {
     if (!deckActive) return;
-    // Update only current slide thumbnail
-    var currentEl = $deckStrip.querySelector('.deck-slide.current canvas');
-    if (currentEl) {
-      var tCtx = currentEl.getContext('2d');
-      currentEl.width = 120;
-      currentEl.height = Math.round(120 * (H / W));
-      tCtx.drawImage(cv, 0, 0, currentEl.width, currentEl.height);
-    }
+    // Update cached thumbnail and the visible strip element
+    var dataUrl = captureCurrentThumb();
+    if (deck[currentSlideIdx]) deck[currentSlideIdx].thumbDataUrl = dataUrl;
+    var currentEl = $deckStrip.querySelector('.deck-slide.current img');
+    if (currentEl) currentEl.src = dataUrl;
   }, 300);
 }
 
