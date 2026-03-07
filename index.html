@@ -545,7 +545,8 @@ html.liquid-glass .lb.on,
 html.liquid-glass .ch-btn.on,
 html.liquid-glass .caps-pill.on,
 html.liquid-glass .crop-flip.on,
-html.liquid-glass .seg.active {
+html.liquid-glass .seg.active,
+html.liquid-glass .tool-tab.active {
   background: linear-gradient(135deg, rgba(106,175,255,.75), rgba(140,100,255,.55)) !important;
   border: 1px solid rgba(255,255,255,.3) !important;
   box-shadow: 0 4px 16px rgba(100,160,255,.2), inset 0 1px 0 rgba(255,255,255,.3);
@@ -584,13 +585,15 @@ html.liquid-glass .fld textarea::placeholder {
   color: var(--lg-text-dim) !important;
 }
 /* Segment control — no backdrop-filter */
-html.liquid-glass .seg-ctrl {
+html.liquid-glass .seg-ctrl,
+html.liquid-glass .tool-tabs {
   background: var(--lg-btn) !important;
   border: 1px solid var(--lg-border) !important;
   border-radius: 14px !important;
   box-shadow: 0 2px 6px rgba(0,0,0,.08), inset 0 1px 0 var(--lg-highlight);
 }
-html.liquid-glass .seg {
+html.liquid-glass .seg,
+html.liquid-glass .tool-tab {
   color: var(--lg-text-muted) !important;
   border-radius: 10px;
 }
@@ -948,7 +951,8 @@ html.fluent .lb.on,
 html.fluent .ch-btn.on,
 html.fluent .caps-pill.on,
 html.fluent .crop-flip.on,
-html.fluent .seg.active {
+html.fluent .seg.active,
+html.fluent .tool-tab.active {
   background: var(--f2-brand) !important;
   border: 1px solid var(--f2-brand) !important;
   color: #fff !important;
@@ -1008,13 +1012,15 @@ html.fluent .fld textarea::placeholder {
   color: var(--f2-text-disabled) !important;
 }
 /* Fluent 2 — segment control */
-html.fluent .seg-ctrl {
+html.fluent .seg-ctrl,
+html.fluent .tool-tabs {
   background: var(--f2-bg2) !important;
   border: 1px solid var(--f2-border) !important;
   border-radius: var(--f2-radius-md) !important;
   box-shadow: none;
 }
-html.fluent .seg {
+html.fluent .seg,
+html.fluent .tool-tab {
   color: var(--f2-text-secondary) !important;
   border-radius: var(--f2-radius-sm);
   font-family: var(--f2-font) !important;
@@ -1281,7 +1287,8 @@ html.m3x .lb.on,
 html.m3x .ch-btn.on,
 html.m3x .caps-pill.on,
 html.m3x .crop-flip.on,
-html.m3x .seg.active {
+html.m3x .seg.active,
+html.m3x .tool-tab.active {
   background: var(--m3-primary) !important;
   border: none !important;
   color: var(--m3-on-primary) !important;
@@ -1336,14 +1343,16 @@ html.m3x .fld textarea::placeholder {
   color: var(--m3-on-surface-variant) !important;
 }
 /* M3X — segment control */
-html.m3x .seg-ctrl {
+html.m3x .seg-ctrl,
+html.m3x .tool-tabs {
   background: var(--m3-surface-container-high) !important;
   border: none !important;
   border-radius: var(--m3-shape-full) !important;
   box-shadow: none;
   padding: 4px;
 }
-html.m3x .seg {
+html.m3x .seg,
+html.m3x .tool-tab {
   color: var(--m3-on-surface-variant) !important;
   border-radius: var(--m3-shape-full);
   font-family: var(--m3-font) !important;
@@ -1646,7 +1655,8 @@ html.geist .lb.on,
 html.geist .ch-btn.on,
 html.geist .caps-pill.on,
 html.geist .crop-flip.on,
-html.geist .seg.active {
+html.geist .seg.active,
+html.geist .tool-tab.active {
   background: var(--geist-accent) !important;
   border: 1px solid var(--geist-accent) !important;
   color: #FFFFFF !important;
@@ -1702,7 +1712,8 @@ html.geist .fld textarea::placeholder {
   color: var(--geist-text-tertiary) !important;
 }
 /* Geist — segment control */
-html.geist .seg-ctrl {
+html.geist .seg-ctrl,
+html.geist .tool-tabs {
   background: var(--geist-bg-secondary) !important;
   border: 1px solid var(--geist-border) !important;
   border-radius: var(--geist-radius-sm) !important;
@@ -1710,7 +1721,8 @@ html.geist .seg-ctrl {
   padding: 3px;
   gap: 2px;
 }
-html.geist .seg {
+html.geist .seg,
+html.geist .tool-tab {
   color: var(--geist-text-secondary) !important;
   border-radius: calc(var(--geist-radius-sm) - 2px);
   font-family: var(--geist-font) !important;
@@ -1955,19 +1967,40 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 }
 .deck-controls button{padding:6px 10px;font-size:12px}
 .deck-label{font-size:12px;color:var(--text-muted);font-weight:500;margin-right:auto}
+/* ===== TOOL TABS ===== */
+.tool-tabs{
+  display:flex;gap:2px;padding:2px;background:var(--btn-secondary-bg);border:1px solid var(--border);
+  border-radius:var(--radius-md);margin-right:auto;
+}
+.tool-tab{
+  padding:6px 14px;font-size:13px;font-weight:500;border:none;background:transparent;
+  color:var(--text-muted);cursor:pointer;font-family:inherit;
+  transition:background .15s ease,color .15s ease;border-radius:var(--radius-sm);
+  white-space:nowrap;line-height:1.4;letter-spacing:-.01em;
+}
+.tool-tab:hover:not(.active){color:var(--text);background:rgba(255,255,255,.04)}
+.tool-tab.active{background:var(--accent);color:#fff;font-weight:500;pointer-events:none}
+/* Mode-specific button visibility */
+.mode-single .carousel-only{display:none !important}
+.mode-carousel .single-only{display:none !important}
 </style>
 </head>
 <body>
-<div class="app">
+<div class="app mode-single">
 <header class="topbar">
   <h1>KI-News Post-Builder</h1>
   <div class="btn-row">
+    <!-- Tool mode tabs -->
+    <div class="tool-tabs" role="tablist" aria-label="Post-Typ">
+      <button class="tool-tab active" id="tabSingle" role="tab" aria-selected="true" data-mode="single">Einzelpost</button>
+      <button class="tool-tab" id="tabCarousel" role="tab" aria-selected="false" data-mode="carousel">Karussell</button>
+    </div>
     <div class="seg-ctrl" id="segCtrl" role="tablist" aria-label="Ansicht" style="display:none">
       <button class="seg active" id="segEdit" role="tab" aria-selected="true" aria-label="Editor anzeigen">Editor</button>
       <button class="seg" id="segPreview" role="tab" aria-selected="false" aria-label="Vorschau anzeigen">Vorschau</button>
     </div>
-    <!-- Export -->
-    <div class="split-btn" id="saveGroup">
+    <!-- Export (single post) -->
+    <div class="split-btn single-only" id="saveGroup">
       <button class="btn-primary split-main" id="bSave" aria-label="Als PNG speichern">PNG speichern</button>
       <button class="btn-primary split-arrow" id="bSaveArrow" aria-label="Format wählen" aria-haspopup="true" aria-expanded="false">&#9662;</button>
       <div class="split-menu" id="saveMenu" role="menu">
@@ -1975,13 +2008,15 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
         <button class="split-opt" data-fmt="jpg" role="menuitem">JPG speichern</button>
       </div>
     </div>
+    <!-- Export (carousel) -->
+    <button class="btn-primary carousel-only" id="bCarouselExportImgs" style="font-size:13px" aria-label="Alle Slides als Bilder exportieren">Bilder Export</button>
+    <button class="btn-x carousel-only" id="bCarouselExportPdf" aria-label="Karussell als PDF exportieren">PDF Export</button>
     <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
     <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
-    <!-- Gespeicherte Posts -->
+    <!-- Save -->
     <button class="btn-x" id="bA" aria-label="Post speichern">Speichern</button>
     <button class="btn-x" id="bH" aria-label="Gespeicherte Posts öffnen">Gespeicherte</button>
     <!-- Utility -->
-    <button class="btn-x" id="bDeck" aria-label="Karussell-Modus starten">Karussell</button>
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
     <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dunkel/Hell-Modus">&#9790;</button>
     <div class="theme-switcher">
@@ -2257,6 +2292,11 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
   <div class="hist-header">
     <div><h2 style="margin:0">Gespeicherte Posts</h2><span id="histCount" style="font-size:12px;color:var(--text-dim)"></span></div>
     <button class="hist-close" id="histClose" aria-label="Schließen">&times;</button>
+  </div>
+  <div style="padding:8px 12px 0;display:flex;gap:2px;background:var(--btn-secondary-bg);margin:0 12px;border-radius:var(--radius-md);border:1px solid var(--border)">
+    <button class="tool-tab active" id="histFilterAll" style="font-size:12px;padding:5px 10px">Alle</button>
+    <button class="tool-tab" id="histFilterSingle" style="font-size:12px;padding:5px 10px">Einzelposts</button>
+    <button class="tool-tab" id="histFilterCarousel" style="font-size:12px;padding:5px 10px">Karussells</button>
   </div>
   <div class="hist-body" id="histBody">
     <div class="hist-empty" id="histEmpty">Noch keine Posts gespeichert.</div>
@@ -2586,7 +2626,7 @@ let draftTimer = null;
 function saveDraft() {
   clearTimeout(draftTimer);
   draftTimer = setTimeout(function() {
-    dbAdd({
+    var draft = {
       id: DRAFT_ID,
       savedAt: new Date().toISOString(),
       headline: S.hlLines.join('\n'),
@@ -2607,7 +2647,34 @@ function saveDraft() {
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; }),
       images: [S.draftBlobs[0], S.draftBlobs[1]]
-    }).catch(function(e) { console.warn('saveDraft failed:', e); });
+    };
+    // Save carousel state if active
+    if (deckActive && deck.length > 0) {
+      draft.isCarousel = true;
+      draft.currentSlideIdx = currentSlideIdx;
+      draft.slides = deck.map(function(snap) {
+        return {
+          headline: snap.hlLines.join('\n'),
+          subtitle: snap.subText,
+          date: snap.dateText,
+          layout: snap.layout,
+          hlCaps: snap.hlCaps,
+          subCaps: snap.subCaps,
+          hlFSOverride: snap.hlFSOverride,
+          subFSOverride: snap.subFSOverride,
+          credFSOverride: snap.credFSOverride,
+          credAlign: snap.credAlign,
+          credOffX: snap.credOffX,
+          credOffY: snap.credOffY,
+          credShadow: snap.credShadow,
+          textPos: snap.textPos,
+          credits: snap.creds.slice(),
+          crops: snap.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; }),
+          images: [snap.draftBlobs[0], snap.draftBlobs[1]]
+        };
+      });
+    }
+    dbAdd(draft).catch(function(e) { console.warn('saveDraft failed:', e); });
   }, 1500);
 }
 function loadDraft() {
@@ -2615,7 +2682,17 @@ function loadDraft() {
     return new Promise(function(resolve, reject) {
       var tx = db.transaction(DB_STORE, 'readonly');
       var req = tx.objectStore(DB_STORE).get(DRAFT_ID);
-      req.onsuccess = function() { resolve(req.result || null); };
+      req.onsuccess = function() {
+        var draft = req.result || null;
+        if (draft && draft.isCarousel && draft.slides) {
+          // Restore as carousel post
+          loadCarouselPost(draft);
+        } else if (draft) {
+          // Restore as single post
+          loadArchivedPost(draft);
+        }
+        resolve(draft);
+      };
       req.onerror = function() { resolve(null); };
     });
   }).catch(function() { return null; });
@@ -2871,15 +2948,8 @@ $bN.addEventListener('click', function() {
     ? 'Karussell mit ' + deck.length + ' Slides verwerfen und neu beginnen?'
     : 'Aktuellen Post verwerfen und neu beginnen?';
   if (hasContent && !confirm(msg)) return;
-  // If deck mode is active, force-stop it without a second confirm
-  if (deckActive) {
-    deckActive = false;
-    deck = [];
-    currentSlideIdx = 0;
-    $deckBar.classList.remove('active');
-    $bDeck.classList.remove('btn-success');
-    $bDeck.textContent = 'Karussell';
-  }
+  // Force-reset to single-post mode (confirmation already happened above)
+  setToolMode('single', true);
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null]; S.creds = ['', ''];
   S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
@@ -3601,7 +3671,7 @@ $bA.addEventListener('click', function() {
   if (btn.disabled) return;
   // Check if there's anything to save (consider all carousel slides if active)
   var hasContent = false;
-  if (deckActive && deck.length > 1) {
+  if (deckActive && deck.length >= 1) {
     saveCurrentSlide(); // ensure current editor state is in deck
     for (var ci = 0; ci < deck.length; ci++) {
       var ds = deck[ci];
@@ -3618,8 +3688,8 @@ $bA.addEventListener('click', function() {
   }
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
 
-  // If carousel mode active, save all slides
-  if (deckActive && deck.length > 1) {
+  // If carousel mode active, save all slides (even if only 1 slide)
+  if (deckActive && deck.length >= 1) {
     // saveCurrentSlide() was already called during the empty check above
     // Save all slides in carousel
     var slidePromises = [];
@@ -3679,12 +3749,12 @@ $bA.addEventListener('click', function() {
       showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides gespeichert');
       setTimeout(function() {
         btn.disabled = false;
-        btn.textContent = 'Speichern';
+        btn.textContent = 'Karussell speichern';
         btn.classList.remove('btn-success');
       }, 1500);
     }).catch(function(err) {
       console.warn('Carousel save failed:', err);
-      btn.disabled = false; btn.textContent = 'Speichern';
+      btn.disabled = false; btn.textContent = 'Karussell speichern';
       showToast('\u26a0 Speichern fehlgeschlagen');
     });
     return;
@@ -3813,17 +3883,37 @@ $histGrid.addEventListener('keydown', function(e) {
     if (post) loadArchivedPost(post);
   }
 });
+var histFilter = 'all'; // 'all', 'single', 'carousel'
+var $histFilterAll = document.getElementById('histFilterAll');
+var $histFilterSingle = document.getElementById('histFilterSingle');
+var $histFilterCarousel = document.getElementById('histFilterCarousel');
+function setHistFilter(f) {
+  histFilter = f;
+  [$histFilterAll, $histFilterSingle, $histFilterCarousel].forEach(function(btn) {
+    var m = btn.id.replace('histFilter', '').toLowerCase();
+    btn.classList.toggle('active', m === f);
+  });
+  loadHistoryGrid();
+}
+$histFilterAll.addEventListener('click', function() { setHistFilter('all'); });
+$histFilterSingle.addEventListener('click', function() { setHistFilter('single'); });
+$histFilterCarousel.addEventListener('click', function() { setHistFilter('carousel'); });
+
 function loadHistoryGrid() {
   // Vorherige Blob-URLs aufräumen bevor DOM zerstört wird
   activeThumbUrls.forEach(function(u) { URL.revokeObjectURL(u); });
   activeThumbUrls = [];
-  dbGetAll().then(function(posts) {
+  dbGetAll().then(function(allPosts) {
+    // Apply filter
+    var posts = allPosts;
+    if (histFilter === 'single') posts = allPosts.filter(function(p) { return !p.isCarousel; });
+    else if (histFilter === 'carousel') posts = allPosts.filter(function(p) { return !!p.isCarousel; });
     _histPosts = posts;
     while ($histGrid.firstChild) $histGrid.removeChild($histGrid.firstChild);
-    $histEmpty.textContent = 'Noch keine Posts gespeichert.';
+    $histEmpty.textContent = posts.length ? '' : (histFilter === 'all' ? 'Noch keine Posts gespeichert.' : 'Keine ' + (histFilter === 'carousel' ? 'Karussells' : 'Einzelposts') + ' gespeichert.');
     $histEmpty.style.display = posts.length ? 'none' : 'block';
     var countEl = document.getElementById('histCount');
-    if (countEl) countEl.textContent = posts.length ? posts.length + ' / ' + MAX_ARCHIVE_POSTS + ' Posts' : '';
+    if (countEl) countEl.textContent = allPosts.length ? allPosts.length + ' / ' + MAX_ARCHIVE_POSTS + ' Posts' : '';
     posts.forEach(function(post, pi) {
       var item = document.createElement('div');
       item.className = 'hist-item';
@@ -3876,7 +3966,13 @@ function loadHistoryGrid() {
 // ===== HISTORY: LOAD POST =====
 function loadArchivedPost(post) {
   var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
-  if (hasContent && !confirm('Aktuellen Post ersetzen und gespeicherten Post laden?')) return;
+  var confirmMsg = 'Aktuellen Post ersetzen und gespeicherten Post laden?';
+  if (deckActive && deck.length > 1) {
+    confirmMsg = 'Aktuelles Karussell (' + deck.length + ' Slides) ersetzen und gespeicherten Post laden?';
+  }
+  if (hasContent && !confirm(confirmMsg)) return;
+  // Force-reset to single-post mode (will be switched to carousel if loading carousel post)
+  setToolMode('single', true);
   // Clean up current images
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null];
@@ -4006,14 +4102,15 @@ function loadCarouselPost(post) {
     }
   }
   function onAllCarouselImgsLoaded() {
-    // Activate carousel mode
+    // Activate carousel mode with pre-built deck
     deckActive = true;
     currentSlideIdx = 0;
     loadSlideState(deck[0]);
     refreshEditorFromState();
     $deckBar.classList.add('active');
-    $bDeck.classList.add('btn-success');
-    $bDeck.textContent = 'Karussell \u2713';
+    // Sync tab UI to carousel (force=true, skip confirm; reset currentToolMode first so it's not skipped)
+    currentToolMode = 'single';
+    setToolMode('carousel', true);
     _origDraw();
     renderDeckStrip();
     showToast('\u2713 Karussell mit ' + deck.length + ' Slides geladen');
@@ -4798,10 +4895,49 @@ var deckActive = false;
 var $deckBar = document.getElementById('deckBar');
 var $deckStrip = document.getElementById('deckStrip');
 var $deckLabel = document.getElementById('deckLabel');
-var $bDeck = document.getElementById('bDeck');
 var $deckExportPdf = document.getElementById('deckExportPdf');
 var $deckExportImgs = document.getElementById('deckExportImgs');
 var $deckClose = document.getElementById('deckClose');
+// Tool mode tabs
+var $tabSingle = document.getElementById('tabSingle');
+var $tabCarousel = document.getElementById('tabCarousel');
+var $bCarouselExportImgs = document.getElementById('bCarouselExportImgs');
+var $bCarouselExportPdf = document.getElementById('bCarouselExportPdf');
+var $appDiv = document.querySelector('.app');
+var currentToolMode = 'single'; // 'single' or 'carousel'
+
+function setToolMode(mode, force) {
+  if (mode === currentToolMode && !force) return;
+  if (!force && mode === 'single' && deckActive && deck.length > 1) {
+    if (!confirm('Karussell mit ' + deck.length + ' Slides verwerfen und zum Einzelpost wechseln?')) return;
+  }
+  currentToolMode = mode;
+  $appDiv.classList.toggle('mode-single', mode === 'single');
+  $appDiv.classList.toggle('mode-carousel', mode === 'carousel');
+  $tabSingle.classList.toggle('active', mode === 'single');
+  $tabCarousel.classList.toggle('active', mode === 'carousel');
+  $tabSingle.setAttribute('aria-selected', String(mode === 'single'));
+  $tabCarousel.setAttribute('aria-selected', String(mode === 'carousel'));
+  if (mode === 'carousel') {
+    if (!deckActive) startDeck();
+    $bA.textContent = 'Karussell speichern';
+    $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
+  } else {
+    if (deckActive) {
+      deckActive = false;
+      deck = [];
+      currentSlideIdx = 0;
+      $deckBar.classList.remove('active');
+    }
+    $bA.textContent = 'Speichern';
+    $bA.setAttribute('aria-label', 'Post speichern');
+  }
+}
+$tabSingle.addEventListener('click', function() { setToolMode('single'); });
+$tabCarousel.addEventListener('click', function() { setToolMode('carousel'); });
+// Wire topbar carousel export buttons to deck bar equivalents
+$bCarouselExportImgs.addEventListener('click', function() { if ($deckExportImgs) $deckExportImgs.click(); });
+$bCarouselExportPdf.addEventListener('click', function() { if ($deckExportPdf) $deckExportPdf.click(); });
 
 function slideSnapshot() {
   return {
@@ -5017,6 +5153,7 @@ function addSlide() {
   };
   deck.push(newSlide);
   switchToSlide(deck.length - 1);
+  saveDraft();
 }
 
 function removeSlide(idx) {
@@ -5028,6 +5165,7 @@ function removeSlide(idx) {
   refreshEditorFromState();
   _origDraw();
   renderDeckStrip();
+  saveDraft();
 }
 
 function startDeck() {
@@ -5036,30 +5174,24 @@ function startDeck() {
   deck = [slideSnapshot()];
   currentSlideIdx = 0;
   $deckBar.classList.add('active');
-  $bDeck.classList.add('btn-success');
-  $bDeck.textContent = 'Karussell \u2713';
-  _origDraw(); // ensure canvas is current before first thumbnail capture
+  $bA.textContent = 'Karussell speichern';
+  $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
+  _origDraw();
   renderDeckStrip();
   showToast('Karussell-Modus aktiv \u2013 Slides hinzuf\u00fcgen mit +');
 }
 
 function stopDeck() {
   if (!deckActive) return;
-  if (deck.length > 1 && !confirm('Karussell beenden? Alle Slides außer dem aktuellen gehen verloren.')) return;
-  deckActive = false;
-  deck = [];
-  currentSlideIdx = 0;
-  $deckBar.classList.remove('active');
-  $bDeck.classList.remove('btn-success');
-  $bDeck.textContent = 'Karussell';
+  // setToolMode('single', true) will reset deckActive, deck, etc.
+  setToolMode('single', true);
   showToast('Karussell-Modus beendet');
 }
 
-$bDeck.addEventListener('click', function() {
-  if (deckActive) stopDeck();
-  else startDeck();
+$deckClose.addEventListener('click', function() {
+  if (deck.length > 1 && !confirm('Karussell beenden? Alle Slides au\u00dfer dem aktuellen gehen verloren.')) return;
+  stopDeck();
 });
-$deckClose.addEventListener('click', stopDeck);
 
 // PDF Export
 $deckExportPdf.addEventListener('click', function() {
