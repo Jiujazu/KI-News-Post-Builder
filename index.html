@@ -2879,6 +2879,8 @@ $bN.addEventListener('click', function() {
     $deckBar.classList.remove('active');
     $bDeck.classList.remove('btn-success');
     $bDeck.textContent = 'Karussell';
+    $bA.textContent = 'Speichern';
+    $bA.setAttribute('aria-label', 'Post speichern');
   }
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null]; S.creds = ['', ''];
@@ -2947,6 +2949,11 @@ document.addEventListener('click', function(e) {
 });
 $bSave.addEventListener('click', function() {
   if (!fontReady && !confirm('Font nicht geladen \u2013 Export k\u00f6nnte fehlerhaft aussehen. Trotzdem exportieren?')) return;
+  // In carousel mode, delegate to batch export (user expects all slides)
+  if (deckActive && deck.length > 1) {
+    $deckExportImgs.click();
+    return;
+  }
   var btn = this;
   var isJpg = saveFmt === 'jpg';
   var mime = isJpg ? 'image/jpeg' : 'image/png';
@@ -3601,7 +3608,7 @@ $bA.addEventListener('click', function() {
   if (btn.disabled) return;
   // Check if there's anything to save (consider all carousel slides if active)
   var hasContent = false;
-  if (deckActive && deck.length > 1) {
+  if (deckActive && deck.length >= 1) {
     saveCurrentSlide(); // ensure current editor state is in deck
     for (var ci = 0; ci < deck.length; ci++) {
       var ds = deck[ci];
@@ -3618,8 +3625,8 @@ $bA.addEventListener('click', function() {
   }
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
 
-  // If carousel mode active, save all slides
-  if (deckActive && deck.length > 1) {
+  // If carousel mode active, save all slides (even if only 1 slide)
+  if (deckActive && deck.length >= 1) {
     // saveCurrentSlide() was already called during the empty check above
     // Save all slides in carousel
     var slidePromises = [];
@@ -3679,12 +3686,12 @@ $bA.addEventListener('click', function() {
       showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides gespeichert');
       setTimeout(function() {
         btn.disabled = false;
-        btn.textContent = 'Speichern';
+        btn.textContent = 'Karussell speichern';
         btn.classList.remove('btn-success');
       }, 1500);
     }).catch(function(err) {
       console.warn('Carousel save failed:', err);
-      btn.disabled = false; btn.textContent = 'Speichern';
+      btn.disabled = false; btn.textContent = 'Karussell speichern';
       showToast('\u26a0 Speichern fehlgeschlagen');
     });
     return;
@@ -3876,7 +3883,22 @@ function loadHistoryGrid() {
 // ===== HISTORY: LOAD POST =====
 function loadArchivedPost(post) {
   var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
-  if (hasContent && !confirm('Aktuellen Post ersetzen und gespeicherten Post laden?')) return;
+  var confirmMsg = 'Aktuellen Post ersetzen und gespeicherten Post laden?';
+  if (deckActive && deck.length > 1) {
+    confirmMsg = 'Aktuelles Karussell (' + deck.length + ' Slides) ersetzen und gespeicherten Post laden?';
+  }
+  if (hasContent && !confirm(confirmMsg)) return;
+  // Stop carousel mode if active
+  if (deckActive) {
+    deckActive = false;
+    deck = [];
+    currentSlideIdx = 0;
+    $deckBar.classList.remove('active');
+    $bDeck.classList.remove('btn-success');
+    $bDeck.textContent = 'Karussell';
+    $bA.textContent = 'Speichern';
+    $bA.setAttribute('aria-label', 'Post speichern');
+  }
   // Clean up current images
   revokeBlob(0); revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null];
@@ -4014,6 +4036,8 @@ function loadCarouselPost(post) {
     $deckBar.classList.add('active');
     $bDeck.classList.add('btn-success');
     $bDeck.textContent = 'Karussell \u2713';
+    $bA.textContent = 'Karussell speichern';
+    $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
     _origDraw();
     renderDeckStrip();
     showToast('\u2713 Karussell mit ' + deck.length + ' Slides geladen');
@@ -5038,6 +5062,9 @@ function startDeck() {
   $deckBar.classList.add('active');
   $bDeck.classList.add('btn-success');
   $bDeck.textContent = 'Karussell \u2713';
+  // Update Speichern button to reflect carousel context
+  $bA.textContent = 'Karussell speichern';
+  $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
   _origDraw(); // ensure canvas is current before first thumbnail capture
   renderDeckStrip();
   showToast('Karussell-Modus aktiv \u2013 Slides hinzuf\u00fcgen mit +');
@@ -5045,13 +5072,16 @@ function startDeck() {
 
 function stopDeck() {
   if (!deckActive) return;
-  if (deck.length > 1 && !confirm('Karussell beenden? Alle Slides außer dem aktuellen gehen verloren.')) return;
+  if (deck.length > 1 && !confirm('Karussell beenden? Alle Slides au\u00dfer dem aktuellen gehen verloren.')) return;
   deckActive = false;
   deck = [];
   currentSlideIdx = 0;
   $deckBar.classList.remove('active');
   $bDeck.classList.remove('btn-success');
   $bDeck.textContent = 'Karussell';
+  // Restore Speichern button label
+  $bA.textContent = 'Speichern';
+  $bA.setAttribute('aria-label', 'Post speichern');
   showToast('Karussell-Modus beendet');
 }
 
