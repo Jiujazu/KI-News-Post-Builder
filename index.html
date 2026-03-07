@@ -2202,6 +2202,9 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
       <button class="lb fmt" data-fmt="16:9" role="radio" aria-checked="false" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
       <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
     </div>
+    <div style="margin-top:8px">
+      <button class="lb" id="btnSafeZone" role="switch" aria-checked="false" aria-label="LinkedIn Safe Zone anzeigen" title="Zeigt den Bereich, den LinkedIn's Navigation-Overlay verdeckt" style="font-size:10px;padding:4px 10px">LinkedIn Safe Zone</button>
+    </div>
     </div>
   </div>
   <!-- IMAGES (thumbnail-sized upload zones) -->
@@ -2291,6 +2294,8 @@ const FORMATS = {
   '9:16': { w: 1080, h: 1920 }
 };
 let W = 1200, H = 1500;
+const SAFE_ZONE_RATIO = 0.08; // LinkedIn overlay covers ~8% of slide height
+var showSafeZone = false;
 const LOGO = new Image();
 LOGO.onload = function() { scheduleDraw(); };
 LOGO.onerror = function() { console.warn('Logo konnte nicht geladen werden'); };
@@ -2392,6 +2397,7 @@ const $hlCount  = document.getElementById('hlCount');
 const $subCount = document.getElementById('subCount');
 const $hint    = document.getElementById('hint');
 const $fmtBtns = document.querySelectorAll('.fmt');
+const $btnSafeZone = document.getElementById('btnSafeZone');
 const $z  = [document.getElementById('z0'),  document.getElementById('z1')];
 const $pv = [document.getElementById('pv0'), document.getElementById('pv1')];
 const $ph = [document.getElementById('ph0'), document.getElementById('ph1')];
@@ -3081,6 +3087,13 @@ for (let fi = 0; fi < $fmtBtns.length; fi++) {
     setFormat(this.getAttribute('data-fmt'));
   });
 }
+// LinkedIn Safe Zone toggle
+$btnSafeZone.addEventListener('click', function() {
+  showSafeZone = !showSafeZone;
+  this.classList.toggle('on', showSafeZone);
+  this.setAttribute('aria-checked', String(showSafeZone));
+  scheduleDraw();
+});
 // Swap button
 $swapBtn.addEventListener('click', function(e) {
   e.stopPropagation();
@@ -4926,6 +4939,30 @@ function scheduleDeckThumbUpdate() {
 var _origDraw = draw;
 draw = function() {
   _origDraw();
+  if (showSafeZone) {
+    var szH = Math.round(H * SAFE_ZONE_RATIO);
+    var szY = H - szH;
+    // Semi-transparent overlay
+    cx.fillStyle = 'rgba(255, 60, 60, 0.13)';
+    cx.fillRect(0, szY, W, szH);
+    // Dashed line at safe zone boundary
+    cx.save();
+    cx.strokeStyle = 'rgba(255, 80, 80, 0.6)';
+    cx.lineWidth = 2;
+    cx.setLineDash([12, 6]);
+    cx.beginPath();
+    cx.moveTo(0, szY);
+    cx.lineTo(W, szY);
+    cx.stroke();
+    // Label
+    cx.setLineDash([]);
+    cx.font = '500 22px ' + SYS_FONT;
+    cx.fillStyle = 'rgba(255, 80, 80, 0.7)';
+    cx.textAlign = 'left';
+    cx.textBaseline = 'top';
+    cx.fillText('LinkedIn Safe Zone', MX, szY + 6);
+    cx.restore();
+  }
   scheduleDeckThumbUpdate();
 };
 
