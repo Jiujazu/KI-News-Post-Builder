@@ -691,18 +691,6 @@ html.liquid-glass.light .fs-reset {
 html.liquid-glass.light .seg:not(.active) {
   color: var(--lg-text-muted) !important;
 }
-/* Glass toggle button */
-.lg-toggle-btn {
-  font-size: 13px;
-  line-height: 1;
-  padding: 8px 10px;
-}
-html.liquid-glass .lg-toggle-btn {
-  background: linear-gradient(135deg, rgba(106,175,255,.55), rgba(140,100,255,.45)) !important;
-  border: 1px solid rgba(255,255,255,.3) !important;
-  box-shadow: 0 4px 14px rgba(100,160,255,.25), inset 0 1px 0 rgba(255,255,255,.25);
-  color: #fff !important;
-}
 /* Drop overlay glass */
 html.liquid-glass .drop-overlay {
   background: rgba(100,160,255,.12) !important;
@@ -798,6 +786,413 @@ html.liquid-glass.lg-no-blur .ed::before,
 html.liquid-glass.lg-no-blur .topbar::before {
   display: none;
 }
+/* ===== FLUENT 2 THEME ===== */
+html.fluent {
+  --f2-font: 'Segoe UI Variable','Segoe UI',-apple-system,system-ui,sans-serif;
+  --f2-bg1: #fafafa;
+  --f2-bg2: #f0f0f0;
+  --f2-bg3: #e8e8e8;
+  --f2-surface: #ffffff;
+  --f2-surface-hover: #f5f5f5;
+  --f2-text: #242424;
+  --f2-text-secondary: #616161;
+  --f2-text-disabled: #bdbdbd;
+  --f2-brand: #0f6cbd;
+  --f2-brand-hover: #115ea3;
+  --f2-brand-pressed: #0c3b5e;
+  --f2-brand-bg: rgba(15,108,189,.08);
+  --f2-subtle-bg: transparent;
+  --f2-subtle-hover: #f5f5f5;
+  --f2-subtle-pressed: #e0e0e0;
+  --f2-border: #e0e0e0;
+  --f2-border-strong: #d1d1d1;
+  --f2-divider: #f0f0f0;
+  --f2-danger: #c50f1f;
+  --f2-success: #107c10;
+  --f2-shadow2: 0 1px 2px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
+  --f2-shadow4: 0 2px 4px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
+  --f2-shadow8: 0 4px 8px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
+  --f2-shadow16: 0 8px 16px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
+  --f2-radius-sm: 4px;
+  --f2-radius-md: 6px;
+  --f2-radius-lg: 8px;
+  --f2-radius-xl: 12px;
+  --f2-dur-fast: 100ms;
+  --f2-dur-normal: 200ms;
+  --f2-dur-slow: 300ms;
+  --f2-ease: cubic-bezier(.33,0,.67,1);
+  --f2-decelerate: cubic-bezier(.1,.9,.2,1);
+}
+html.fluent.dark {
+  --f2-bg1: #1f1f1f;
+  --f2-bg2: #141414;
+  --f2-bg3: #0a0a0a;
+  --f2-surface: #292929;
+  --f2-surface-hover: #3d3d3d;
+  --f2-text: #ffffff;
+  --f2-text-secondary: #d6d6d6;
+  --f2-text-disabled: #5c5c5c;
+  --f2-brand: #479ef5;
+  --f2-brand-hover: #62abf5;
+  --f2-brand-pressed: #115ea3;
+  --f2-brand-bg: rgba(71,158,245,.1);
+  --f2-subtle-hover: #383838;
+  --f2-subtle-pressed: #2e2e2e;
+  --f2-border: #525252;
+  --f2-border-strong: #666666;
+  --f2-divider: #404040;
+  --f2-danger: #e87575;
+  --f2-success: #54b054;
+  --f2-shadow2: 0 1px 2px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
+  --f2-shadow4: 0 2px 4px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
+  --f2-shadow8: 0 4px 8px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
+  --f2-shadow16: 0 8px 16px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
+}
+/* Fluent 2 — body */
+html.fluent body {
+  background: var(--f2-bg1);
+  font-family: var(--f2-font);
+  color: var(--f2-text);
+  transition: background var(--f2-dur-normal) var(--f2-ease), color var(--f2-dur-normal) var(--f2-ease);
+}
+/* Fluent 2 — topbar */
+html.fluent .topbar {
+  background: var(--f2-surface);
+  border: 1px solid var(--f2-border);
+  border-radius: var(--f2-radius-lg);
+  padding: 12px 16px 8px;
+  margin-bottom: 12px;
+  box-shadow: var(--f2-shadow2);
+  transition: background var(--f2-dur-normal) var(--f2-ease), border-color var(--f2-dur-normal) var(--f2-ease);
+}
+html.fluent .topbar h1 {
+  font-family: var(--f2-font) !important;
+  font-weight: 600 !important;
+  color: var(--f2-text) !important;
+  letter-spacing: -.01em;
+}
+/* Fluent 2 — editor panels */
+html.fluent .ed {
+  background: var(--f2-surface) !important;
+  border: 1px solid var(--f2-border) !important;
+  border-top: 1px solid var(--f2-border) !important;
+  border-radius: var(--f2-radius-lg) !important;
+  box-shadow: var(--f2-shadow2);
+  transition: box-shadow var(--f2-dur-normal) var(--f2-ease), border-color var(--f2-dur-normal) var(--f2-ease);
+}
+html.fluent .ed:hover {
+  box-shadow: var(--f2-shadow4);
+  border-color: var(--f2-border-strong) !important;
+}
+/* Remove colored top borders on Fluent panels */
+html.fluent #cropSection,
+html.fluent #textSection,
+html.fluent #creditSection,
+html.fluent #layoutSection,
+html.fluent #imgEd,
+html.fluent #tplSection {
+  border-top-color: var(--f2-border) !important;
+}
+/* Fluent 2 — section titles */
+html.fluent .ed-t {
+  font-family: var(--f2-font) !important;
+  font-weight: 600 !important;
+  color: var(--f2-text) !important;
+}
+html.fluent .fld label {
+  font-family: var(--f2-font) !important;
+  color: var(--f2-text-secondary) !important;
+  font-weight: 400 !important;
+}
+html.fluent .crop-lbl,
+html.fluent .crop-title {
+  color: var(--f2-text-secondary) !important;
+  font-family: var(--f2-font) !important;
+}
+/* Fluent 2 — buttons (subtle appearance by default) */
+html.fluent .btn-x,
+html.fluent .collapse-all-btn,
+html.fluent .lb,
+html.fluent .caps-pill,
+html.fluent .crop-reset,
+html.fluent .crop-flip,
+html.fluent .ch-btn,
+html.fluent .fs-row button,
+html.fluent .fs-reset {
+  background: var(--f2-subtle-bg) !important;
+  border: 1px solid var(--f2-border) !important;
+  border-radius: var(--f2-radius-sm) !important;
+  color: var(--f2-text) !important;
+  font-family: var(--f2-font) !important;
+  font-weight: 400;
+  box-shadow: none;
+  transition: background var(--f2-dur-fast) var(--f2-ease), border-color var(--f2-dur-fast) var(--f2-ease);
+}
+html.fluent .btn-x:hover,
+html.fluent .lb:hover:not(.on),
+html.fluent .ch-btn:hover:not(.on),
+html.fluent .crop-flip:hover:not(.on) {
+  background: var(--f2-subtle-hover) !important;
+  border-color: var(--f2-border-strong) !important;
+}
+html.fluent .btn-x:active,
+html.fluent .lb:active,
+html.fluent .ch-btn:active {
+  background: var(--f2-subtle-pressed) !important;
+}
+/* Fluent 2 — primary button (compound/brand) */
+html.fluent .btn-primary,
+html.fluent .lb.on,
+html.fluent .ch-btn.on,
+html.fluent .caps-pill.on,
+html.fluent .crop-flip.on,
+html.fluent .seg.active {
+  background: var(--f2-brand) !important;
+  border: 1px solid var(--f2-brand) !important;
+  color: #fff !important;
+  box-shadow: none;
+  font-weight: 600;
+}
+html.fluent .btn-primary:hover,
+html.fluent .lb.on:hover {
+  background: var(--f2-brand-hover) !important;
+  border-color: var(--f2-brand-hover) !important;
+}
+html.fluent .btn-primary:active {
+  background: var(--f2-brand-pressed) !important;
+  border-color: var(--f2-brand-pressed) !important;
+}
+/* Fluent 2 — danger button */
+html.fluent .btn-danger {
+  background: transparent !important;
+  border: 1px solid var(--f2-danger) !important;
+  color: var(--f2-danger) !important;
+  border-radius: var(--f2-radius-sm) !important;
+  box-shadow: none;
+  font-family: var(--f2-font) !important;
+}
+html.fluent .btn-danger:hover {
+  background: var(--f2-danger) !important;
+  color: #fff !important;
+}
+/* Fluent 2 — inputs (bottom-heavy border, Fluent signature) */
+html.fluent .fld input,
+html.fluent .fld textarea,
+html.fluent .tpl-row select,
+html.fluent .tpl-row input {
+  background: var(--f2-surface) !important;
+  border: 1px solid var(--f2-border-strong) !important;
+  border-bottom: 2px solid #616161 !important;
+  border-radius: var(--f2-radius-sm) !important;
+  color: var(--f2-text) !important;
+  font-family: var(--f2-font) !important;
+  box-shadow: none;
+  transition: border-color var(--f2-dur-fast) var(--f2-ease);
+}
+html.fluent.dark .fld input,
+html.fluent.dark .fld textarea,
+html.fluent.dark .tpl-row select,
+html.fluent.dark .tpl-row input {
+  border-bottom-color: #adadad !important;
+}
+html.fluent .fld input:focus,
+html.fluent .fld textarea:focus {
+  border-bottom-color: var(--f2-brand) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+html.fluent .fld input::placeholder,
+html.fluent .fld textarea::placeholder {
+  color: var(--f2-text-disabled) !important;
+}
+/* Fluent 2 — segment control */
+html.fluent .seg-ctrl {
+  background: var(--f2-bg2) !important;
+  border: 1px solid var(--f2-border) !important;
+  border-radius: var(--f2-radius-md) !important;
+  box-shadow: none;
+}
+html.fluent .seg {
+  color: var(--f2-text-secondary) !important;
+  border-radius: var(--f2-radius-sm);
+  font-family: var(--f2-font) !important;
+}
+/* Fluent 2 — image zones */
+html.fluent .img-zone {
+  border: 2px dashed var(--f2-border) !important;
+  border-radius: var(--f2-radius-lg) !important;
+  background: var(--f2-brand-bg);
+  transition: border-color var(--f2-dur-fast) var(--f2-ease);
+}
+html.fluent .img-zone:hover {
+  border-color: var(--f2-brand) !important;
+  box-shadow: none;
+}
+html.fluent .img-zone.has {
+  border-style: solid !important;
+}
+/* Fluent 2 — preview wrapper */
+html.fluent .pw {
+  border: 1px solid var(--f2-border);
+  border-radius: var(--f2-radius-lg);
+  box-shadow: var(--f2-shadow4);
+  padding: 4px;
+  background: var(--f2-surface);
+}
+/* Fluent 2 — history drawer */
+html.fluent .hist-drawer {
+  background: var(--f2-bg1) !important;
+  border-left: 1px solid var(--f2-border) !important;
+  box-shadow: -4px 0 16px rgba(0,0,0,.1);
+}
+html.fluent .hist-item {
+  background: var(--f2-surface) !important;
+  border: 1px solid var(--f2-border) !important;
+  border-radius: var(--f2-radius-lg) !important;
+  box-shadow: var(--f2-shadow2);
+  transition: box-shadow var(--f2-dur-fast) var(--f2-ease), border-color var(--f2-dur-fast) var(--f2-ease);
+}
+html.fluent .hist-item:hover {
+  box-shadow: var(--f2-shadow8);
+  border-color: var(--f2-brand) !important;
+}
+html.fluent .hist-header h2 { color: var(--f2-text) !important; font-family: var(--f2-font) !important; }
+html.fluent .hist-item-title { color: var(--f2-text) !important; }
+html.fluent .hist-item-date { color: var(--f2-text-secondary) !important; }
+/* Fluent 2 — toast */
+html.fluent .toast {
+  background: var(--f2-surface) !important;
+  border: 1px solid var(--f2-border);
+  color: var(--f2-text) !important;
+  box-shadow: var(--f2-shadow16);
+  border-radius: var(--f2-radius-md) !important;
+  font-family: var(--f2-font) !important;
+}
+/* Fluent 2 — split menu */
+html.fluent .split-menu {
+  background: var(--f2-surface) !important;
+  border: 1px solid var(--f2-border) !important;
+  border-radius: var(--f2-radius-md) !important;
+  box-shadow: var(--f2-shadow16);
+}
+html.fluent .split-opt { color: var(--f2-text) !important; font-family: var(--f2-font) !important; }
+html.fluent .split-opt:hover { background: var(--f2-subtle-hover) !important; }
+html.fluent .split-opt.active { color: var(--f2-brand) !important; font-weight: 600; }
+/* Fluent 2 — range sliders */
+html.fluent .crop-ctrl input[type=range],
+html.fluent .fs-row input[type=range] {
+  background: var(--f2-bg3) !important;
+  border-radius: 2px;
+}
+html.fluent .crop-ctrl input[type=range]::-webkit-slider-thumb,
+html.fluent .fs-row input[type=range]::-webkit-slider-thumb {
+  background: var(--f2-brand) !important;
+  border: 2px solid #fff !important;
+  box-shadow: var(--f2-shadow2);
+}
+/* Fluent 2 — text colors */
+html.fluent .vl { color: var(--f2-text-secondary) !important; }
+html.fluent .charcount { color: var(--f2-text-disabled) !important; }
+html.fluent .hint { color: var(--f2-text-secondary) !important; }
+html.fluent .crop-hint { color: var(--f2-text-secondary) !important; }
+/* Fluent 2 — drop overlay */
+html.fluent .drop-overlay {
+  background: var(--f2-brand-bg) !important;
+  border-color: var(--f2-brand) !important;
+}
+html.fluent .drop-overlay span {
+  background: var(--f2-surface) !important;
+  border: 1px solid var(--f2-border);
+  color: var(--f2-brand) !important;
+  box-shadow: var(--f2-shadow16);
+  font-family: var(--f2-font) !important;
+}
+/* Fluent 2 — subtle activation animation */
+@keyframes f2Activate {
+  0%   { opacity:0; transform:translateY(4px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+html.fluent .ed,
+html.fluent .topbar {
+  animation: f2Activate var(--f2-dur-slow) var(--f2-decelerate) both;
+}
+html.fluent .ed:nth-child(2) { animation-delay: .03s; }
+html.fluent .ed:nth-child(3) { animation-delay: .06s; }
+html.fluent .ed:nth-child(4) { animation-delay: .09s; }
+html.fluent .ed:nth-child(5) { animation-delay: .12s; }
+html.fluent .ed:nth-child(6) { animation-delay: .15s; }
+html.fluent .ed:nth-child(7) { animation-delay: .18s; }
+/* ===== THEME SWITCHER STYLES ===== */
+.theme-switcher {
+  position: relative;
+  display: inline-flex;
+}
+.theme-switcher-btn {
+  font-size: 13px;
+  line-height: 1;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.theme-switcher-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  z-index: 999;
+  min-width: 160px;
+  padding: 4px;
+  animation: f2MenuIn .15s cubic-bezier(.1,.9,.2,1) both;
+}
+@keyframes f2MenuIn {
+  0% { opacity:0; transform: translateY(-4px) scale(.98); }
+  100% { opacity:1; transform: translateY(0) scale(1); }
+}
+.theme-switcher-menu.show { display: block; }
+.theme-switcher-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text, #242424);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 6px;
+  text-align: left;
+  transition: background .1s ease;
+}
+.theme-switcher-opt:hover { background: rgba(0,0,0,.05); }
+.theme-switcher-opt.active { color: var(--accent, #0078d4); font-weight: 600; }
+.theme-switcher-opt .ts-icon { font-size: 16px; width: 20px; text-align: center; }
+html.dark .theme-switcher-menu { background: var(--surface, #292929); border-color: var(--border, #404040); }
+html.dark .theme-switcher-opt:hover { background: rgba(255,255,255,.06); }
+html.liquid-glass .theme-switcher-menu {
+  background: var(--lg-surface);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid var(--lg-border);
+  box-shadow: 0 8px 32px var(--lg-shadow);
+}
+html.liquid-glass .theme-switcher-opt { color: var(--lg-text); }
+html.liquid-glass .theme-switcher-opt:hover { background: rgba(255,255,255,.08); }
+html.liquid-glass .theme-switcher-opt.active { color: var(--lg-accent); }
+html.fluent .theme-switcher-menu {
+  background: var(--f2-surface);
+  border: 1px solid var(--f2-border);
+  box-shadow: var(--f2-shadow16);
+  border-radius: var(--f2-radius-md);
+}
+html.fluent .theme-switcher-opt { color: var(--f2-text); font-family: var(--f2-font); }
+html.fluent .theme-switcher-opt:hover { background: var(--f2-subtle-hover); }
+html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 </style>
 </head>
 <body>
@@ -826,7 +1221,14 @@ html.liquid-glass.lg-no-blur .topbar::before {
     <!-- Utility -->
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
     <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dunkel/Hell-Modus">&#9790;</button>
-    <button class="btn-x lg-toggle-btn" id="lgToggle" aria-label="Liquid Glass Modus" title="Liquid Glass UI">&#9830;</button>
+    <div class="theme-switcher">
+      <button class="btn-x theme-switcher-btn" id="designToggle" aria-label="Design-Thema wählen" title="Design-Thema">&#9674;</button>
+      <div class="theme-switcher-menu" id="designMenu" role="menu">
+        <button class="theme-switcher-opt active" data-design="default" role="menuitem"><span class="ts-icon">&#9679;</span>Standard</button>
+        <button class="theme-switcher-opt" data-design="fluent" role="menuitem"><span class="ts-icon">&#9638;</span>Fluent 2</button>
+        <button class="theme-switcher-opt" data-design="liquid-glass" role="menuitem"><span class="ts-icon">&#9830;</span>Liquid Glass</button>
+      </div>
+    </div>
     <button class="btn-x login-btn" id="loginBtn" aria-label="Mit Google anmelden">Anmelden</button>
     <div class="user-info" id="userInfo" style="display:none">
       <img class="user-avatar" id="userAvatar" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Benutzerbild">
@@ -2831,38 +3233,74 @@ $themeToggle.addEventListener('click', function() {
   var cur = document.documentElement.classList.contains('light') ? 'light' : 'dark';
   applyTheme(cur === 'dark' ? 'light' : 'dark');
 });
-// ===== LIQUID GLASS TOGGLE =====
-var LG_KEY = 'ki-news-liquid-glass';
-var $lgToggle = document.getElementById('lgToggle');
+// ===== DESIGN THEME SWITCHER =====
+var DESIGN_KEY = 'ki-news-design-theme';
+var $designToggle = document.getElementById('designToggle');
+var $designMenu = document.getElementById('designMenu');
 var lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
-function applyLiquidGlass(on) {
+var DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666' };
+var DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass' };
+var currentDesign = 'default';
+function applyDesignTheme(theme) {
   var html = document.documentElement;
   html.classList.add('lg-transitioning');
-  if (on) {
+  // Remove all design classes
+  html.classList.remove('liquid-glass', 'lg-no-blur', 'fluent');
+  currentDesign = theme;
+  if (theme === 'liquid-glass') {
     html.classList.add('liquid-glass');
     if (lgIsFirefox) html.classList.add('lg-no-blur');
-    $lgToggle.textContent = '\u2666';
-    $lgToggle.title = 'Liquid Glass UI (aktiv)';
-  } else {
-    html.classList.remove('liquid-glass', 'lg-no-blur');
-    $lgToggle.textContent = '\u2662';
-    $lgToggle.title = 'Liquid Glass UI';
+  } else if (theme === 'fluent') {
+    html.classList.add('fluent');
   }
-  try { localStorage.setItem(LG_KEY, on ? '1' : '0'); } catch(e) {}
+  // Update button icon
+  $designToggle.textContent = DESIGN_ICONS[theme] || '\u25c7';
+  $designToggle.title = 'Design: ' + (DESIGN_LABELS[theme] || 'Standard');
+  // Update menu active state
+  var opts = $designMenu.querySelectorAll('.theme-switcher-opt');
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].classList.toggle('active', opts[i].getAttribute('data-design') === theme);
+  }
+  try { localStorage.setItem(DESIGN_KEY, theme); } catch(e) {}
+  // Migrate old LG key
+  try { localStorage.removeItem('ki-news-liquid-glass'); } catch(e) {}
   setTimeout(function() {
     html.classList.remove('lg-transitioning');
   }, 500);
 }
+// Init from localStorage (with migration from old LG key)
 (function() {
   var saved = '';
-  try { saved = localStorage.getItem(LG_KEY) || ''; } catch(e) {}
-  if (saved === '1') applyLiquidGlass(true);
-  else $lgToggle.textContent = '\u2662';
+  try { saved = localStorage.getItem(DESIGN_KEY) || ''; } catch(e) {}
+  if (!saved) {
+    // Migrate old liquid-glass preference
+    try {
+      var oldLG = localStorage.getItem('ki-news-liquid-glass');
+      if (oldLG === '1') saved = 'liquid-glass';
+    } catch(e) {}
+  }
+  if (saved && saved !== 'default') applyDesignTheme(saved);
+  else $designToggle.textContent = '\u25c7';
 })();
-$lgToggle.addEventListener('click', function() {
-  var isOn = document.documentElement.classList.contains('liquid-glass');
-  applyLiquidGlass(!isOn);
-  showToast(isOn ? 'Liquid Glass deaktiviert' : 'Liquid Glass aktiviert \u2728');
+// Toggle menu
+$designToggle.addEventListener('click', function(e) {
+  e.stopPropagation();
+  $designMenu.classList.toggle('show');
+});
+// Menu option click
+$designMenu.addEventListener('click', function(e) {
+  var opt = e.target.closest('.theme-switcher-opt');
+  if (!opt) return;
+  var theme = opt.getAttribute('data-design');
+  applyDesignTheme(theme);
+  $designMenu.classList.remove('show');
+  showToast(DESIGN_LABELS[theme] + ' aktiviert');
+});
+// Close menu on outside click
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.theme-switcher')) {
+    $designMenu.classList.remove('show');
+  }
 });
 // ===== UNDO / REDO =====
 var undoStack = [];
