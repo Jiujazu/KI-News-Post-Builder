@@ -2650,6 +2650,8 @@ function saveDraft() {
     };
     // Save carousel state if active
     if (deckActive && deck.length > 0) {
+      // Sync current editor state into the deck before saving
+      saveCurrentSlide();
       draft.isCarousel = true;
       draft.currentSlideIdx = currentSlideIdx;
       draft.slides = deck.map(function(snap) {
@@ -2658,6 +2660,7 @@ function saveDraft() {
           subtitle: snap.subText,
           date: snap.dateText,
           layout: snap.layout,
+          format: snap.format || S.format,
           hlCaps: snap.hlCaps,
           subCaps: snap.subCaps,
           hlFSOverride: snap.hlFSOverride,
@@ -4070,6 +4073,7 @@ function loadSlideFromSaved(slideData) {
         })
       : [defaultCrop(), defaultCrop()],
     layout: slideData.layout || 'one',
+    format: slideData.format || S.format,
     hlCaps: !!slideData.hlCaps,
     subCaps: !!slideData.subCaps,
     hlLines: slideData.headline ? slideData.headline.split('\n') : [''],
@@ -4947,6 +4951,7 @@ function slideSnapshot() {
     creds: [S.creds[0], S.creds[1]],
     crop: [Object.assign({}, S.crop[0]), Object.assign({}, S.crop[1])],
     layout: S.layout,
+    format: S.format,
     hlCaps: S.hlCaps,
     subCaps: S.subCaps,
     hlLines: S.hlLines.slice(),
