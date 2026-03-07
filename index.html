@@ -3430,70 +3430,6 @@ function drawFooter() {
   cx.textBaseline = 'alphabetic';
   cx.textAlign = 'left';
 }
-// ===== CAROUSEL SLIDE INDICATORS =====
-var deckRenderIdx = -1; // set during export to override currentSlideIdx
-function drawCarouselIndicators() {
-  if (!deckActive || deck.length < 2) return;
-  var idx = deckRenderIdx >= 0 ? deckRenderIdx : currentSlideIdx;
-  var total = deck.length;
-  var isLandscape = W > H;
-  var fBottom = isLandscape ? 20 : FOOTER_BOTTOM;
-  var indicatorY = H - fBottom - (isLandscape ? 50 : 70);
-  // --- Page indicator pill (e.g. "1 / 9") ---
-  cx.save();
-  var label = (idx + 1) + ' / ' + total;
-  var pillFS = isLandscape ? 22 : 28;
-  cx.font = '700 ' + pillFS + 'px ' + SYS_FONT;
-  var tw = cx.measureText(label).width;
-  var pillW = tw + 28;
-  var pillH = pillFS + 16;
-  var pillX = MX;
-  var pillY = indicatorY;
-  cx.fillStyle = 'rgba(0,0,0,0.45)';
-  cx.beginPath();
-  var r = pillH / 2;
-  cx.moveTo(pillX + r, pillY);
-  cx.lineTo(pillX + pillW - r, pillY);
-  cx.arcTo(pillX + pillW, pillY, pillX + pillW, pillY + r, r);
-  cx.arcTo(pillX + pillW, pillY + pillH, pillX + pillW - r, pillY + pillH, r);
-  cx.lineTo(pillX + r, pillY + pillH);
-  cx.arcTo(pillX, pillY + pillH, pillX, pillY + pillH - r, r);
-  cx.arcTo(pillX, pillY, pillX + r, pillY, r);
-  cx.closePath();
-  cx.fill();
-  cx.fillStyle = '#fff';
-  cx.textBaseline = 'middle';
-  cx.textAlign = 'center';
-  cx.fillText(label, pillX + pillW / 2, pillY + pillH / 2 + 1);
-  // --- Swipe arrow on all slides except last ---
-  if (idx < total - 1) {
-    var arrowFS = isLandscape ? 30 : 38;
-    cx.font = '600 ' + arrowFS + 'px ' + SYS_FONT;
-    var arrowText = '\u2192'; // →
-    var atw = cx.measureText(arrowText).width;
-    var aPillW = atw + 24;
-    var aPillH = arrowFS + 14;
-    var aPillX = W - MX - aPillW;
-    var aPillY = indicatorY;
-    cx.fillStyle = 'rgba(0,0,0,0.45)';
-    cx.beginPath();
-    var ar = aPillH / 2;
-    cx.moveTo(aPillX + ar, aPillY);
-    cx.lineTo(aPillX + aPillW - ar, aPillY);
-    cx.arcTo(aPillX + aPillW, aPillY, aPillX + aPillW, aPillY + ar, ar);
-    cx.arcTo(aPillX + aPillW, aPillY + aPillH, aPillX + aPillW - ar, aPillY + aPillH, ar);
-    cx.lineTo(aPillX + ar, aPillY + aPillH);
-    cx.arcTo(aPillX, aPillY + aPillH, aPillX, aPillY + aPillH - ar, ar);
-    cx.arcTo(aPillX, aPillY, aPillX + ar, aPillY, ar);
-    cx.closePath();
-    cx.fill();
-    cx.fillStyle = '#fff';
-    cx.textBaseline = 'middle';
-    cx.textAlign = 'center';
-    cx.fillText(arrowText, aPillX + aPillW / 2, aPillY + aPillH / 2 + 1);
-  }
-  cx.restore();
-}
 // ===== DRAW =====
 function draw() {
   cx.drawImage(gradCV, 0, 0, 1, H, 0, 0, W, H);
@@ -3508,7 +3444,6 @@ function draw() {
     if (!t.isNone) drawImages(curY);
   }
   drawFooter();
-  drawCarouselIndicators();
 }
 // ===== DRAW CROPPED IMAGE =====
 function drawCroppedImage(idx, dx, dy, dw, dh) {
@@ -4890,12 +4825,10 @@ $deckExportPdf.addEventListener('click', function() {
       for (var i = 0; i < deck.length; i++) {
         if (i > 0) pdf.addPage([W, H], orient);
         loadSlideState(deck[i]);
-        deckRenderIdx = i;
         _origDraw();
         var imgData = cv.toDataURL('image/jpeg', 0.95);
         pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
       }
-      deckRenderIdx = -1;
 
       // Restore current slide
       loadSlideState(origSnap);
@@ -4945,7 +4878,6 @@ $deckExportImgs.addEventListener('click', function() {
   function exportSlide(i) {
     if (i >= deck.length) {
       // Done — restore state
-      deckRenderIdx = -1;
       loadSlideState(origSnap);
       _origDraw();
       btn.disabled = false;
@@ -4956,7 +4888,6 @@ $deckExportImgs.addEventListener('click', function() {
       return;
     }
     loadSlideState(deck[i]);
-    deckRenderIdx = i;
     _origDraw();
     var args = [function(blob) {
       if (blob) {
