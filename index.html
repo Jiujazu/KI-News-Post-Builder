@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0a0a1a">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
 <title>KI News Post Generator</title>
 <style>
 @font-face {
@@ -4804,44 +4804,50 @@ $deckExportPdf.addEventListener('click', function() {
 
   // Load jsPDF dynamically if not already loaded
   function doExport() {
-    var origSnap = slideSnapshot();
-    var pdf = new window.jspdf.jsPDF({
-      orientation: W > H ? 'landscape' : 'portrait',
-      unit: 'px',
-      format: [W, H],
-      hotfixes: ['px_scaling']
-    });
+    try {
+      var origSnap = slideSnapshot();
+      var orient = W > H ? 'landscape' : 'portrait';
+      var pdf = new window.jspdf.jsPDF({
+        orientation: orient,
+        unit: 'px',
+        format: [W, H],
+        hotfixes: ['px_scaling']
+      });
 
-    for (var i = 0; i < deck.length; i++) {
-      if (i > 0) pdf.addPage([W, H], W > H ? 'landscape' : 'portrait');
-      loadSlideState(deck[i]);
-      draw();
-      var imgData = cv.toDataURL('image/jpeg', 0.95);
-      pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+      for (var i = 0; i < deck.length; i++) {
+        if (i > 0) pdf.addPage([W, H], orient);
+        loadSlideState(deck[i]);
+        _origDraw();
+        var imgData = cv.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+      }
+
+      // Restore current slide
+      loadSlideState(origSnap);
+      _origDraw();
+
+      pdf.save('ki-news-karussell-' + new Date().toISOString().slice(0, 10) + '.pdf');
+      btn.classList.add('btn-success');
+      showToast('\u2713 PDF mit ' + deck.length + ' Slides exportiert');
+      setTimeout(function() { btn.classList.remove('btn-success'); }, 1500);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      showToast('\u26a0 PDF-Export fehlgeschlagen: ' + err.message);
     }
-
-    // Restore current slide
-    loadSlideState(origSnap);
-    draw();
-
-    pdf.save('ki-news-karussell-' + new Date().toISOString().slice(0, 10) + '.pdf');
     btn.disabled = false;
     btn.textContent = 'PDF Export';
-    btn.classList.add('btn-success');
-    showToast('✓ PDF mit ' + deck.length + ' Slides exportiert');
-    setTimeout(function() { btn.classList.remove('btn-success'); }, 1500);
   }
 
   if (window.jspdf) {
     doExport();
   } else {
     var script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+    script.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
     script.onload = doExport;
     script.onerror = function() {
       btn.disabled = false;
       btn.textContent = 'PDF Export';
-      showToast('⚠ jsPDF konnte nicht geladen werden');
+      showToast('\u26a0 jsPDF konnte nicht geladen werden');
     };
     document.head.appendChild(script);
   }

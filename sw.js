@@ -35,7 +35,7 @@ self.addEventListener('fetch', function(e) {
       url.indexOf('firebaseio.com') !== -1 ||
       url.indexOf('firebasestorage.app') !== -1 ||
       url.indexOf('accounts.google.com') !== -1 ||
-      url.indexOf('cdnjs.cloudflare.com') !== -1) {
+      url.indexOf('cdn.jsdelivr.net') !== -1) {
     return;
   }
   e.respondWith(
