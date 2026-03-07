@@ -1519,6 +1519,382 @@ html.m3x .ed:nth-child(4) { animation-delay: .12s; }
 html.m3x .ed:nth-child(5) { animation-delay: .16s; }
 html.m3x .ed:nth-child(6) { animation-delay: .2s; }
 html.m3x .ed:nth-child(7) { animation-delay: .24s; }
+/* ===== VERCEL GEIST THEME ===== */
+html.geist {
+  --geist-font: 'Geist','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --geist-mono: 'Geist Mono','Roboto Mono','Fira Code','Cascadia Code',monospace;
+  /* Light palette — Vercel Geist Design System */
+  --geist-bg: #FFFFFF;
+  --geist-bg-secondary: #FAFAFA;
+  --geist-surface: #FFFFFF;
+  --geist-surface-raised: #FFFFFF;
+  --geist-border: #EAEAEA;
+  --geist-border-hover: #999999;
+  --geist-border-active: #000000;
+  --geist-text: #000000;
+  --geist-text-secondary: #666666;
+  --geist-text-tertiary: #888888;
+  --geist-accent: #0070F3;
+  --geist-accent-hover: #0060DF;
+  --geist-accent-light: #ECF5FF;
+  --geist-accent-text: #0070F3;
+  --geist-error: #EE0000;
+  --geist-error-light: #FFF5F5;
+  --geist-error-text: #C50000;
+  --geist-success: #007928;
+  --geist-warning: #F5A623;
+  /* Shadows — precise, minimal */
+  --geist-shadow-xs: 0 0 0 1px rgba(0,0,0,.04);
+  --geist-shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 0 0 1px rgba(0,0,0,.06);
+  --geist-shadow-md: 0 4px 8px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05);
+  --geist-shadow-lg: 0 8px 16px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.05);
+  --geist-shadow-xl: 0 12px 24px rgba(0,0,0,.1), 0 0 0 1px rgba(0,0,0,.05);
+  /* Shape — sharp, precise geometry */
+  --geist-radius-xs: 4px;
+  --geist-radius-sm: 6px;
+  --geist-radius-md: 8px;
+  --geist-radius-lg: 12px;
+  --geist-radius-full: 9999px;
+  /* Motion — swift and purposeful */
+  --geist-dur-fast: 100ms;
+  --geist-dur-normal: 200ms;
+  --geist-dur-slow: 350ms;
+  --geist-ease: cubic-bezier(.16,1,.3,1);
+  --geist-ease-in: cubic-bezier(.4,0,1,1);
+  --geist-ease-out: cubic-bezier(0,0,.2,1);
+}
+html.geist.dark {
+  --geist-bg: #000000;
+  --geist-bg-secondary: #111111;
+  --geist-surface: #111111;
+  --geist-surface-raised: #1A1A1A;
+  --geist-border: #333333;
+  --geist-border-hover: #666666;
+  --geist-border-active: #FFFFFF;
+  --geist-text: #EDEDED;
+  --geist-text-secondary: #888888;
+  --geist-text-tertiary: #555555;
+  --geist-accent: #0070F3;
+  --geist-accent-hover: #3291FF;
+  --geist-accent-light: #061A2F;
+  --geist-accent-text: #3291FF;
+  --geist-error: #FF4444;
+  --geist-error-light: #1A0000;
+  --geist-error-text: #FF6166;
+  --geist-success: #00B33C;
+  --geist-shadow-xs: 0 0 0 1px rgba(255,255,255,.04);
+  --geist-shadow-sm: 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.06);
+  --geist-shadow-md: 0 4px 8px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.05);
+  --geist-shadow-lg: 0 8px 16px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05);
+  --geist-shadow-xl: 0 12px 24px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.05);
+}
+/* Geist — body */
+html.geist body {
+  background: var(--geist-bg);
+  font-family: var(--geist-font);
+  color: var(--geist-text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--geist-dur-normal) var(--geist-ease), color var(--geist-dur-normal) var(--geist-ease);
+}
+/* Geist — topbar */
+html.geist .topbar {
+  background: var(--geist-bg);
+  border-bottom: 1px solid var(--geist-border) !important;
+  border-radius: 0;
+  padding: 12px 0 10px;
+  margin-bottom: 0;
+  box-shadow: none;
+  transition: border-color var(--geist-dur-normal) var(--geist-ease);
+}
+html.geist .topbar h1 {
+  font-family: var(--geist-font) !important;
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  letter-spacing: -0.02em;
+  color: var(--geist-text) !important;
+}
+/* Geist — editor panels */
+html.geist .ed {
+  background: var(--geist-surface) !important;
+  border: 1px solid var(--geist-border) !important;
+  border-top: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 16px;
+  transition: border-color var(--geist-dur-fast) var(--geist-ease), background var(--geist-dur-fast) var(--geist-ease);
+}
+html.geist .ed:first-child {
+  border-top: 1px solid var(--geist-border) !important;
+  border-top-left-radius: var(--geist-radius-md) !important;
+  border-top-right-radius: var(--geist-radius-md) !important;
+}
+html.geist .ed:last-child {
+  border-bottom-left-radius: var(--geist-radius-md) !important;
+  border-bottom-right-radius: var(--geist-radius-md) !important;
+}
+html.geist .ed:hover {
+  background: var(--geist-bg-secondary) !important;
+  border-color: var(--geist-border-hover) !important;
+  box-shadow: none !important;
+}
+/* Geist — section titles */
+html.geist .ed-t {
+  font-family: var(--geist-font) !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  letter-spacing: -0.01em;
+  color: var(--geist-text) !important;
+  text-transform: none;
+}
+html.geist .fld label {
+  font-family: var(--geist-font) !important;
+  color: var(--geist-text-secondary) !important;
+  font-weight: 500 !important;
+  font-size: 12px;
+  letter-spacing: 0;
+}
+html.geist .crop-lbl,
+html.geist .crop-title {
+  color: var(--geist-text-secondary) !important;
+  font-family: var(--geist-font) !important;
+}
+/* Geist — buttons (base) */
+html.geist .btn-x,
+html.geist .collapse-all-btn,
+html.geist .lb,
+html.geist .caps-pill,
+html.geist .crop-reset,
+html.geist .crop-flip,
+html.geist .ch-btn,
+html.geist .fs-row button,
+html.geist .fs-reset {
+  background: var(--geist-surface) !important;
+  border: 1px solid var(--geist-border) !important;
+  border-radius: var(--geist-radius-sm) !important;
+  color: var(--geist-text) !important;
+  font-family: var(--geist-font) !important;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  box-shadow: var(--geist-shadow-sm) !important;
+  transition: background var(--geist-dur-fast) var(--geist-ease), border-color var(--geist-dur-fast) var(--geist-ease), box-shadow var(--geist-dur-fast) var(--geist-ease) !important;
+}
+html.geist .btn-x:hover,
+html.geist .lb:hover:not(.on),
+html.geist .ch-btn:hover:not(.on),
+html.geist .crop-flip:hover:not(.on) {
+  background: var(--geist-bg-secondary) !important;
+  border-color: var(--geist-border-hover) !important;
+  box-shadow: var(--geist-shadow-md) !important;
+}
+html.geist .btn-x:active,
+html.geist .lb:active,
+html.geist .ch-btn:active {
+  background: var(--geist-bg-secondary) !important;
+  box-shadow: var(--geist-shadow-xs) !important;
+}
+/* Geist — primary buttons (Vercel blue) */
+html.geist .btn-primary,
+html.geist .lb.on,
+html.geist .ch-btn.on,
+html.geist .caps-pill.on,
+html.geist .crop-flip.on,
+html.geist .seg.active {
+  background: var(--geist-accent) !important;
+  border: 1px solid var(--geist-accent) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 0 3px rgba(0,112,243,.15) !important;
+  font-weight: 500;
+  border-radius: var(--geist-radius-sm) !important;
+}
+html.geist .btn-primary:hover,
+html.geist .lb.on:hover {
+  background: var(--geist-accent-hover) !important;
+  border-color: var(--geist-accent-hover) !important;
+  box-shadow: 0 0 0 4px rgba(0,112,243,.2) !important;
+}
+html.geist .btn-primary:active {
+  box-shadow: 0 0 0 2px rgba(0,112,243,.1) !important;
+}
+/* Geist — danger button */
+html.geist .btn-danger {
+  background: var(--geist-error-light) !important;
+  border: 1px solid var(--geist-error) !important;
+  color: var(--geist-error-text) !important;
+  border-radius: var(--geist-radius-sm) !important;
+  box-shadow: none !important;
+  font-family: var(--geist-font) !important;
+  font-weight: 500;
+}
+html.geist .btn-danger:hover {
+  background: var(--geist-error-light) !important;
+  box-shadow: 0 0 0 3px rgba(238,0,0,.1) !important;
+}
+/* Geist — inputs */
+html.geist .fld input,
+html.geist .fld textarea,
+html.geist .tpl-row select,
+html.geist .tpl-row input {
+  background: var(--geist-surface) !important;
+  border: 1px solid var(--geist-border) !important;
+  border-radius: var(--geist-radius-sm) !important;
+  color: var(--geist-text) !important;
+  font-family: var(--geist-font) !important;
+  font-size: 14px;
+  box-shadow: var(--geist-shadow-xs) !important;
+  transition: border-color var(--geist-dur-fast) var(--geist-ease), box-shadow var(--geist-dur-fast) var(--geist-ease);
+}
+html.geist .fld input:focus,
+html.geist .fld textarea:focus {
+  border-color: var(--geist-accent) !important;
+  box-shadow: 0 0 0 3px rgba(0,112,243,.1) !important;
+  outline: none !important;
+}
+html.geist .fld input::placeholder,
+html.geist .fld textarea::placeholder {
+  color: var(--geist-text-tertiary) !important;
+}
+/* Geist — segment control */
+html.geist .seg-ctrl {
+  background: var(--geist-bg-secondary) !important;
+  border: 1px solid var(--geist-border) !important;
+  border-radius: var(--geist-radius-sm) !important;
+  box-shadow: none;
+  padding: 3px;
+  gap: 2px;
+}
+html.geist .seg {
+  color: var(--geist-text-secondary) !important;
+  border-radius: calc(var(--geist-radius-sm) - 2px);
+  font-family: var(--geist-font) !important;
+  font-weight: 500;
+  font-size: 13px;
+}
+/* Geist — image zones */
+html.geist .img-zone {
+  border: 1px dashed var(--geist-border) !important;
+  border-radius: var(--geist-radius-md) !important;
+  background: var(--geist-bg-secondary) !important;
+  transition: border-color var(--geist-dur-fast) var(--geist-ease), background var(--geist-dur-fast) var(--geist-ease);
+}
+html.geist .img-zone:hover {
+  border-color: var(--geist-border-hover) !important;
+  background: var(--geist-surface) !important;
+  box-shadow: var(--geist-shadow-sm) !important;
+}
+html.geist .img-zone.has {
+  border-style: solid !important;
+  border-color: var(--geist-border) !important;
+}
+/* Geist — preview wrapper */
+html.geist .pw {
+  border: 1px solid var(--geist-border);
+  border-radius: var(--geist-radius-lg);
+  box-shadow: var(--geist-shadow-md);
+  padding: 4px;
+  background: var(--geist-bg-secondary);
+}
+/* Geist — history drawer */
+html.geist .hist-drawer {
+  background: var(--geist-surface) !important;
+  border-left: 1px solid var(--geist-border) !important;
+  box-shadow: var(--geist-shadow-xl);
+}
+html.geist .hist-item {
+  background: var(--geist-surface) !important;
+  border: 1px solid var(--geist-border) !important;
+  border-radius: var(--geist-radius-md) !important;
+  box-shadow: var(--geist-shadow-xs);
+  transition: border-color var(--geist-dur-fast) var(--geist-ease), box-shadow var(--geist-dur-fast) var(--geist-ease);
+}
+html.geist .hist-item:hover {
+  border-color: var(--geist-border-hover) !important;
+  box-shadow: var(--geist-shadow-sm) !important;
+}
+html.geist .hist-header h2 { color: var(--geist-text) !important; font-family: var(--geist-font) !important; font-weight: 600 !important; }
+html.geist .hist-item-title { color: var(--geist-text) !important; font-family: var(--geist-font) !important; }
+html.geist .hist-item-date { color: var(--geist-text-secondary) !important; font-family: var(--geist-mono) !important; font-size: 11px !important; }
+/* Geist — toast */
+html.geist .toast {
+  background: var(--geist-text) !important;
+  border: none;
+  color: var(--geist-bg) !important;
+  box-shadow: var(--geist-shadow-xl);
+  border-radius: var(--geist-radius-md) !important;
+  font-family: var(--geist-font) !important;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+/* Geist — split menu */
+html.geist .split-menu {
+  background: var(--geist-surface) !important;
+  border: 1px solid var(--geist-border) !important;
+  border-radius: var(--geist-radius-md) !important;
+  box-shadow: var(--geist-shadow-lg) !important;
+}
+html.geist .split-opt { color: var(--geist-text) !important; font-family: var(--geist-font) !important; font-size: 13px; }
+html.geist .split-opt:hover { background: var(--geist-bg-secondary) !important; }
+html.geist .split-opt.active { color: var(--geist-accent-text) !important; font-weight: 600; }
+/* Geist — range sliders */
+html.geist .crop-ctrl input[type=range],
+html.geist .fs-row input[type=range] {
+  background: var(--geist-border) !important;
+  border-radius: var(--geist-radius-full);
+}
+html.geist .crop-ctrl input[type=range]::-webkit-slider-thumb,
+html.geist .fs-row input[type=range]::-webkit-slider-thumb {
+  background: var(--geist-accent) !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: var(--geist-shadow-sm) !important;
+  border-radius: 50%;
+}
+/* Geist — text colors */
+html.geist .vl { color: var(--geist-text-secondary) !important; }
+html.geist .charcount { color: var(--geist-text-tertiary) !important; font-family: var(--geist-mono) !important; font-size: 11px; }
+html.geist .hint { color: var(--geist-text-secondary) !important; font-size: 12px; }
+html.geist .crop-hint { color: var(--geist-text-secondary) !important; }
+/* Geist — drop overlay */
+html.geist .drop-overlay {
+  background: rgba(0,112,243,.06) !important;
+  border-color: var(--geist-accent) !important;
+}
+html.geist .drop-overlay span {
+  background: var(--geist-surface) !important;
+  border: 1px solid var(--geist-border);
+  color: var(--geist-text) !important;
+  box-shadow: var(--geist-shadow-lg);
+  font-family: var(--geist-font) !important;
+  border-radius: var(--geist-radius-md) !important;
+}
+/* Geist — theme switcher menu */
+html.geist .theme-switcher-menu {
+  background: var(--geist-surface);
+  border: 1px solid var(--geist-border);
+  box-shadow: var(--geist-shadow-lg);
+  border-radius: var(--geist-radius-md);
+}
+html.geist .theme-switcher-opt { color: var(--geist-text); font-family: var(--geist-font); font-size: 13px; }
+html.geist .theme-switcher-opt:hover { background: var(--geist-bg-secondary); }
+html.geist .theme-switcher-opt.active { color: var(--geist-accent-text); font-weight: 600; }
+/* Geist — entrance animation (clean, precise slide) */
+@keyframes geistActivate {
+  0%   { opacity:0; transform:translateY(8px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+html.geist .ed,
+html.geist .topbar {
+  animation: geistActivate var(--geist-dur-slow) var(--geist-ease) both;
+}
+html.geist .ed:nth-child(2) { animation-delay: .03s; }
+html.geist .ed:nth-child(3) { animation-delay: .06s; }
+html.geist .ed:nth-child(4) { animation-delay: .09s; }
+html.geist .ed:nth-child(5) { animation-delay: .12s; }
+html.geist .ed:nth-child(6) { animation-delay: .15s; }
+html.geist .ed:nth-child(7) { animation-delay: .18s; }
 /* ===== THEME SWITCHER STYLES ===== */
 .theme-switcher {
   position: relative;
@@ -1625,6 +2001,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
         <button class="theme-switcher-opt" data-design="fluent" role="menuitem"><span class="ts-icon">&#9638;</span>Fluent 2</button>
         <button class="theme-switcher-opt" data-design="liquid-glass" role="menuitem"><span class="ts-icon">&#9830;</span>Liquid Glass</button>
         <button class="theme-switcher-opt" data-design="m3x" role="menuitem"><span class="ts-icon">&#10022;</span>Material 3</button>
+        <button class="theme-switcher-opt" data-design="geist" role="menuitem"><span class="ts-icon">&#9651;</span>Geist</button>
       </div>
     </div>
     <button class="btn-x login-btn" id="loginBtn" aria-label="Mit Google anmelden">Anmelden</button>
@@ -3636,14 +4013,14 @@ var DESIGN_KEY = 'ki-news-design-theme';
 var $designToggle = document.getElementById('designToggle');
 var $designMenu = document.getElementById('designMenu');
 var lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
-var DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666', 'm3x': '\u2726' };
-var DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass', 'm3x': 'Material 3' };
+var DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666', 'm3x': '\u2726', 'geist': '\u25b3' };
+var DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass', 'm3x': 'Material 3', 'geist': 'Geist' };
 var currentDesign = 'default';
 function applyDesignTheme(theme) {
   var html = document.documentElement;
   html.classList.add('lg-transitioning');
   // Remove all design classes
-  html.classList.remove('liquid-glass', 'lg-no-blur', 'fluent', 'm3x');
+  html.classList.remove('liquid-glass', 'lg-no-blur', 'fluent', 'm3x', 'geist');
   currentDesign = theme;
   if (theme === 'liquid-glass') {
     html.classList.add('liquid-glass');
@@ -3652,6 +4029,8 @@ function applyDesignTheme(theme) {
     html.classList.add('fluent');
   } else if (theme === 'm3x') {
     html.classList.add('m3x');
+  } else if (theme === 'geist') {
+    html.classList.add('geist');
   }
   // Update button icon
   $designToggle.textContent = DESIGN_ICONS[theme] || '\u25c7';
