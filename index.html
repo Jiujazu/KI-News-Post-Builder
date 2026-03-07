@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0a0a1a">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdnjs.cloudflare.com; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
 <title>KI News Post Generator</title>
 <style>
 @font-face {
@@ -1908,6 +1908,50 @@ html.fluent .theme-switcher-menu {
 html.fluent .theme-switcher-opt { color: var(--f2-text); font-family: var(--f2-font); }
 html.fluent .theme-switcher-opt:hover { background: var(--f2-subtle-hover); }
 html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
+/* ===== CAROUSEL DECK STRIP ===== */
+.deck-bar{
+  display:none;padding:8px 0;margin-bottom:8px;
+}
+.deck-bar.active{display:block}
+.deck-strip{
+  display:flex;gap:8px;align-items:center;overflow-x:auto;
+  padding:4px 2px;scrollbar-width:thin;
+}
+.deck-strip::-webkit-scrollbar{height:4px}
+.deck-strip::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:4px}
+.deck-slide{
+  flex:0 0 auto;width:72px;height:90px;border-radius:8px;
+  border:2px solid var(--border);background:var(--surface);
+  cursor:pointer;position:relative;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;
+}
+.deck-slide:hover{border-color:var(--border-hover)}
+.deck-slide.current{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+.deck-slide canvas{width:100%;height:100%;display:block;pointer-events:none}
+.deck-slide .slide-num{
+  position:absolute;bottom:2px;right:4px;font-size:10px;font-weight:700;
+  color:var(--text-faint);pointer-events:none;
+}
+.deck-slide .slide-rm{
+  position:absolute;top:1px;right:1px;width:20px;height:20px;border-radius:50%;
+  background:rgba(0,0,0,.6);color:#fff;font-size:13px;border:none;cursor:pointer;
+  display:none;align-items:center;justify-content:center;line-height:1;
+  transition:background .15s;
+}
+.deck-slide:hover .slide-rm{display:flex}
+.deck-slide .slide-rm:hover{background:rgba(220,50,50,.9)}
+.deck-add{
+  flex:0 0 auto;width:72px;height:90px;border-radius:8px;
+  border:2px dashed var(--border-hover);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:var(--text-faint);transition:border-color .2s,color .2s;
+}
+.deck-add:hover{border-color:var(--accent);color:var(--accent)}
+.deck-controls{
+  display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;
+}
+.deck-controls button{padding:8px 12px;font-size:12px}
+.deck-label{font-size:12px;color:var(--text-muted);font-weight:600;margin-right:auto}
 </style>
 </head>
 <body>
@@ -1934,6 +1978,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     <button class="btn-x" id="bA" aria-label="Post speichern">Speichern</button>
     <button class="btn-x" id="bH" aria-label="Gespeicherte Posts öffnen">Gespeicherte</button>
     <!-- Utility -->
+    <button class="btn-x" id="bDeck" aria-label="Karussell-Modus starten">Karussell</button>
     <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
     <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dunkel/Hell-Modus">&#9790;</button>
     <div class="theme-switcher">
@@ -1957,6 +2002,15 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
   <!-- ===== PREVIEW ===== -->
   <div class="preview-col">
     <div class="pw"><canvas id="cv" width="1200" height="1500" role="img" aria-label="Vorschau des generierten Posts"></canvas></div>
+    <!-- ===== CAROUSEL DECK STRIP ===== -->
+    <div class="deck-bar" id="deckBar">
+      <div class="deck-strip" id="deckStrip"></div>
+      <div class="deck-controls">
+        <span class="deck-label" id="deckLabel"></span>
+        <button class="btn-x" id="deckExportPdf">PDF Export</button>
+        <button class="btn-danger" id="deckClose">Karussell beenden</button>
+      </div>
+    </div>
   </div>
   <!-- ===== EDITOR ===== -->
   <div class="editor-col" id="EP">
@@ -4466,6 +4520,325 @@ function syncTemplatesFromCloud() {
     }
   }).catch(function(err) { console.warn('Template cloud fetch failed:', err); });
 }
+// ===== CAROUSEL / DECK =====
+var deck = [];           // array of slide state snapshots
+var currentSlideIdx = 0;
+var deckActive = false;
+var $deckBar = document.getElementById('deckBar');
+var $deckStrip = document.getElementById('deckStrip');
+var $deckLabel = document.getElementById('deckLabel');
+var $bDeck = document.getElementById('bDeck');
+var $deckExportPdf = document.getElementById('deckExportPdf');
+var $deckClose = document.getElementById('deckClose');
+
+function slideSnapshot() {
+  return {
+    imgs: [S.imgs[0], S.imgs[1]],
+    blobs: [S.blobs[0], S.blobs[1]],
+    draftBlobs: [S.draftBlobs[0], S.draftBlobs[1]],
+    creds: [S.creds[0], S.creds[1]],
+    crop: [Object.assign({}, S.crop[0]), Object.assign({}, S.crop[1])],
+    layout: S.layout,
+    hlCaps: S.hlCaps,
+    subCaps: S.subCaps,
+    hlLines: S.hlLines.slice(),
+    subText: S.subText,
+    dateText: S.dateText,
+    hlFSOverride: S.hlFSOverride,
+    subFSOverride: S.subFSOverride,
+    credFSOverride: S.credFSOverride,
+    credAlign: S.credAlign,
+    credOffX: S.credOffX,
+    credOffY: S.credOffY,
+    credShadow: S.credShadow,
+    textPos: S.textPos
+  };
+}
+
+function loadSlideState(snap) {
+  S.imgs = [snap.imgs[0], snap.imgs[1]];
+  S.blobs = [snap.blobs[0], snap.blobs[1]];
+  S.draftBlobs = [snap.draftBlobs[0], snap.draftBlobs[1]];
+  S.creds = [snap.creds[0], snap.creds[1]];
+  S.crop = [Object.assign({}, snap.crop[0]), Object.assign({}, snap.crop[1])];
+  S.layout = snap.layout;
+  S.hlCaps = snap.hlCaps;
+  S.subCaps = snap.subCaps;
+  S.hlLines = snap.hlLines.slice();
+  S.subText = snap.subText;
+  S.dateText = snap.dateText;
+  S.hlFSOverride = snap.hlFSOverride;
+  S.subFSOverride = snap.subFSOverride;
+  S.credFSOverride = snap.credFSOverride;
+  S.credAlign = snap.credAlign;
+  S.credOffX = snap.credOffX;
+  S.credOffY = snap.credOffY;
+  S.credShadow = snap.credShadow;
+  S.textPos = snap.textPos;
+}
+
+function refreshEditorFromState() {
+  $hl.value = S.hlLines.join('\n');
+  $sub.value = S.subText;
+  $date.value = deToISO(S.dateText) || todayISO();
+  $togHlCaps.classList.toggle('on', S.hlCaps);
+  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
+  $togSubCaps.classList.toggle('on', S.subCaps);
+  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
+  setLayout(S.layout);
+  updateFSSlider();
+  Object.keys(CA_BTNS).forEach(function(k) {
+    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
+    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
+  });
+  updateCredOffsetUI();
+  Object.keys(TP_BTNS).forEach(function(k) {
+    TP_BTNS[k].classList.toggle('on', k === S.textPos);
+    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
+  });
+  autoSize($hl);
+  autoSize($sub);
+  renderUI();
+}
+
+function saveCurrentSlide() {
+  if (!deckActive || !deck.length) return;
+  // Read current editor inputs into S first
+  S.hlLines = $hl.value.split('\n');
+  S.subText = $sub.value;
+  var iso = $date.value;
+  if (iso) S.dateText = isoToDE(iso);
+  deck[currentSlideIdx] = slideSnapshot();
+}
+
+function switchToSlide(idx) {
+  if (idx < 0 || idx >= deck.length) return;
+  saveCurrentSlide();
+  currentSlideIdx = idx;
+  loadSlideState(deck[idx]);
+  refreshEditorFromState();
+  renderDeckStrip();
+}
+
+function renderDeckStrip() {
+  if (!deckActive) return;
+  $deckStrip.innerHTML = '';
+  // First, make sure current state is saved
+  S.hlLines = $hl.value.split('\n');
+  S.subText = $sub.value;
+  var iso = $date.value;
+  if (iso) S.dateText = isoToDE(iso);
+  deck[currentSlideIdx] = slideSnapshot();
+
+  // Render each slide thumbnail efficiently
+  var origSnap = slideSnapshot();
+
+  for (var i = 0; i < deck.length; i++) {
+    var div = document.createElement('div');
+    div.className = 'deck-slide' + (i === currentSlideIdx ? ' current' : '');
+    div.setAttribute('data-idx', i);
+
+    var tc = document.createElement('canvas');
+    // Render thumbnail: temporarily load slide state, draw, capture
+    loadSlideState(deck[i]);
+    draw();
+    var tCtx = tc.getContext('2d');
+    tc.width = 120;
+    tc.height = Math.round(120 * (H / W));
+    tCtx.drawImage(cv, 0, 0, tc.width, tc.height);
+
+    div.appendChild(tc);
+
+    var num = document.createElement('span');
+    num.className = 'slide-num';
+    num.textContent = (i + 1);
+    div.appendChild(num);
+
+    if (deck.length > 1) {
+      var rm = document.createElement('button');
+      rm.className = 'slide-rm';
+      rm.innerHTML = '&times;';
+      rm.setAttribute('data-idx', i);
+      rm.addEventListener('click', (function(idx) {
+        return function(e) {
+          e.stopPropagation();
+          removeSlide(idx);
+        };
+      })(i));
+      div.appendChild(rm);
+    }
+
+    div.addEventListener('click', (function(idx) {
+      return function() { switchToSlide(idx); };
+    })(i));
+
+    $deckStrip.appendChild(div);
+  }
+
+  // Restore current slide state
+  loadSlideState(origSnap);
+  draw();
+
+  // Add button
+  var addBtn = document.createElement('button');
+  addBtn.className = 'deck-add';
+  addBtn.textContent = '+';
+  addBtn.title = 'Slide hinzufügen';
+  addBtn.addEventListener('click', addSlide);
+  $deckStrip.appendChild(addBtn);
+
+  $deckLabel.textContent = 'Slide ' + (currentSlideIdx + 1) + ' / ' + deck.length;
+
+  // Scroll current into view
+  var currentEl = $deckStrip.querySelector('.current');
+  if (currentEl) currentEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+function addSlide() {
+  saveCurrentSlide();
+  // New blank slide inherits format but blank content
+  var newSlide = {
+    imgs: [null, null],
+    blobs: [null, null],
+    draftBlobs: [null, null],
+    creds: ['', ''],
+    crop: [defaultCrop(), defaultCrop()],
+    layout: 'one',
+    hlCaps: false,
+    subCaps: false,
+    hlLines: [''],
+    subText: '',
+    dateText: S.dateText,
+    hlFSOverride: 0,
+    subFSOverride: 0,
+    credFSOverride: 0,
+    credAlign: 'right',
+    credOffX: 0,
+    credOffY: 0,
+    credShadow: false,
+    textPos: 'top'
+  };
+  deck.push(newSlide);
+  switchToSlide(deck.length - 1);
+}
+
+function removeSlide(idx) {
+  if (deck.length <= 1) return;
+  deck.splice(idx, 1);
+  if (currentSlideIdx >= deck.length) currentSlideIdx = deck.length - 1;
+  loadSlideState(deck[currentSlideIdx]);
+  refreshEditorFromState();
+  renderDeckStrip();
+}
+
+function startDeck() {
+  if (deckActive) return;
+  deckActive = true;
+  deck = [slideSnapshot()];
+  currentSlideIdx = 0;
+  $deckBar.classList.add('active');
+  $bDeck.classList.add('btn-success');
+  $bDeck.textContent = 'Karussell ✓';
+  renderDeckStrip();
+  showToast('Karussell-Modus aktiv – Slides hinzufügen mit +');
+}
+
+function stopDeck() {
+  if (!deckActive) return;
+  if (deck.length > 1 && !confirm('Karussell beenden? Alle Slides außer dem aktuellen gehen verloren.')) return;
+  deckActive = false;
+  deck = [];
+  currentSlideIdx = 0;
+  $deckBar.classList.remove('active');
+  $bDeck.classList.remove('btn-success');
+  $bDeck.textContent = 'Karussell';
+  showToast('Karussell-Modus beendet');
+}
+
+$bDeck.addEventListener('click', function() {
+  if (deckActive) stopDeck();
+  else startDeck();
+});
+$deckClose.addEventListener('click', stopDeck);
+
+// PDF Export
+$deckExportPdf.addEventListener('click', function() {
+  if (!deckActive || !deck.length) return;
+  saveCurrentSlide();
+  var btn = $deckExportPdf;
+  btn.disabled = true;
+  btn.textContent = 'Exportiert…';
+
+  // Load jsPDF dynamically if not already loaded
+  function doExport() {
+    var origSnap = slideSnapshot();
+    var pdf = new window.jspdf.jsPDF({
+      orientation: W > H ? 'landscape' : 'portrait',
+      unit: 'px',
+      format: [W, H],
+      hotfixes: ['px_scaling']
+    });
+
+    for (var i = 0; i < deck.length; i++) {
+      if (i > 0) pdf.addPage([W, H], W > H ? 'landscape' : 'portrait');
+      loadSlideState(deck[i]);
+      draw();
+      var imgData = cv.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+    }
+
+    // Restore current slide
+    loadSlideState(origSnap);
+    draw();
+
+    pdf.save('ki-news-karussell-' + new Date().toISOString().slice(0, 10) + '.pdf');
+    btn.disabled = false;
+    btn.textContent = 'PDF Export';
+    btn.classList.add('btn-success');
+    showToast('✓ PDF mit ' + deck.length + ' Slides exportiert');
+    setTimeout(function() { btn.classList.remove('btn-success'); }, 1500);
+  }
+
+  if (window.jspdf) {
+    doExport();
+  } else {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js';
+    script.onload = doExport;
+    script.onerror = function() {
+      btn.disabled = false;
+      btn.textContent = 'PDF Export';
+      showToast('⚠ jsPDF konnte nicht geladen werden');
+    };
+    document.head.appendChild(script);
+  }
+});
+
+// Hook into draw to update deck strip after edits (debounced)
+var deckThumbTimer = null;
+function scheduleDeckThumbUpdate() {
+  if (!deckActive) return;
+  clearTimeout(deckThumbTimer);
+  deckThumbTimer = setTimeout(function() {
+    if (!deckActive) return;
+    // Update only current slide thumbnail
+    var currentEl = $deckStrip.querySelector('.deck-slide.current canvas');
+    if (currentEl) {
+      var tCtx = currentEl.getContext('2d');
+      currentEl.width = 120;
+      currentEl.height = Math.round(120 * (H / W));
+      tCtx.drawImage(cv, 0, 0, currentEl.width, currentEl.height);
+    }
+  }, 300);
+}
+
+// Patch scheduleDraw to also update deck thumbs
+var _origDraw = draw;
+draw = function() {
+  _origDraw();
+  scheduleDeckThumbUpdate();
+};
+
 // ===== INIT =====
 function init() {
   if (document.fonts && !document.fonts.check('12px Festivo')) {
