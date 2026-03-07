@@ -797,22 +797,22 @@ html.fluent {
   --f2-text: #242424;
   --f2-text-secondary: #616161;
   --f2-text-disabled: #bdbdbd;
-  --f2-brand: #0078d4;
-  --f2-brand-hover: #106ebe;
-  --f2-brand-pressed: #005a9e;
-  --f2-brand-bg: rgba(0,120,212,.08);
+  --f2-brand: #0f6cbd;
+  --f2-brand-hover: #115ea3;
+  --f2-brand-pressed: #0c3b5e;
+  --f2-brand-bg: rgba(15,108,189,.08);
   --f2-subtle-bg: transparent;
-  --f2-subtle-hover: rgba(0,0,0,.04);
-  --f2-subtle-pressed: rgba(0,0,0,.06);
+  --f2-subtle-hover: #f5f5f5;
+  --f2-subtle-pressed: #e0e0e0;
   --f2-border: #e0e0e0;
   --f2-border-strong: #d1d1d1;
-  --f2-divider: #e0e0e0;
-  --f2-danger: #bc2f32;
+  --f2-divider: #f0f0f0;
+  --f2-danger: #c50f1f;
   --f2-success: #107c10;
-  --f2-shadow2: 0 1px 2px rgba(0,0,0,.12);
-  --f2-shadow4: 0 2px 4px rgba(0,0,0,.14);
-  --f2-shadow8: 0 4px 8px rgba(0,0,0,.14);
-  --f2-shadow16: 0 8px 16px rgba(0,0,0,.14);
+  --f2-shadow2: 0 1px 2px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
+  --f2-shadow4: 0 2px 4px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
+  --f2-shadow8: 0 4px 8px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
+  --f2-shadow16: 0 8px 16px rgba(0,0,0,.14), 0 0 2px rgba(0,0,0,.12);
   --f2-radius-sm: 4px;
   --f2-radius-md: 6px;
   --f2-radius-lg: 8px;
@@ -824,29 +824,29 @@ html.fluent {
   --f2-decelerate: cubic-bezier(.1,.9,.2,1);
 }
 html.fluent.dark {
-  --f2-bg1: #1b1b1b;
-  --f2-bg2: #292929;
-  --f2-bg3: #333333;
+  --f2-bg1: #1f1f1f;
+  --f2-bg2: #141414;
+  --f2-bg3: #0a0a0a;
   --f2-surface: #292929;
-  --f2-surface-hover: #333333;
+  --f2-surface-hover: #3d3d3d;
   --f2-text: #ffffff;
   --f2-text-secondary: #d6d6d6;
   --f2-text-disabled: #5c5c5c;
-  --f2-brand: #4ea8e6;
-  --f2-brand-hover: #62b5eb;
-  --f2-brand-pressed: #3a96d4;
-  --f2-brand-bg: rgba(78,168,230,.1);
-  --f2-subtle-hover: rgba(255,255,255,.06);
-  --f2-subtle-pressed: rgba(255,255,255,.04);
-  --f2-border: #404040;
-  --f2-border-strong: #4d4d4d;
+  --f2-brand: #479ef5;
+  --f2-brand-hover: #62abf5;
+  --f2-brand-pressed: #115ea3;
+  --f2-brand-bg: rgba(71,158,245,.1);
+  --f2-subtle-hover: #383838;
+  --f2-subtle-pressed: #2e2e2e;
+  --f2-border: #525252;
+  --f2-border-strong: #666666;
   --f2-divider: #404040;
   --f2-danger: #e87575;
   --f2-success: #54b054;
-  --f2-shadow2: 0 1px 2px rgba(0,0,0,.24);
-  --f2-shadow4: 0 2px 4px rgba(0,0,0,.28);
-  --f2-shadow8: 0 4px 8px rgba(0,0,0,.28);
-  --f2-shadow16: 0 8px 16px rgba(0,0,0,.28);
+  --f2-shadow2: 0 1px 2px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
+  --f2-shadow4: 0 2px 4px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
+  --f2-shadow8: 0 4px 8px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
+  --f2-shadow16: 0 8px 16px rgba(0,0,0,.28), 0 0 2px rgba(0,0,0,.24);
 }
 /* Fluent 2 — body */
 html.fluent body {
@@ -975,19 +975,25 @@ html.fluent .btn-danger:hover {
   background: var(--f2-danger) !important;
   color: #fff !important;
 }
-/* Fluent 2 — inputs */
+/* Fluent 2 — inputs (bottom-heavy border, Fluent signature) */
 html.fluent .fld input,
 html.fluent .fld textarea,
 html.fluent .tpl-row select,
 html.fluent .tpl-row input {
   background: var(--f2-surface) !important;
-  border: 1px solid var(--f2-border) !important;
-  border-bottom: 2px solid var(--f2-border-strong) !important;
+  border: 1px solid var(--f2-border-strong) !important;
+  border-bottom: 2px solid #616161 !important;
   border-radius: var(--f2-radius-sm) !important;
   color: var(--f2-text) !important;
   font-family: var(--f2-font) !important;
   box-shadow: none;
   transition: border-color var(--f2-dur-fast) var(--f2-ease);
+}
+html.fluent.dark .fld input,
+html.fluent.dark .fld textarea,
+html.fluent.dark .tpl-row select,
+html.fluent.dark .tpl-row input {
+  border-bottom-color: #adadad !important;
 }
 html.fluent .fld input:focus,
 html.fluent .fld textarea:focus {
