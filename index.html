@@ -414,7 +414,6 @@ html.liquid-glass {
   --lg-refraction: rgba(255,255,255,.05);
   --lg-glow: rgba(140,180,255,.12);
   --lg-accent: #6aafff;
-  --lg-accent-dark: #4d8ee0;
   --lg-text: #eef2ff;
   --lg-text-muted: rgba(220,225,255,.7);
   --lg-text-dim: rgba(200,210,255,.5);
@@ -453,23 +452,6 @@ html.liquid-glass.light body {
     radial-gradient(ellipse at 50% 50%, rgba(60,200,180,.06) 0%, transparent 60%),
     var(--bg);
 }
-/* Subtle animated background — uses will-change for GPU compositing */
-html.liquid-glass body::before {
-  content:'';
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(circle 300px at 30% 30%, rgba(100,170,255,.1) 0%, transparent 100%),
-    radial-gradient(circle 250px at 70% 60%, rgba(180,100,255,.08) 0%, transparent 100%),
-    radial-gradient(circle 200px at 50% 80%, rgba(60,220,180,.06) 0%, transparent 100%);
-  animation: lgBlobDrift 25s ease-in-out infinite alternate;
-  will-change: transform;
-  opacity:.6;
-}
-@keyframes lgBlobDrift {
-  0%   { transform: translate3d(0,0,0) scale(1); }
-  50%  { transform: translate3d(25px,-15px,0) scale(1.03); }
-  100% { transform: translate3d(-15px,20px,0) scale(.98); }
-}
 html.liquid-glass .app,
 html.liquid-glass .hist-drawer,
 html.liquid-glass .hist-overlay { position:relative; z-index:1; }
@@ -487,7 +469,6 @@ html.liquid-glass .ed {
     inset 0 1px 0 var(--lg-highlight);
   transition: box-shadow .3s ease, border-color .3s ease;
   position: relative;
-  overflow: hidden;
 }
 html.liquid-glass .ed::before {
   content:'';
@@ -523,7 +504,6 @@ html.liquid-glass .topbar {
   margin-bottom: 16px;
   box-shadow: 0 4px 20px var(--lg-shadow), inset 0 1px 0 var(--lg-highlight);
   position: relative;
-  overflow: hidden;
 }
 html.liquid-glass .topbar::before {
   content:'';position:absolute;top:0;left:0;right:0;height:40%;
@@ -761,20 +741,6 @@ html.liquid-glass .ed:nth-child(4) { animation-delay: .15s; }
 html.liquid-glass .ed:nth-child(5) { animation-delay: .2s; }
 html.liquid-glass .ed:nth-child(6) { animation-delay: .25s; }
 html.liquid-glass .ed:nth-child(7) { animation-delay: .3s; }
-/* Subtle specular shimmer on panels */
-@keyframes lgShimmer {
-  0%   { transform: translateX(-100%) rotate(25deg); }
-  100% { transform: translateX(200%) rotate(25deg); }
-}
-html.liquid-glass .ed::after {
-  content:'';
-  position:absolute;top:-50%;left:-50%;width:50%;height:200%;
-  background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.04) 40%, rgba(255,255,255,.08) 50%, rgba(255,255,255,.04) 60%, transparent 100%);
-  transform:translateX(-100%) rotate(25deg);
-  pointer-events:none;
-  animation: lgShimmer 8s ease-in-out infinite;
-  animation-delay: inherit;
-}
 /* Smooth transition when toggling */
 html.lg-transitioning .ed,
 html.lg-transitioning .topbar,
@@ -783,6 +749,54 @@ html.lg-transitioning .lb,
 html.lg-transitioning .fld input,
 html.lg-transitioning .fld textarea {
   transition-duration: .4s !important;
+}
+/* ---- FIREFOX FALLBACK: no backdrop-filter, use opaque backgrounds ---- */
+/* Firefox supports backdrop-filter but renders it very slowly with multiple layers.
+   JS adds .lg-no-blur on Firefox; these rules replace blur with solid translucent fills. */
+html.liquid-glass.lg-no-blur .ed {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(20,20,50,.82) !important;
+}
+html.liquid-glass.lg-no-blur.light .ed {
+  background: rgba(235,238,250,.82) !important;
+}
+html.liquid-glass.lg-no-blur .topbar {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(20,20,50,.82) !important;
+}
+html.liquid-glass.lg-no-blur.light .topbar {
+  background: rgba(235,238,250,.82) !important;
+}
+html.liquid-glass.lg-no-blur .hist-drawer {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(10,10,30,.9) !important;
+}
+html.liquid-glass.lg-no-blur.light .hist-drawer {
+  background: rgba(230,235,255,.9) !important;
+}
+html.liquid-glass.lg-no-blur .toast {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(20,20,50,.88) !important;
+}
+html.liquid-glass.lg-no-blur.light .toast {
+  background: rgba(235,238,250,.88) !important;
+}
+html.liquid-glass.lg-no-blur .split-menu {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(20,20,50,.92) !important;
+}
+html.liquid-glass.lg-no-blur.light .split-menu {
+  background: rgba(235,238,250,.92) !important;
+}
+/* No ::before refraction layer needed without blur */
+html.liquid-glass.lg-no-blur .ed::before,
+html.liquid-glass.lg-no-blur .topbar::before {
+  display: none;
 }
 </style>
 </head>
@@ -2820,15 +2834,17 @@ $themeToggle.addEventListener('click', function() {
 // ===== LIQUID GLASS TOGGLE =====
 var LG_KEY = 'ki-news-liquid-glass';
 var $lgToggle = document.getElementById('lgToggle');
+var lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
 function applyLiquidGlass(on) {
   var html = document.documentElement;
   html.classList.add('lg-transitioning');
   if (on) {
     html.classList.add('liquid-glass');
+    if (lgIsFirefox) html.classList.add('lg-no-blur');
     $lgToggle.textContent = '\u2666';
     $lgToggle.title = 'Liquid Glass UI (aktiv)';
   } else {
-    html.classList.remove('liquid-glass');
+    html.classList.remove('liquid-glass', 'lg-no-blur');
     $lgToggle.textContent = '\u2662';
     $lgToggle.title = 'Liquid Glass UI';
   }
