@@ -4631,18 +4631,24 @@ function switchToSlide(idx) {
   currentSlideIdx = idx;
   loadSlideState(deck[idx]);
   refreshEditorFromState();
+  // Draw the new slide synchronously so captureCurrentThumb() gets the right content
+  _origDraw();
   renderDeckStrip();
 }
 
 function captureCurrentThumb() {
-  // Capture the current main canvas as a small data URL for the current slide
   var thumbW = 120;
-  var thumbH = Math.round(120 * (H / W));
+  var thumbH = Math.round(120 * (H / W)) || 90;
   var offscreen = document.createElement('canvas');
   offscreen.width = thumbW;
   offscreen.height = thumbH;
-  offscreen.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-  return offscreen.toDataURL('image/jpeg', 0.6);
+  try {
+    offscreen.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+    return offscreen.toDataURL('image/jpeg', 0.6);
+  } catch (e) {
+    // Canvas may be tainted; return null to fall back to canvas render
+    return null;
+  }
 }
 
 function renderDeckStrip() {
@@ -4654,7 +4660,8 @@ function renderDeckStrip() {
   var iso = $date.value;
   if (iso) S.dateText = isoToDE(iso);
   deck[currentSlideIdx] = slideSnapshot();
-  // Update current slide's cached thumbnail from the live canvas
+  // Ensure canvas shows current slide before capturing (guard against rAF timing)
+  _origDraw();
   deck[currentSlideIdx].thumbDataUrl = captureCurrentThumb();
 
   var thumbH = Math.round(120 * (H / W));
@@ -4664,7 +4671,7 @@ function renderDeckStrip() {
     div.setAttribute('data-idx', i);
 
     // Use cached thumbnail image instead of re-rendering every slide
-    if (deck[i].thumbDataUrl) {
+    if (deck[i].thumbDataUrl && deck[i].thumbDataUrl !== 'data:,') {
       var img = document.createElement('img');
       img.src = deck[i].thumbDataUrl;
       img.alt = 'Slide ' + (i + 1);
@@ -4771,9 +4778,10 @@ function startDeck() {
   currentSlideIdx = 0;
   $deckBar.classList.add('active');
   $bDeck.classList.add('btn-success');
-  $bDeck.textContent = 'Karussell ✓';
+  $bDeck.textContent = 'Karussell \u2713';
+  _origDraw(); // ensure canvas is current before first thumbnail capture
   renderDeckStrip();
-  showToast('Karussell-Modus aktiv – Slides hinzufügen mit +');
+  showToast('Karussell-Modus aktiv \u2013 Slides hinzuf\u00fcgen mit +');
 }
 
 function stopDeck() {
