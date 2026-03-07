@@ -3564,6 +3564,37 @@ function drawCroppedImage(idx, dx, dy, dw, dh) {
   }
 }
 // ===== HISTORY: ARCHIVE POST =====
+function buildSlideData(snap) {
+  return {
+    headline: snap.hlLines.join('\n'),
+    subtitle: snap.subText,
+    date: snap.dateText,
+    layout: snap.layout,
+    hlCaps: snap.hlCaps,
+    subCaps: snap.subCaps,
+    hlFSOverride: snap.hlFSOverride,
+    subFSOverride: snap.subFSOverride,
+    credFSOverride: snap.credFSOverride,
+    credAlign: snap.credAlign,
+    credOffX: snap.credOffX,
+    credOffY: snap.credOffY,
+    credShadow: snap.credShadow,
+    textPos: snap.textPos,
+    credits: snap.creds.slice(),
+    crops: snap.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; })
+  };
+}
+function compressSlideImages(snap) {
+  var promises = [];
+  for (var i = 0; i < 2; i++) {
+    if (snap.imgs[i]) {
+      promises.push(compressImage(snap.imgs[i]));
+    } else {
+      promises.push(Promise.resolve(null));
+    }
+  }
+  return Promise.all(promises);
+}
 $bA.addEventListener('click', function() {
   var btn = this;
   if (btn.disabled) return;
@@ -3572,6 +3603,80 @@ $bA.addEventListener('click', function() {
     return;
   }
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
+
+  // If carousel mode active, save current slide state to deck first
+  if (deckActive && deck.length > 1) {
+    saveCurrentSlide();
+    // Save all slides in carousel
+    var slidePromises = [];
+    for (var si = 0; si < deck.length; si++) {
+      slidePromises.push(compressSlideImages(deck[si]));
+    }
+    // Generate thumbnail from first slide
+    var origSnap = slideSnapshot();
+    loadSlideState(deck[0]);
+    _origDraw();
+    var thumbPromise = canvasToThumbnail(cv);
+    // Restore current slide
+    loadSlideState(origSnap);
+    _origDraw();
+
+    Promise.all([Promise.all(slidePromises), thumbPromise]).then(function(allResults) {
+      var allSlideImages = allResults[0]; // array of [img0, img1] per slide
+      var thumbnail = allResults[1];
+      var slides = [];
+      for (var j = 0; j < deck.length; j++) {
+        var sd = buildSlideData(deck[j]);
+        sd.images = [allSlideImages[j][0], allSlideImages[j][1]];
+        slides.push(sd);
+      }
+      var post = {
+        id: Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
+        savedAt: new Date().toISOString(),
+        // Top-level fields from first slide (for backward-compat display in history)
+        headline: slides[0].headline,
+        subtitle: slides[0].subtitle,
+        date: slides[0].date,
+        layout: slides[0].layout,
+        format: S.format,
+        hlCaps: slides[0].hlCaps,
+        subCaps: slides[0].subCaps,
+        hlFSOverride: slides[0].hlFSOverride,
+        subFSOverride: slides[0].subFSOverride,
+        credFSOverride: slides[0].credFSOverride,
+        credAlign: slides[0].credAlign,
+        credOffX: slides[0].credOffX,
+        credOffY: slides[0].credOffY,
+        credShadow: slides[0].credShadow,
+        textPos: slides[0].textPos,
+        credits: slides[0].credits,
+        crops: slides[0].crops,
+        thumbnail: thumbnail,
+        images: slides[0].images,
+        // Carousel-specific data
+        isCarousel: true,
+        slides: slides
+      };
+      return dbAdd(post).then(function() { return post; });
+    }).then(function(post) {
+      syncToCloud(post);
+      btn.textContent = '\u2713 Gespeichert!';
+      btn.classList.add('btn-success');
+      showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides gespeichert');
+      setTimeout(function() {
+        btn.disabled = false;
+        btn.textContent = 'Speichern';
+        btn.classList.remove('btn-success');
+      }, 1500);
+    }).catch(function(err) {
+      console.warn('Carousel save failed:', err);
+      btn.disabled = false; btn.textContent = 'Speichern';
+      showToast('\u26a0 Speichern fehlgeschlagen');
+    });
+    return;
+  }
+
+  // Single-slide save (original logic)
   draw();
   var promises = [];
   // Compress images
@@ -3734,6 +3839,9 @@ function loadHistoryGrid() {
       var date = document.createElement('div');
       date.className = 'hist-item-date';
       date.textContent = post.date || new Date(post.savedAt).toLocaleDateString('de-DE');
+      if (post.isCarousel && post.slides) {
+        date.textContent += ' \u00b7 ' + post.slides.length + ' Slides';
+      }
       info.appendChild(date);
       item.appendChild(info);
       // Delete button
@@ -3808,7 +3916,12 @@ function loadArchivedPost(post) {
     autoSize($hl); autoSize($sub);
     renderUI(); saveState();
     closeHistory();
-    showToast('\u2713 Post geladen');
+    // If this is a carousel post, restore all slides
+    if (post.isCarousel && Array.isArray(post.slides) && post.slides.length > 1) {
+      loadCarouselPost(post);
+    } else {
+      showToast('\u2713 Post geladen');
+    }
   }
   for (var i = 0; i < 2; i++) {
     if (post.images && post.images[i]) {
@@ -3833,6 +3946,92 @@ function loadArchivedPost(post) {
     }
   }
   if (total === 0) onAllLoaded();
+}
+function loadSlideFromSaved(slideData) {
+  return {
+    imgs: [null, null],
+    blobs: [null, null],
+    draftBlobs: [null, null],
+    creds: (Array.isArray(slideData.credits) && slideData.credits.length === 2) ? slideData.credits.slice() : ['', ''],
+    crop: (Array.isArray(slideData.crops) && slideData.crops.length === 2)
+      ? slideData.crops.map(function(c) {
+          if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100};
+          return defaultCrop();
+        })
+      : [defaultCrop(), defaultCrop()],
+    layout: slideData.layout || 'one',
+    hlCaps: !!slideData.hlCaps,
+    subCaps: !!slideData.subCaps,
+    hlLines: slideData.headline ? slideData.headline.split('\n') : [''],
+    subText: slideData.subtitle || '',
+    dateText: slideData.date || todayDE(),
+    hlFSOverride: slideData.hlFSOverride || 0,
+    subFSOverride: slideData.subFSOverride || 0,
+    credFSOverride: slideData.credFSOverride || 0,
+    credAlign: slideData.credAlign || 'right',
+    credOffX: slideData.credOffX || 0,
+    credOffY: slideData.credOffY || 0,
+    credShadow: !!slideData.credShadow,
+    textPos: slideData.textPos || 'top'
+  };
+}
+function loadCarouselPost(post) {
+  // Stop existing carousel if active
+  if (deckActive) { deckActive = false; deck = []; }
+  // Build deck from saved slides
+  var slides = post.slides;
+  deck = [];
+  var totalImgs = 0, loadedImgs = 0;
+  for (var si = 0; si < slides.length; si++) {
+    deck.push(loadSlideFromSaved(slides[si]));
+  }
+  // Count images to load across all slides
+  for (var si2 = 0; si2 < slides.length; si2++) {
+    for (var ii = 0; ii < 2; ii++) {
+      if (slides[si2].images && slides[si2].images[ii]) totalImgs++;
+    }
+  }
+  function onAllCarouselImgsLoaded() {
+    // Activate carousel mode
+    deckActive = true;
+    currentSlideIdx = 0;
+    loadSlideState(deck[0]);
+    refreshEditorFromState();
+    $deckBar.classList.add('active');
+    $bDeck.classList.add('btn-success');
+    $bDeck.textContent = 'Karussell \u2713';
+    _origDraw();
+    renderDeckStrip();
+    showToast('\u2713 Karussell mit ' + deck.length + ' Slides geladen');
+  }
+  if (totalImgs === 0) {
+    onAllCarouselImgsLoaded();
+    return;
+  }
+  // Load images for each slide
+  for (var si3 = 0; si3 < slides.length; si3++) {
+    for (var ii2 = 0; ii2 < 2; ii2++) {
+      if (slides[si3].images && slides[si3].images[ii2]) {
+        (function(slideIdx, imgIdx, blob) {
+          deck[slideIdx].draftBlobs[imgIdx] = blob;
+          var blobUrl = URL.createObjectURL(blob);
+          var im = new Image();
+          im.onload = function() {
+            deck[slideIdx].imgs[imgIdx] = im;
+            deck[slideIdx].blobs[imgIdx] = blobUrl;
+            loadedImgs++;
+            if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+          };
+          im.onerror = function() {
+            URL.revokeObjectURL(blobUrl);
+            loadedImgs++;
+            if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+          };
+          im.src = blobUrl;
+        })(si3, ii2, slides[si3].images[ii2]);
+      }
+    }
+  }
 }
 // ===== GLOBAL DRAG & DROP =====
 var dragCounter = 0;
@@ -4463,7 +4662,9 @@ function syncToCloud(post) {
       crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
       savedAt: post.savedAt,
       imageUrls: [urls[0], urls[1]],
-      thumbnailUrl: urls[2]
+      thumbnailUrl: urls[2],
+      isCarousel: !!post.isCarousel,
+      slideCount: (post.slides && post.slides.length) || 1
     });
   }).catch(function(err) {
     console.warn('syncToCloud failed:', err);
@@ -4691,7 +4892,10 @@ function captureCurrentThumb() {
   offscreen.height = thumbH;
   try {
     offscreen.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-    return offscreen.toDataURL('image/jpeg', 0.6);
+    var dataUrl = offscreen.toDataURL('image/jpeg', 0.6);
+    // Validate: must be a real data URL, not empty
+    if (!dataUrl || dataUrl === 'data:,' || dataUrl.length < 50) return null;
+    return dataUrl;
   } catch (e) {
     // Canvas may be tainted; return null to fall back to canvas render
     return null;
@@ -4718,30 +4922,56 @@ function renderDeckStrip() {
     div.setAttribute('data-idx', i);
 
     // Use cached thumbnail image instead of re-rendering every slide
-    if (deck[i].thumbDataUrl && deck[i].thumbDataUrl !== 'data:,') {
+    var thumbSrc = deck[i].thumbDataUrl;
+    if (!thumbSrc || thumbSrc === 'data:,' || thumbSrc.length < 50) {
+      // Try to render thumbnail for this slide on the fly
+      try {
+        var origSnap = slideSnapshot();
+        loadSlideState(deck[i]);
+        _origDraw();
+        var tc = document.createElement('canvas');
+        tc.width = 120;
+        tc.height = thumbH;
+        tc.getContext('2d').drawImage(cv, 0, 0, tc.width, tc.height);
+        thumbSrc = tc.toDataURL('image/jpeg', 0.6);
+        if (thumbSrc && thumbSrc !== 'data:,' && thumbSrc.length >= 50) {
+          deck[i].thumbDataUrl = thumbSrc;
+        } else {
+          thumbSrc = null;
+        }
+        loadSlideState(origSnap);
+        _origDraw();
+      } catch (e) {
+        thumbSrc = null;
+        // Restore state if fallback failed
+        try { loadSlideState(origSnap); _origDraw(); } catch (e2) {}
+      }
+    }
+    if (thumbSrc) {
       var img = document.createElement('img');
-      img.src = deck[i].thumbDataUrl;
-      img.alt = 'Slide ' + (i + 1);
+      img.src = thumbSrc;
+      img.alt = '';
       img.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;object-fit:cover';
       div.appendChild(img);
     } else {
-      // Fallback for slides without a cached thumb: render once
-      var origSnap = slideSnapshot();
-      loadSlideState(deck[i]);
-      _origDraw();
-      var tc = document.createElement('canvas');
-      tc.width = 120;
-      tc.height = thumbH;
-      tc.getContext('2d').drawImage(cv, 0, 0, tc.width, tc.height);
-      deck[i].thumbDataUrl = tc.toDataURL('image/jpeg', 0.6);
-      loadSlideState(origSnap);
-      _origDraw();
-      // Use img element (not canvas) so scheduleDeckThumbUpdate can find it
-      var fImg = document.createElement('img');
-      fImg.src = deck[i].thumbDataUrl;
-      fImg.alt = 'Slide ' + (i + 1);
-      fImg.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;object-fit:cover';
-      div.appendChild(fImg);
+      // Ultimate fallback: render a mini canvas directly (avoids toDataURL taint issues)
+      try {
+        var origSnap2 = slideSnapshot();
+        loadSlideState(deck[i]);
+        _origDraw();
+        var fc = document.createElement('canvas');
+        fc.width = 120;
+        fc.height = thumbH;
+        fc.getContext('2d').drawImage(cv, 0, 0, 120, thumbH);
+        fc.style.cssText = 'width:100%;height:100%;display:block;pointer-events:none;object-fit:cover';
+        div.appendChild(fc);
+        loadSlideState(origSnap2);
+        _origDraw();
+      } catch (e) {
+        // Complete fallback: colored placeholder
+        div.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #0a0a1a 100%)';
+        try { loadSlideState(origSnap2); _origDraw(); } catch (e2) {}
+      }
     }
 
     var num = document.createElement('span');
@@ -4967,9 +5197,21 @@ function scheduleDeckThumbUpdate() {
     if (!deckActive) return;
     // Update cached thumbnail and the visible strip element
     var dataUrl = captureCurrentThumb();
+    // Only update if we got a valid thumbnail (don't overwrite good thumb with null)
+    if (!dataUrl) return;
     if (deck[currentSlideIdx]) deck[currentSlideIdx].thumbDataUrl = dataUrl;
     var currentEl = $deckStrip.querySelector('.deck-slide.current img');
     if (currentEl) currentEl.src = dataUrl;
+    // Also try updating the canvas fallback element if img isn't present
+    var currentCanvas = $deckStrip.querySelector('.deck-slide.current canvas');
+    if (currentCanvas) {
+      try {
+        var thumbH = Math.round(120 * (H / W));
+        currentCanvas.width = 120;
+        currentCanvas.height = thumbH;
+        currentCanvas.getContext('2d').drawImage(cv, 0, 0, 120, thumbH);
+      } catch (e) {}
+    }
   }, 300);
 }
 
