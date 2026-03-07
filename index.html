@@ -2946,7 +2946,18 @@ $segPreview.addEventListener('click', function() { setView(false); });
 // New post
 const $bN = document.getElementById('bN');
 $bN.addEventListener('click', function() {
-  var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
+  var hasContent = false;
+  if (deckActive && deck.length > 0) {
+    saveCurrentSlide();
+    for (var ci = 0; ci < deck.length; ci++) {
+      var ds = deck[ci];
+      if (ds.imgs[0] || ds.imgs[1] || ds.hlLines.join('').trim() || ds.subText.trim()) {
+        hasContent = true; break;
+      }
+    }
+  } else {
+    hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
+  }
   var msg = deckActive
     ? 'Karussell mit ' + deck.length + ' Slides verwerfen und neu beginnen?'
     : 'Aktuellen Post verwerfen und neu beginnen?';
@@ -4030,7 +4041,9 @@ function loadArchivedPost(post) {
     renderUI(); saveState();
     closeHistory();
     // If this is a carousel post, restore all slides
-    if (post.isCarousel && Array.isArray(post.slides) && post.slides.length > 1) {
+    if (post.isCarousel && Array.isArray(post.slides) && post.slides.length >= 1) {
+      // Revoke temporary blob URLs created above — loadCarouselPost will create its own
+      revokeBlob(0); revokeBlob(1);
       loadCarouselPost(post);
     } else {
       showToast('\u2713 Post geladen');
@@ -4091,7 +4104,7 @@ function loadSlideFromSaved(slideData) {
 }
 function loadCarouselPost(post) {
   // Stop existing carousel if active
-  if (deckActive) { deckActive = false; deck = []; }
+  if (deckActive) { revokeDeckBlobs(); deckActive = false; deck = []; }
   // Build deck from saved slides
   var slides = post.slides;
   deck = [];
@@ -4910,6 +4923,14 @@ var $bCarouselExportPdf = document.getElementById('bCarouselExportPdf');
 var $appDiv = document.querySelector('.app');
 var currentToolMode = 'single'; // 'single' or 'carousel'
 
+function revokeDeckBlobs() {
+  for (var i = 0; i < deck.length; i++) {
+    for (var j = 0; j < 2; j++) {
+      if (deck[i].blobs[j]) { URL.revokeObjectURL(deck[i].blobs[j]); deck[i].blobs[j] = null; }
+    }
+  }
+}
+
 function setToolMode(mode, force) {
   if (mode === currentToolMode && !force) return;
   if (!force && mode === 'single' && deckActive && deck.length > 1) {
@@ -4928,6 +4949,7 @@ function setToolMode(mode, force) {
     $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
   } else {
     if (deckActive) {
+      revokeDeckBlobs();
       deckActive = false;
       deck = [];
       currentSlideIdx = 0;
@@ -5163,6 +5185,12 @@ function addSlide() {
 
 function removeSlide(idx) {
   if (deck.length <= 1) return;
+  var removed = deck[idx];
+  if (removed) {
+    for (var ri = 0; ri < 2; ri++) {
+      if (removed.blobs[ri]) { URL.revokeObjectURL(removed.blobs[ri]); }
+    }
+  }
   deck.splice(idx, 1);
   if (currentSlideIdx >= deck.length) currentSlideIdx = deck.length - 1;
   else if (idx < currentSlideIdx) currentSlideIdx--;
