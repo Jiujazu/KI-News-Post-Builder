@@ -130,7 +130,7 @@ button{border:none;cursor:pointer;font-size:14px;font-weight:600;padding:10px 14
   .seg{padding:6px 12px;font-size:12px}
 }
 /* ===== EDITOR PANELS ===== */
-.ed{background:var(--surface);border:none;border-top:4px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);transition:box-shadow .2s ease}
+.ed{background:var(--surface);border:none;border-top:6px solid var(--border);border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);transition:box-shadow .2s ease}
 #cropSection{border-top-color:#5B8DEF;background:rgba(91,141,239,.07)}
 #textSection{border-top-color:#8C50C8;background:rgba(140,80,200,.07)}
 #creditSection{border-top-color:#D4668E;background:rgba(212,102,142,.07)}
@@ -2202,6 +2202,9 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
       <button class="lb fmt" data-fmt="16:9" role="radio" aria-checked="false" aria-label="Format 16:9" title="YouTube / Landscape">16:9</button>
       <button class="lb fmt" data-fmt="9:16" role="radio" aria-checked="false" aria-label="Format 9:16" title="Story / Reel">9:16</button>
     </div>
+    <div style="margin-top:8px">
+      <button class="lb" id="btnSafeZone" role="switch" aria-checked="false" aria-label="LinkedIn Safe Zone anzeigen" title="Zeigt den Bereich, den LinkedIn's Navigation-Overlay verdeckt" style="font-size:10px;padding:4px 10px">LinkedIn Safe Zone</button>
+    </div>
     </div>
   </div>
   <!-- IMAGES (thumbnail-sized upload zones) -->
@@ -2291,6 +2294,8 @@ const FORMATS = {
   '9:16': { w: 1080, h: 1920 }
 };
 let W = 1200, H = 1500;
+const SAFE_ZONE_RATIO = 0.08; // LinkedIn overlay covers ~8% of slide height
+var showSafeZone = false;
 const LOGO = new Image();
 LOGO.onload = function() { scheduleDraw(); };
 LOGO.onerror = function() { console.warn('Logo konnte nicht geladen werden'); };
@@ -2392,6 +2397,7 @@ const $hlCount  = document.getElementById('hlCount');
 const $subCount = document.getElementById('subCount');
 const $hint    = document.getElementById('hint');
 const $fmtBtns = document.querySelectorAll('.fmt');
+const $btnSafeZone = document.getElementById('btnSafeZone');
 const $z  = [document.getElementById('z0'),  document.getElementById('z1')];
 const $pv = [document.getElementById('pv0'), document.getElementById('pv1')];
 const $ph = [document.getElementById('ph0'), document.getElementById('ph1')];
@@ -3081,6 +3087,13 @@ for (let fi = 0; fi < $fmtBtns.length; fi++) {
     setFormat(this.getAttribute('data-fmt'));
   });
 }
+// LinkedIn Safe Zone toggle
+$btnSafeZone.addEventListener('click', function() {
+  showSafeZone = !showSafeZone;
+  this.classList.toggle('on', showSafeZone);
+  this.setAttribute('aria-checked', String(showSafeZone));
+  scheduleDraw();
+});
 // Swap button
 $swapBtn.addEventListener('click', function(e) {
   e.stopPropagation();
@@ -3430,70 +3443,6 @@ function drawFooter() {
   cx.textBaseline = 'alphabetic';
   cx.textAlign = 'left';
 }
-// ===== CAROUSEL SLIDE INDICATORS =====
-var deckRenderIdx = -1; // set during export to override currentSlideIdx
-function drawCarouselIndicators() {
-  if (!deckActive || deck.length < 2) return;
-  var idx = deckRenderIdx >= 0 ? deckRenderIdx : currentSlideIdx;
-  var total = deck.length;
-  var isLandscape = W > H;
-  var fBottom = isLandscape ? 20 : FOOTER_BOTTOM;
-  var indicatorY = H - fBottom - (isLandscape ? 50 : 70);
-  // --- Page indicator pill (e.g. "1 / 9") ---
-  cx.save();
-  var label = (idx + 1) + ' / ' + total;
-  var pillFS = isLandscape ? 22 : 28;
-  cx.font = '700 ' + pillFS + 'px ' + SYS_FONT;
-  var tw = cx.measureText(label).width;
-  var pillW = tw + 28;
-  var pillH = pillFS + 16;
-  var pillX = MX;
-  var pillY = indicatorY;
-  cx.fillStyle = 'rgba(0,0,0,0.45)';
-  cx.beginPath();
-  var r = pillH / 2;
-  cx.moveTo(pillX + r, pillY);
-  cx.lineTo(pillX + pillW - r, pillY);
-  cx.arcTo(pillX + pillW, pillY, pillX + pillW, pillY + r, r);
-  cx.arcTo(pillX + pillW, pillY + pillH, pillX + pillW - r, pillY + pillH, r);
-  cx.lineTo(pillX + r, pillY + pillH);
-  cx.arcTo(pillX, pillY + pillH, pillX, pillY + pillH - r, r);
-  cx.arcTo(pillX, pillY, pillX + r, pillY, r);
-  cx.closePath();
-  cx.fill();
-  cx.fillStyle = '#fff';
-  cx.textBaseline = 'middle';
-  cx.textAlign = 'center';
-  cx.fillText(label, pillX + pillW / 2, pillY + pillH / 2 + 1);
-  // --- Swipe arrow on all slides except last ---
-  if (idx < total - 1) {
-    var arrowFS = isLandscape ? 30 : 38;
-    cx.font = '600 ' + arrowFS + 'px ' + SYS_FONT;
-    var arrowText = '\u2192'; // →
-    var atw = cx.measureText(arrowText).width;
-    var aPillW = atw + 24;
-    var aPillH = arrowFS + 14;
-    var aPillX = W - MX - aPillW;
-    var aPillY = indicatorY;
-    cx.fillStyle = 'rgba(0,0,0,0.45)';
-    cx.beginPath();
-    var ar = aPillH / 2;
-    cx.moveTo(aPillX + ar, aPillY);
-    cx.lineTo(aPillX + aPillW - ar, aPillY);
-    cx.arcTo(aPillX + aPillW, aPillY, aPillX + aPillW, aPillY + ar, ar);
-    cx.arcTo(aPillX + aPillW, aPillY + aPillH, aPillX + aPillW - ar, aPillY + aPillH, ar);
-    cx.lineTo(aPillX + ar, aPillY + aPillH);
-    cx.arcTo(aPillX, aPillY + aPillH, aPillX, aPillY + aPillH - ar, ar);
-    cx.arcTo(aPillX, aPillY, aPillX + ar, aPillY, ar);
-    cx.closePath();
-    cx.fill();
-    cx.fillStyle = '#fff';
-    cx.textBaseline = 'middle';
-    cx.textAlign = 'center';
-    cx.fillText(arrowText, aPillX + aPillW / 2, aPillY + aPillH / 2 + 1);
-  }
-  cx.restore();
-}
 // ===== DRAW =====
 function draw() {
   cx.drawImage(gradCV, 0, 0, 1, H, 0, 0, W, H);
@@ -3508,7 +3457,6 @@ function draw() {
     if (!t.isNone) drawImages(curY);
   }
   drawFooter();
-  drawCarouselIndicators();
 }
 // ===== DRAW CROPPED IMAGE =====
 function drawCroppedImage(idx, dx, dy, dw, dh) {
@@ -4890,12 +4838,10 @@ $deckExportPdf.addEventListener('click', function() {
       for (var i = 0; i < deck.length; i++) {
         if (i > 0) pdf.addPage([W, H], orient);
         loadSlideState(deck[i]);
-        deckRenderIdx = i;
         _origDraw();
         var imgData = cv.toDataURL('image/jpeg', 0.95);
         pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
       }
-      deckRenderIdx = -1;
 
       // Restore current slide
       loadSlideState(origSnap);
@@ -4945,7 +4891,6 @@ $deckExportImgs.addEventListener('click', function() {
   function exportSlide(i) {
     if (i >= deck.length) {
       // Done — restore state
-      deckRenderIdx = -1;
       loadSlideState(origSnap);
       _origDraw();
       btn.disabled = false;
@@ -4956,7 +4901,6 @@ $deckExportImgs.addEventListener('click', function() {
       return;
     }
     loadSlideState(deck[i]);
-    deckRenderIdx = i;
     _origDraw();
     var args = [function(blob) {
       if (blob) {
@@ -4995,6 +4939,30 @@ function scheduleDeckThumbUpdate() {
 var _origDraw = draw;
 draw = function() {
   _origDraw();
+  if (showSafeZone) {
+    var szH = Math.round(H * SAFE_ZONE_RATIO);
+    var szY = H - szH;
+    // Semi-transparent overlay
+    cx.fillStyle = 'rgba(255, 60, 60, 0.13)';
+    cx.fillRect(0, szY, W, szH);
+    // Dashed line at safe zone boundary
+    cx.save();
+    cx.strokeStyle = 'rgba(255, 80, 80, 0.6)';
+    cx.lineWidth = 2;
+    cx.setLineDash([12, 6]);
+    cx.beginPath();
+    cx.moveTo(0, szY);
+    cx.lineTo(W, szY);
+    cx.stroke();
+    // Label
+    cx.setLineDash([]);
+    cx.font = '500 22px ' + SYS_FONT;
+    cx.fillStyle = 'rgba(255, 80, 80, 0.7)';
+    cx.textAlign = 'left';
+    cx.textBaseline = 'top';
+    cx.fillText('LinkedIn Safe Zone', MX, szY + 6);
+    cx.restore();
+  }
   scheduleDeckThumbUpdate();
 };
 
