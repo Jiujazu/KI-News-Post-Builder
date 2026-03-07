@@ -1929,7 +1929,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 }
 .deck-slide:hover{border-color:var(--border-hover)}
 .deck-slide.current{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
-.deck-slide canvas,.deck-slide .deck-thumb-canvas{width:100%;height:100%;display:block;pointer-events:none;object-fit:cover}
+.deck-slide canvas,.deck-slide .deck-thumb-canvas{width:100%;height:100%;display:block;pointer-events:none}
 .deck-slide .slide-num{
   position:absolute;bottom:2px;right:4px;font-size:10px;font-weight:700;
   color:var(--text-faint);pointer-events:none;
@@ -1947,6 +1947,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
   border:2px dashed var(--border-hover);background:transparent;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   font-size:28px;color:var(--text-faint);transition:border-color .2s,color .2s;
+  /* height is overridden dynamically by renderDeckStrip to match format aspect ratio */
 }
 .deck-add:hover{border-color:var(--accent);color:var(--accent)}
 .deck-controls{
@@ -3598,15 +3599,28 @@ function compressSlideImages(snap) {
 $bA.addEventListener('click', function() {
   var btn = this;
   if (btn.disabled) return;
-  if (!S.hlLines.join('').trim() && !S.subText.trim() && !S.imgs[0] && !S.imgs[1]) {
+  // Check if there's anything to save (consider all carousel slides if active)
+  var hasContent = false;
+  if (deckActive && deck.length > 1) {
+    saveCurrentSlide(); // ensure current editor state is in deck
+    for (var ci = 0; ci < deck.length; ci++) {
+      var ds = deck[ci];
+      if ((ds.hlLines.join('').trim()) || ds.subText.trim() || ds.imgs[0] || ds.imgs[1]) {
+        hasContent = true; break;
+      }
+    }
+  } else {
+    hasContent = S.hlLines.join('').trim() || S.subText.trim() || S.imgs[0] || S.imgs[1];
+  }
+  if (!hasContent) {
     showToast('\u26a0 Nichts zum Speichern');
     return;
   }
   btn.disabled = true; btn.textContent = 'Speichert\u2026';
 
-  // If carousel mode active, save current slide state to deck first
+  // If carousel mode active, save all slides
   if (deckActive && deck.length > 1) {
-    saveCurrentSlide();
+    // saveCurrentSlide() was already called during the empty check above
     // Save all slides in carousel
     var slidePromises = [];
     for (var si = 0; si < deck.length; si++) {
@@ -4880,28 +4894,6 @@ function switchToSlide(idx) {
   renderDeckStrip();
 }
 
-function captureCurrentThumb() {
-  // Returns a canvas element (NOT a data URL) — avoids taint issues entirely
-  var thumbW = 120;
-  var thumbH = Math.round(120 * (H / W)) || 90;
-  var offscreen = document.createElement('canvas');
-  offscreen.width = thumbW;
-  offscreen.height = thumbH;
-  try {
-    offscreen.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-  } catch (e) {
-    // Even drawImage can fail in very restricted environments
-    var fCtx = offscreen.getContext('2d');
-    var grad = fCtx.createLinearGradient(0, 0, 0, thumbH);
-    grad.addColorStop(0, '#025671');
-    grad.addColorStop(0.5, '#261c53');
-    grad.addColorStop(1, '#1f0e1d');
-    fCtx.fillStyle = grad;
-    fCtx.fillRect(0, 0, thumbW, thumbH);
-  }
-  return offscreen;
-}
-
 function renderDeckStrip() {
   if (!deckActive) return;
   $deckStrip.innerHTML = '';
@@ -4914,19 +4906,22 @@ function renderDeckStrip() {
 
   var thumbW = 120;
   var thumbH = Math.round(thumbW * (H / W)) || 90;
+  // Container matches the canvas aspect ratio so CSS stretch looks correct
+  // (object-fit does NOT work on <canvas> elements)
+  var containerW = 72;
+  var containerH = Math.round(containerW * (H / W));
+
+  // Draw current slide once on cv (used for thumbnail capture)
+  _origDraw();
 
   for (var i = 0; i < deck.length; i++) {
     var div = document.createElement('div');
     div.className = 'deck-slide' + (i === currentSlideIdx ? ' current' : '');
     div.setAttribute('data-idx', i);
+    div.style.height = containerH + 'px';
 
     // Render thumbnail: load slide state, draw, capture to mini canvas
-    var origSnap = null;
-    if (i === currentSlideIdx) {
-      // Current slide is already drawn on cv
-      _origDraw();
-    } else {
-      origSnap = slideSnapshot();
+    if (i !== currentSlideIdx) {
       loadSlideState(deck[i]);
       _origDraw();
     }
@@ -4948,9 +4943,9 @@ function renderDeckStrip() {
     tc.className = 'deck-thumb-canvas';
     div.appendChild(tc);
 
-    // Restore state if we switched away
-    if (origSnap) {
-      loadSlideState(origSnap);
+    // Restore current slide state after rendering a different slide
+    if (i !== currentSlideIdx) {
+      loadSlideState(deck[currentSlideIdx]);
       _origDraw();
     }
 
@@ -4980,9 +4975,10 @@ function renderDeckStrip() {
     $deckStrip.appendChild(div);
   }
 
-  // Add button
+  // Add button (matches dynamic height)
   var addBtn = document.createElement('button');
   addBtn.className = 'deck-add';
+  addBtn.style.height = containerH + 'px';
   addBtn.textContent = '+';
   addBtn.title = 'Slide hinzufügen';
   addBtn.addEventListener('click', addSlide);
@@ -5027,8 +5023,10 @@ function removeSlide(idx) {
   if (deck.length <= 1) return;
   deck.splice(idx, 1);
   if (currentSlideIdx >= deck.length) currentSlideIdx = deck.length - 1;
+  else if (idx < currentSlideIdx) currentSlideIdx--;
   loadSlideState(deck[currentSlideIdx]);
   refreshEditorFromState();
+  _origDraw();
   renderDeckStrip();
 }
 
@@ -5087,8 +5085,17 @@ $deckExportPdf.addEventListener('click', function() {
         if (i > 0) pdf.addPage([W, H], orient);
         loadSlideState(deck[i]);
         _origDraw();
-        var imgData = cv.toDataURL('image/jpeg', 0.95);
-        pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+        try {
+          var imgData = cv.toDataURL('image/jpeg', 0.95);
+          pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+        } catch (taintErr) {
+          // Canvas tainted — draw placeholder
+          pdf.setFillColor(26, 26, 62);
+          pdf.rect(0, 0, W, H, 'F');
+          pdf.setTextColor(255, 255, 255);
+          pdf.setFontSize(24);
+          pdf.text('Slide ' + (i + 1) + ' – Export nicht möglich (CORS)', W / 2, H / 2, { align: 'center' });
+        }
       }
 
       // Restore current slide
@@ -5150,20 +5157,26 @@ $deckExportImgs.addEventListener('click', function() {
     }
     loadSlideState(deck[i]);
     _origDraw();
-    var args = [function(blob) {
-      if (blob) {
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.download = 'ki-news-karussell-' + ts + '-slide-' + (i + 1) + ext;
-        a.href = url;
-        a.click();
-        setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-      }
-      // Small delay between downloads so browser doesn't block them
-      setTimeout(function() { exportSlide(i + 1); }, 300);
-    }, mime];
-    if (isJpg) args.push(0.95);
-    cv.toBlob.apply(cv, args);
+    try {
+      var args = [function(blob) {
+        if (blob) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.download = 'ki-news-karussell-' + ts + '-slide-' + (i + 1) + ext;
+          a.href = url;
+          a.click();
+          setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        }
+        // Small delay between downloads so browser doesn't block them
+        setTimeout(function() { exportSlide(i + 1); }, 300);
+      }, mime];
+      if (isJpg) args.push(0.95);
+      cv.toBlob.apply(cv, args);
+    } catch (taintErr) {
+      console.warn('Slide ' + (i + 1) + ' export failed (tainted canvas):', taintErr);
+      showToast('\u26a0 Slide ' + (i + 1) + ' konnte nicht exportiert werden');
+      setTimeout(function() { exportSlide(i + 1); }, 100);
+    }
   }
   exportSlide(0);
 });
@@ -5175,18 +5188,14 @@ function scheduleDeckThumbUpdate() {
   clearTimeout(deckThumbTimer);
   deckThumbTimer = setTimeout(function() {
     if (!deckActive) return;
-    // Update the current slide's canvas thumbnail in-place
+    // Update the current slide's canvas thumbnail in-place (redraw from main canvas)
     var thumbCanvas = $deckStrip.querySelector('.deck-slide.current .deck-thumb-canvas');
     if (thumbCanvas) {
-      var thumbW = 120;
-      var thumbH = Math.round(thumbW * (H / W)) || 90;
-      thumbCanvas.width = thumbW;
-      thumbCanvas.height = thumbH;
       try {
-        thumbCanvas.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+        thumbCanvas.getContext('2d').drawImage(cv, 0, 0, thumbCanvas.width, thumbCanvas.height);
       } catch (e) {}
     }
-  }, 300);
+  }, 250);
 }
 
 // Patch scheduleDraw to also update deck thumbs
