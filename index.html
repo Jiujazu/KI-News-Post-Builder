@@ -2561,7 +2561,7 @@ var $bSaveCopy = document.getElementById('bSaveCopy');
 function updateSaveButtonLabel() {
   var isCarousel = typeof deckActive !== 'undefined' && deckActive;
   if (_loadedPostId) {
-    setSaveLabel(isCarousel ? '\u00dcberschreiben' : '\u00dcberschreiben');
+    setSaveLabel('\u00dcberschreiben');
     $bA.setAttribute('aria-label', 'Ge\u00e4nderten Post \u00fcberschreiben');
     $bSaveCopy.style.display = '';
   } else {
@@ -2572,7 +2572,6 @@ function updateSaveButtonLabel() {
 }
 $bSaveCopy.addEventListener('click', function() {
   _loadedPostId = null;
-  updateSaveButtonLabel();
   $bA.click(); // trigger normal save (now without _loadedPostId → creates new post)
 });
 const $bH   = document.getElementById('bH');
@@ -2810,6 +2809,9 @@ function compressImage(img, maxSide, quality) {
       else reject(new Error('compressImage: toBlob returned null'));
     }, 'image/jpeg', quality);
   });
+}
+function generatePostId() {
+  return Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
 }
 function canvasToThumbnail(canvas, maxW) {
   maxW = maxW || 300;
@@ -3874,7 +3876,7 @@ $bA.addEventListener('click', function() {
         sd.images = [allSlideImages[j][0], allSlideImages[j][1]];
         slides.push(sd);
       }
-      var postId = _loadedPostId || (Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36));
+      var postId = _loadedPostId || generatePostId();
       var post = {
         id: postId,
         savedAt: new Date().toISOString(),
@@ -3937,7 +3939,7 @@ $bA.addEventListener('click', function() {
   // Generate thumbnail
   promises.push(canvasToThumbnail(cv));
   Promise.all(promises).then(function(results) {
-    var postId = _loadedPostId || (Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36));
+    var postId = _loadedPostId || generatePostId();
     var post = {
       id: postId,
       savedAt: new Date().toISOString(),
@@ -4036,7 +4038,7 @@ $histGrid.addEventListener('click', function(e) {
       loadHistoryGrid();
       showToast('\u2713 Post gel\u00f6scht');
     }).catch(function() {
-      // Local delete succeeded even if cloud fails — still refresh
+      delete _recentlyDeletedIds[post.id];
       loadHistoryGrid();
       showToast('\u2713 Post lokal gel\u00f6scht');
     });
@@ -4243,48 +4245,18 @@ function loadArchivedPost(post) {
     } else if (hasCloudUrl) {
       total++;
       (function(idx, url) {
-        // Load image directly via <img> (no CORS needed for display)
-        var im = new Image();
-        im.crossOrigin = 'anonymous';
-        im.onload = function() {
-          S.imgs[idx] = im;
-          // Try to create a blob URL for consistent handling
-          try {
-            var c = document.createElement('canvas');
-            c.width = im.naturalWidth; c.height = im.naturalHeight;
-            c.getContext('2d').drawImage(im, 0, 0);
-            c.toBlob(function(blob) {
-              if (blob) {
-                S.draftBlobs[idx] = blob;
-                S.blobs[idx] = URL.createObjectURL(blob);
-                if (!post.images) post.images = [null, null];
-                post.images[idx] = blob;
-                dbAdd(post).catch(function() {});
-              }
-              loaded++;
-              if (loaded >= total) onAllLoaded();
-            }, 'image/jpeg', 0.85);
-          } catch (e) {
-            // Canvas tainted — still usable for display
-            loaded++;
-            if (loaded >= total) onAllLoaded();
+        loadCloudImage(url).then(function(r) {
+          if (r.img) S.imgs[idx] = r.img;
+          if (r.blob) {
+            S.draftBlobs[idx] = r.blob;
+            S.blobs[idx] = URL.createObjectURL(r.blob);
+            if (!post.images) post.images = [null, null];
+            post.images[idx] = r.blob;
+            dbAdd(post).catch(function() {});
           }
-        };
-        im.onerror = function() {
-          // crossOrigin failed — retry without (still loads for display, taints canvas)
-          var im2 = new Image();
-          im2.onload = function() {
-            S.imgs[idx] = im2;
-            loaded++;
-            if (loaded >= total) onAllLoaded();
-          };
-          im2.onerror = function() {
-            loaded++;
-            if (loaded >= total) onAllLoaded();
-          };
-          im2.src = url;
-        };
-        im.src = url;
+          loaded++;
+          if (loaded >= total) onAllLoaded();
+        });
       })(i, post.cloudImageUrls[0][i]);
     }
   }
@@ -4388,46 +4360,18 @@ function loadCarouselPost(post) {
         loadCarouselImageBlob(si3, ii2, slides[si3].images[ii2]);
       } else if (hasSlideCloudUrl) {
         (function(sIdx, iIdx, url) {
-          // Load image directly via <img> (no CORS needed for display)
-          var im = new Image();
-          im.crossOrigin = 'anonymous';
-          im.onload = function() {
-            deck[sIdx].imgs[iIdx] = im;
-            try {
-              var c = document.createElement('canvas');
-              c.width = im.naturalWidth; c.height = im.naturalHeight;
-              c.getContext('2d').drawImage(im, 0, 0);
-              c.toBlob(function(blob) {
-                if (blob) {
-                  deck[sIdx].draftBlobs[iIdx] = blob;
-                  deck[sIdx].blobs[iIdx] = URL.createObjectURL(blob);
-                  if (!slides[sIdx].images) slides[sIdx].images = [null, null];
-                  slides[sIdx].images[iIdx] = blob;
-                  dbAdd(post).catch(function() {});
-                }
-                loadedImgs++;
-                if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
-              }, 'image/jpeg', 0.85);
-            } catch (e) {
-              loadedImgs++;
-              if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+          loadCloudImage(url).then(function(r) {
+            if (r.img) deck[sIdx].imgs[iIdx] = r.img;
+            if (r.blob) {
+              deck[sIdx].draftBlobs[iIdx] = r.blob;
+              deck[sIdx].blobs[iIdx] = URL.createObjectURL(r.blob);
+              if (!slides[sIdx].images) slides[sIdx].images = [null, null];
+              slides[sIdx].images[iIdx] = r.blob;
+              dbAdd(post).catch(function() {});
             }
-          };
-          im.onerror = function() {
-            // crossOrigin failed — retry without (loads for display, taints canvas)
-            var im2 = new Image();
-            im2.onload = function() {
-              deck[sIdx].imgs[iIdx] = im2;
-              loadedImgs++;
-              if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
-            };
-            im2.onerror = function() {
-              loadedImgs++;
-              if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
-            };
-            im2.src = url;
-          };
-          im.src = url;
+            loadedImgs++;
+            if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+          });
         })(si3, ii2, post.cloudImageUrls[si3][ii2]);
       }
     }
@@ -5188,7 +5132,8 @@ function deleteFromCloud(postId, slideCount) {
 }
 // Load image from URL via <img> element, then convert to blob via canvas.
 // This bypasses CORS issues that block fetch() on Firebase Storage URLs.
-function imgUrlToBlob(url) {
+// Returns {img: Image, blob: Blob|null} — img is always set on success, blob may be null if canvas is tainted.
+function loadCloudImage(url) {
   return new Promise(function(resolve) {
     var im = new Image();
     im.crossOrigin = 'anonymous';
@@ -5199,15 +5144,18 @@ function imgUrlToBlob(url) {
         c.height = im.naturalHeight;
         c.getContext('2d').drawImage(im, 0, 0);
         c.toBlob(function(blob) {
-          resolve(blob || null);
+          resolve({ img: im, blob: blob || null });
         }, 'image/jpeg', 0.85);
       } catch (e) {
-        // Canvas tainted — resolve with null, but keep the Image for display
-        resolve(null);
+        resolve({ img: im, blob: null });
       }
     };
     im.onerror = function() {
-      resolve(null);
+      // crossOrigin failed — retry without (loads for display, taints canvas)
+      var im2 = new Image();
+      im2.onload = function() { resolve({ img: im2, blob: null }); };
+      im2.onerror = function() { resolve({ img: null, blob: null }); };
+      im2.src = url;
     };
     im.src = url;
   });
@@ -5216,7 +5164,7 @@ function downloadCloudPost(id, data) {
   // Thumbnail: try fetch first (fast, preserves original quality), fall back to img→canvas
   var thumbFetch = data.thumbnailUrl
     ? fetch(data.thumbnailUrl).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
-        .catch(function() { return imgUrlToBlob(data.thumbnailUrl); })
+        .catch(function() { return loadCloudImage(data.thumbnailUrl).then(function(r) { return r.blob; }); })
     : Promise.resolve(null);
 
   // Carousel post with slides data
@@ -5231,8 +5179,8 @@ function downloadCloudPost(id, data) {
                 .then(function(blob) { return { si: slideIdx, ii: imgIdx, blob: blob }; })
                 .catch(function() {
                   // fetch failed (CORS) — try img→canvas fallback
-                  return imgUrlToBlob(url).then(function(blob) {
-                    return { si: slideIdx, ii: imgIdx, blob: blob };
+                  return loadCloudImage(url).then(function(r) {
+                    return { si: slideIdx, ii: imgIdx, blob: r.blob };
                   });
                 })
             );
@@ -5307,7 +5255,7 @@ function downloadCloudPost(id, data) {
       (function(url) {
         imgFetches.push(
           fetch(url).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
-            .catch(function() { return imgUrlToBlob(url); })
+            .catch(function() { return loadCloudImage(url).then(function(r) { return r.blob; }); })
         );
       })(data.imageUrls[i]);
     } else {
@@ -5422,7 +5370,7 @@ function syncTemplatesFromCloud() {
 var deck = [];           // array of slide state snapshots
 var currentSlideIdx = 0;
 var deckActive = false;
-var deckThumbCache = []; // cached thumbnail ImageData per slide index
+var deckThumbCache = []; // cached thumbnail canvas elements per slide index
 var MAX_DECK_SLIDES = 50; // soft limit for carousel slides
 var _dragSlideIdx = -1;  // index of slide being dragged
 var $deckBar = document.getElementById('deckBar');
@@ -5610,26 +5558,21 @@ function renderDeckStrip() {
     div.setAttribute('data-idx', i);
     div.style.height = containerH + 'px';
 
-    var tc = document.createElement('canvas');
-    tc.width = thumbW;
-    tc.height = thumbH;
-
-    if (deckThumbCache[i]) {
-      // Use cached thumbnail canvas — drawImage works even on tainted canvases
-      tc.getContext('2d').drawImage(deckThumbCache[i], 0, 0);
-    } else {
+    if (!deckThumbCache[i]) {
       // No cache: render slide, capture, restore (only happens once per slide)
       loadSlideState(deck[i]);
       _origDraw();
-      tc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-      // Cache as offscreen canvas (no getImageData — avoids tainted canvas SecurityError)
-      var cacheCanvas = document.createElement('canvas');
-      cacheCanvas.width = thumbW; cacheCanvas.height = thumbH;
-      cacheCanvas.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-      deckThumbCache[i] = cacheCanvas;
+      var cc = document.createElement('canvas');
+      cc.width = thumbW; cc.height = thumbH;
+      cc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+      deckThumbCache[i] = cc;
       loadSlideState(deck[currentSlideIdx]);
       _origDraw();
     }
+    // Clone cached canvas for display (cache stays offscreen for reuse)
+    var tc = document.createElement('canvas');
+    tc.width = thumbW; tc.height = thumbH;
+    tc.getContext('2d').drawImage(deckThumbCache[i], 0, 0);
     tc.className = 'deck-thumb-canvas';
     div.appendChild(tc);
 
