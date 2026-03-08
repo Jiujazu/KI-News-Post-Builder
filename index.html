@@ -1992,6 +1992,10 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
   transition:background .15s;
 }
 .deck-slide:hover .slide-rm,.deck-slide.current .slide-rm{display:flex}
+.deck-slide.drag-over-left{box-shadow:-3px 0 0 0 var(--accent)}
+.deck-slide.drag-over-right{box-shadow:3px 0 0 0 var(--accent)}
+.deck-slide[draggable]{cursor:grab}
+.deck-slide[draggable]:active{cursor:grabbing}
 .deck-slide .slide-rm:hover,.deck-slide .slide-rm:active{background:rgba(220,50,50,.9)}
 .deck-add{
   flex:0 0 auto;width:72px;height:90px;border-radius:8px;
@@ -3157,7 +3161,7 @@ $bSave.addEventListener('click', function() {
   var ext = isJpg ? '.jpg' : '.png';
   var fmtLabel = isJpg ? 'JPG' : 'PNG';
   var defaultLabel = fmtLabel + ' speichern';
-  btn.disabled = true; btn.textContent = 'Speichert\u2026';
+  btn.disabled = true; setSaveLabel('Speichert\u2026');
   draw();
   var args = [function(blob) {
     if (!blob) {
@@ -3821,7 +3825,7 @@ $bA.addEventListener('click', function() {
     showToast('\u26a0 Nichts zum Speichern');
     return;
   }
-  btn.disabled = true; btn.textContent = 'Speichert\u2026';
+  btn.disabled = true; setSaveLabel('Speichert\u2026');
 
   // If carousel mode active, save all slides (even if only 1 slide)
   if (deckActive && deck.length >= 1) {
@@ -3994,10 +3998,19 @@ $histGrid.addEventListener('click', function(e) {
     var idx = +delBtn.getAttribute('data-idx');
     var post = _histPosts[idx];
     if (!post || !confirm('Gespeicherten Post l\u00f6schen?')) return;
-    dbDelete(post.id).then(function() {
-      deleteFromCloud(post.id, post.isCarousel && post.slides ? post.slides.length : 1);
+    _recentlyDeletedIds[post.id] = true;
+    var slideCount = post.isCarousel && post.slides ? post.slides.length : 1;
+    Promise.all([
+      dbDelete(post.id),
+      deleteFromCloud(post.id, slideCount)
+    ]).then(function() {
+      delete _recentlyDeletedIds[post.id];
       loadHistoryGrid();
       showToast('\u2713 Post gel\u00f6scht');
+    }).catch(function() {
+      // Local delete succeeded even if cloud fails — still refresh
+      loadHistoryGrid();
+      showToast('\u2713 Post lokal gel\u00f6scht');
     });
     return;
   }
@@ -5112,6 +5125,8 @@ function syncToCloud(post) {
     showToast('\u26a0 Cloud-Sync fehlgeschlagen');
   });
 }
+// Track recently deleted post IDs so syncCloud won't re-download them
+var _recentlyDeletedIds = {};
 function deleteFromCloud(postId, slideCount) {
   if (!fbUser || !fbEnabled) return Promise.resolve();
   var uid = fbUser.uid;
@@ -5303,7 +5318,7 @@ function syncCloud() {
     cloudSnap.forEach(function(doc) { cloudById[doc.id] = true; });
     var toDownload = [];
     cloudSnap.forEach(function(doc) {
-      if (!localById[doc.id]) toDownload.push({id: doc.id, data: doc.data()});
+      if (!localById[doc.id] && !_recentlyDeletedIds[doc.id]) toDownload.push({id: doc.id, data: doc.data()});
     });
     var toUpload = localPosts.filter(function(p) { return !cloudById[p.id]; });
     if (!toDownload.length && !toUpload.length) return;
@@ -5351,6 +5366,7 @@ var currentSlideIdx = 0;
 var deckActive = false;
 var deckThumbCache = []; // cached thumbnail ImageData per slide index
 var MAX_DECK_SLIDES = 50; // soft limit for carousel slides
+var _dragSlideIdx = -1;  // index of slide being dragged
 var $deckBar = document.getElementById('deckBar');
 var $deckStrip = document.getElementById('deckStrip');
 var $deckLabel = document.getElementById('deckLabel');
@@ -5588,6 +5604,56 @@ function renderDeckStrip() {
       div.appendChild(rm);
     }
 
+    // Drag & drop reordering
+    div.draggable = true;
+    div.addEventListener('dragstart', (function(idx) {
+      return function(e) {
+        _dragSlideIdx = idx;
+        e.dataTransfer.effectAllowed = 'move';
+        // Transparent drag image — we use CSS for visual feedback
+        try { e.dataTransfer.setData('text/plain', '' + idx); } catch (ex) {}
+        setTimeout(function() { div.style.opacity = '0.4'; }, 0);
+      };
+    })(i));
+    div.addEventListener('dragend', function() {
+      this.style.opacity = '';
+      _dragSlideIdx = -1;
+      // Remove all drop indicators
+      var allSlides = $deckStrip.querySelectorAll('.deck-slide');
+      for (var j = 0; j < allSlides.length; j++) {
+        allSlides[j].classList.remove('drag-over-left', 'drag-over-right');
+      }
+    });
+    div.addEventListener('dragover', (function(idx) {
+      return function(e) {
+        if (_dragSlideIdx < 0 || _dragSlideIdx === idx) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        // Visual indicator: show insertion point
+        var rect = this.getBoundingClientRect();
+        var midX = rect.left + rect.width / 2;
+        this.classList.toggle('drag-over-left', e.clientX < midX);
+        this.classList.toggle('drag-over-right', e.clientX >= midX);
+      };
+    })(i));
+    div.addEventListener('dragleave', function() {
+      this.classList.remove('drag-over-left', 'drag-over-right');
+    });
+    div.addEventListener('drop', (function(idx) {
+      return function(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over-left', 'drag-over-right');
+        if (_dragSlideIdx < 0 || _dragSlideIdx === idx) return;
+        var rect = this.getBoundingClientRect();
+        var midX = rect.left + rect.width / 2;
+        var targetIdx = e.clientX < midX ? idx : idx + 1;
+        if (_dragSlideIdx < targetIdx) targetIdx--;
+        if (_dragSlideIdx === targetIdx) return;
+        moveSlide(_dragSlideIdx, targetIdx);
+        _dragSlideIdx = -1;
+      };
+    })(i));
+
     div.addEventListener('click', (function(idx) {
       return function() { switchToSlide(idx); };
     })(i));
@@ -5614,6 +5680,76 @@ function renderDeckStrip() {
   var currentEl = $deckStrip.querySelector('.current');
   if (currentEl) currentEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 }
+
+// Touch-based drag & drop for mobile (HTML5 drag events don't fire on touch)
+(function() {
+  var touchSlide = null, touchIdx = -1, touchClone = null, touchStartX = 0, touchStartY = 0, touchMoved = false;
+  $deckStrip.addEventListener('touchstart', function(e) {
+    var sl = e.target.closest('.deck-slide');
+    if (!sl || e.target.closest('.slide-rm')) return;
+    touchSlide = sl;
+    touchIdx = +sl.getAttribute('data-idx');
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchMoved = false;
+  }, { passive: true });
+  $deckStrip.addEventListener('touchmove', function(e) {
+    if (touchIdx < 0) return;
+    var dx = e.touches[0].clientX - touchStartX;
+    var dy = e.touches[0].clientY - touchStartY;
+    if (!touchMoved && Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+    if (!touchMoved && Math.abs(dy) > Math.abs(dx)) { touchIdx = -1; return; }
+    touchMoved = true;
+    e.preventDefault();
+    if (!touchClone) {
+      touchClone = touchSlide.cloneNode(true);
+      touchClone.style.cssText = 'position:fixed;z-index:9999;opacity:0.8;pointer-events:none;width:' + touchSlide.offsetWidth + 'px;height:' + touchSlide.offsetHeight + 'px;';
+      document.body.appendChild(touchClone);
+      touchSlide.style.opacity = '0.3';
+    }
+    touchClone.style.left = (e.touches[0].clientX - touchSlide.offsetWidth / 2) + 'px';
+    touchClone.style.top = (e.touches[0].clientY - touchSlide.offsetHeight / 2) + 'px';
+    // Highlight drop target
+    var allSlides = $deckStrip.querySelectorAll('.deck-slide');
+    for (var j = 0; j < allSlides.length; j++) {
+      allSlides[j].classList.remove('drag-over-left', 'drag-over-right');
+      var rect = allSlides[j].getBoundingClientRect();
+      if (e.touches[0].clientX >= rect.left && e.touches[0].clientX <= rect.right) {
+        var midX = rect.left + rect.width / 2;
+        allSlides[j].classList.toggle('drag-over-left', e.touches[0].clientX < midX);
+        allSlides[j].classList.toggle('drag-over-right', e.touches[0].clientX >= midX);
+      }
+    }
+  }, { passive: false });
+  function touchEnd(e) {
+    if (touchIdx < 0) { cleanup(); return; }
+    if (touchMoved) {
+      // Find drop target
+      var cx = e.changedTouches[0].clientX;
+      var allSlides = $deckStrip.querySelectorAll('.deck-slide');
+      for (var j = 0; j < allSlides.length; j++) {
+        allSlides[j].classList.remove('drag-over-left', 'drag-over-right');
+        var rect = allSlides[j].getBoundingClientRect();
+        if (cx >= rect.left && cx <= rect.right) {
+          var targetIdx = +allSlides[j].getAttribute('data-idx');
+          var midX = rect.left + rect.width / 2;
+          var insertIdx = cx < midX ? targetIdx : targetIdx + 1;
+          if (touchIdx < insertIdx) insertIdx--;
+          if (touchIdx !== insertIdx) moveSlide(touchIdx, insertIdx);
+          break;
+        }
+      }
+    }
+    cleanup();
+  }
+  function cleanup() {
+    if (touchClone) { touchClone.remove(); touchClone = null; }
+    if (touchSlide) touchSlide.style.opacity = '';
+    touchSlide = null; touchIdx = -1; touchMoved = false;
+  }
+  $deckStrip.addEventListener('touchend', touchEnd);
+  $deckStrip.addEventListener('touchcancel', function() { cleanup(); });
+})();
 
 function addSlide() {
   if (deck.length >= MAX_DECK_SLIDES) {
@@ -5674,6 +5810,27 @@ function removeSlide(idx) {
   _origDraw();
   renderDeckStrip();
   saveDraft();
+}
+
+function moveSlide(fromIdx, toIdx) {
+  if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= deck.length || toIdx >= deck.length) return;
+  saveCurrentSlide();
+  var slide = deck.splice(fromIdx, 1)[0];
+  var thumb = deckThumbCache.splice(fromIdx, 1)[0];
+  deck.splice(toIdx, 0, slide);
+  deckThumbCache.splice(toIdx, 0, thumb);
+  // Update currentSlideIdx to follow the moved slide if needed
+  if (currentSlideIdx === fromIdx) {
+    currentSlideIdx = toIdx;
+  } else if (fromIdx < currentSlideIdx && toIdx >= currentSlideIdx) {
+    currentSlideIdx--;
+  } else if (fromIdx > currentSlideIdx && toIdx <= currentSlideIdx) {
+    currentSlideIdx++;
+  }
+  loadSlideState(deck[currentSlideIdx]);
+  refreshEditorFromState();
+  _origDraw();
+  renderDeckStrip();
 }
 
 function startDeck() {
