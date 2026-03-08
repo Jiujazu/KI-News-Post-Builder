@@ -92,6 +92,8 @@ body{
 .btn-save-toggle{display:inline-grid;place-items:center}
 .btn-save-toggle .save-label{grid-row:1/2;grid-column:1/2}
 .btn-save-toggle .save-label::after{content:attr(data-long);visibility:hidden;display:block;height:0;overflow:hidden}
+.btn-save-copy{font-size:12px!important;padding:4px 10px!important;opacity:.8;transition:opacity .15s}
+.btn-save-copy:hover{opacity:1}
 /* Hide overflow button on desktop */
 .toolbar-more-btn{display:none;font-size:18px;font-weight:bold;padding:8px 10px;line-height:1}
 /* Mobile overflow menu */
@@ -2072,6 +2074,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     <!-- Group 4: Save / Archive -->
     <div class="toolbar-group toolbar-save">
       <button class="btn-x btn-save-toggle" id="bA" aria-label="Post speichern"><span class="save-label" data-short="Speichern" data-long="Karussell speichern">Speichern</span></button>
+      <button class="btn-x btn-save-copy" id="bSaveCopy" style="display:none" aria-label="Als neue Kopie speichern" title="Als neue Kopie speichern">Kopie</button>
       <button class="btn-x" id="bH" aria-label="Gespeicherte Posts laden">Laden</button>
     </div>
     <!-- Group 5: Utility -->
@@ -2554,6 +2557,24 @@ function setSaveLabel(text) {
   if ($bASaveLabel) $bASaveLabel.textContent = text;
   else $bA.textContent = text;
 }
+var $bSaveCopy = document.getElementById('bSaveCopy');
+function updateSaveButtonLabel() {
+  var isCarousel = typeof deckActive !== 'undefined' && deckActive;
+  if (_loadedPostId) {
+    setSaveLabel(isCarousel ? '\u00dcberschreiben' : '\u00dcberschreiben');
+    $bA.setAttribute('aria-label', 'Ge\u00e4nderten Post \u00fcberschreiben');
+    $bSaveCopy.style.display = '';
+  } else {
+    setSaveLabel(isCarousel ? 'Karussell speichern' : 'Speichern');
+    $bA.setAttribute('aria-label', 'Post speichern');
+    $bSaveCopy.style.display = 'none';
+  }
+}
+$bSaveCopy.addEventListener('click', function() {
+  _loadedPostId = null;
+  updateSaveButtonLabel();
+  $bA.click(); // trigger normal save (now without _loadedPostId → creates new post)
+});
 const $bH   = document.getElementById('bH');
 const $histOverlay = document.getElementById('histOverlay');
 const $histDrawer  = document.getElementById('histDrawer');
@@ -3853,8 +3874,9 @@ $bA.addEventListener('click', function() {
         sd.images = [allSlideImages[j][0], allSlideImages[j][1]];
         slides.push(sd);
       }
+      var postId = _loadedPostId || (Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36));
       var post = {
-        id: Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
+        id: postId,
         savedAt: new Date().toISOString(),
         // Top-level fields from first slide (for backward-compat display in history)
         headline: slides[0].headline,
@@ -3882,18 +3904,20 @@ $bA.addEventListener('click', function() {
       };
       return dbAdd(post).then(function() { return post; });
     }).then(function(post) {
+      var wasOverwrite = !!_loadedPostId;
       syncToCloud(post);
+      _loadedPostId = post.id;
       setSaveLabel('\u2713 Gespeichert!');
       btn.classList.add('btn-success');
-      showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides gespeichert');
+      showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides ' + (wasOverwrite ? '\u00fcberschrieben' : 'gespeichert'));
       setTimeout(function() {
         btn.disabled = false;
-        setSaveLabel('Karussell speichern');
+        updateSaveButtonLabel();
         btn.classList.remove('btn-success');
       }, 1500);
     }).catch(function(err) {
       console.warn('Carousel save failed:', err);
-      btn.disabled = false; setSaveLabel('Karussell speichern');
+      btn.disabled = false; updateSaveButtonLabel();
       showToast('\u26a0 Speichern fehlgeschlagen');
     });
     return;
@@ -3913,8 +3937,9 @@ $bA.addEventListener('click', function() {
   // Generate thumbnail
   promises.push(canvasToThumbnail(cv));
   Promise.all(promises).then(function(results) {
+    var postId = _loadedPostId || (Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36));
     var post = {
-      id: Date.now().toString(36) + '-' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
+      id: postId,
       savedAt: new Date().toISOString(),
       headline: S.hlLines.join('\n'),
       subtitle: S.subText,
@@ -3938,18 +3963,20 @@ $bA.addEventListener('click', function() {
     };
     return dbAdd(post).then(function() { return post; });
   }).then(function(post) {
+    var wasOverwrite = !!_loadedPostId;
     syncToCloud(post);
+    _loadedPostId = post.id;
     setSaveLabel('\u2713 Gespeichert!');
     btn.classList.add('btn-success');
-    showToast('\u2713 Post gespeichert');
+    showToast('\u2713 Post ' + (wasOverwrite ? '\u00fcberschrieben' : 'gespeichert'));
     setTimeout(function() {
       btn.disabled = false;
-      setSaveLabel('Speichern');
+      updateSaveButtonLabel();
       btn.classList.remove('btn-success');
     }, 1500);
   }).catch(function(err) {
     console.warn('Save failed:', err);
-    btn.disabled = false; setSaveLabel('Speichern');
+    btn.disabled = false; updateSaveButtonLabel();
     showToast('\u26a0 Speichern fehlgeschlagen');
   });
 });
@@ -3990,6 +4017,7 @@ $histClose.addEventListener('click', closeHistory);
 $histOverlay.addEventListener('click', closeHistory);
 let activeThumbUrls = [];
 var _histPosts = [];
+var _loadedPostId = null; // ID of post loaded from archive (for overwrite-on-save)
 // Event delegation for history grid (avoids per-item listener leaks)
 $histGrid.addEventListener('click', function(e) {
   var delBtn = e.target.closest('.hist-del');
@@ -4175,6 +4203,11 @@ function loadArchivedPost(post) {
     autoSize($hl); autoSize($sub);
     renderUI(); saveState();
     closeHistory();
+    // Track loaded post for overwrite-on-save (skip draft pseudo-posts)
+    if (post.id && post.id !== '__draft__') {
+      _loadedPostId = post.id;
+    }
+    updateSaveButtonLabel();
     // If this is a carousel post, restore all slides
     if (post.isCarousel && Array.isArray(post.slides) && post.slides.length >= 1) {
       // Revoke temporary blob URLs created above — loadCarouselPost will create its own
@@ -4320,8 +4353,7 @@ function loadCarouselPost(post) {
     $tabCarousel.classList.add('active');
     $tabSingle.setAttribute('aria-selected', 'false');
     $tabCarousel.setAttribute('aria-selected', 'true');
-    setSaveLabel('Karussell speichern');
-    $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
+    updateSaveButtonLabel();
     _origDraw();
     renderDeckStrip();
     showToast('\u2713 Karussell mit ' + deck.length + ' Slides geladen');
@@ -5074,6 +5106,10 @@ function syncToCloud(post) {
         isCarousel: true,
         slideCount: post.slides.length,
         slides: slidesData
+      }).then(function() {
+        // Mark local post as cloud-synced (for cross-device delete detection)
+        post.cloudSynced = true;
+        return dbAdd(post);
       });
     }).catch(function(err) {
       console.warn('syncToCloud (carousel) failed:', err);
@@ -5119,6 +5155,9 @@ function syncToCloud(post) {
       thumbnailUrl: thumbnailUrl,
       isCarousel: false,
       slideCount: 1
+    }).then(function() {
+      post.cloudSynced = true;
+      return dbAdd(post);
     });
   }).catch(function(err) {
     console.warn('syncToCloud failed:', err);
@@ -5255,7 +5294,8 @@ function downloadCloudPost(id, data) {
         thumbnailUrl: data.thumbnailUrl || null,
         cloudImageUrls: data.slides.map(function(s) { return s.imageUrls || [null, null]; }),
         isCarousel: true,
-        slides: slides
+        slides: slides,
+        cloudSynced: true
       });
     });
   }
@@ -5300,7 +5340,8 @@ function downloadCloudPost(id, data) {
       images: [imgBlobs[0], imgBlobs[1]],
       thumbnail: thumbnail,
       thumbnailUrl: data.thumbnailUrl || null,
-      cloudImageUrls: [data.imageUrls || [null, null]]
+      cloudImageUrls: [data.imageUrls || [null, null]],
+      cloudSynced: true
     });
   });
 }
@@ -5320,13 +5361,30 @@ function syncCloud() {
     cloudSnap.forEach(function(doc) {
       if (!localById[doc.id] && !_recentlyDeletedIds[doc.id]) toDownload.push({id: doc.id, data: doc.data()});
     });
-    var toUpload = localPosts.filter(function(p) { return !cloudById[p.id]; });
-    if (!toDownload.length && !toUpload.length) return;
+    // Separate local-only posts into: upload (never synced) vs delete (deleted on another device)
+    var toUpload = [];
+    var toDeleteLocally = [];
+    localPosts.forEach(function(p) {
+      if (cloudById[p.id]) return; // already in cloud
+      if (p.cloudSynced || p.thumbnailUrl || p.cloudImageUrls) {
+        // Was synced before but no longer in cloud → deleted on another device
+        toDeleteLocally.push(p);
+      } else {
+        // Never synced → needs uploading
+        toUpload.push(p);
+      }
+    });
+    if (!toDownload.length && !toUpload.length && !toDeleteLocally.length) return;
     var ops = [];
     toDownload.forEach(function(item) { ops.push(downloadCloudPost(item.id, item.data)); });
     toUpload.forEach(function(post) { ops.push(syncToCloud(post)); });
+    toDeleteLocally.forEach(function(post) { ops.push(dbDelete(post.id)); });
     return Promise.all(ops).then(function() {
-      showToast('\u2713 ' + (toDownload.length + toUpload.length) + ' Post(s) synchronisiert');
+      var total = toDownload.length + toUpload.length;
+      var msg = total ? '\u2713 ' + total + ' Post(s) synchronisiert' : '';
+      if (toDeleteLocally.length) msg += (msg ? ', ' : '\u2713 ') + toDeleteLocally.length + ' gel\u00f6schte entfernt';
+      if (msg) showToast(msg);
+      if (toDeleteLocally.length) loadHistoryGrid();
     });
   }).catch(function(err) {
     console.warn('syncCloud failed:', err);
@@ -5404,19 +5462,17 @@ function setToolMode(mode, force) {
   $tabCarousel.setAttribute('aria-selected', String(mode === 'carousel'));
   if (mode === 'carousel') {
     if (!deckActive) startDeck();
-    setSaveLabel('Karussell speichern');
-    $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
   } else {
     if (deckActive) {
+      _loadedPostId = null; // reset when discarding carousel
       revokeDeckBlobs();
       deckActive = false;
       deck = [];
       currentSlideIdx = 0;
       $deckBar.classList.remove('active');
     }
-    setSaveLabel('Speichern');
-    $bA.setAttribute('aria-label', 'Post speichern');
   }
+  updateSaveButtonLabel();
 }
 $tabSingle.addEventListener('click', function() { setToolMode('single'); });
 $tabCarousel.addEventListener('click', function() { setToolMode('carousel'); });
@@ -5543,12 +5599,10 @@ function renderDeckStrip() {
 
   // Always refresh current slide thumbnail from live canvas
   _origDraw();
-  try {
-    var tmpC = document.createElement('canvas');
-    tmpC.width = thumbW; tmpC.height = thumbH;
-    tmpC.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-    deckThumbCache[currentSlideIdx] = tmpC.getContext('2d').getImageData(0, 0, thumbW, thumbH);
-  } catch (e) { deckThumbCache[currentSlideIdx] = null; }
+  var curCache = document.createElement('canvas');
+  curCache.width = thumbW; curCache.height = thumbH;
+  curCache.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+  deckThumbCache[currentSlideIdx] = curCache;
 
   for (var i = 0; i < deck.length; i++) {
     var div = document.createElement('div');
@@ -5561,24 +5615,18 @@ function renderDeckStrip() {
     tc.height = thumbH;
 
     if (deckThumbCache[i]) {
-      // Use cached thumbnail — no re-render needed
-      tc.getContext('2d').putImageData(deckThumbCache[i], 0, 0);
+      // Use cached thumbnail canvas — drawImage works even on tainted canvases
+      tc.getContext('2d').drawImage(deckThumbCache[i], 0, 0);
     } else {
       // No cache: render slide, capture, restore (only happens once per slide)
       loadSlideState(deck[i]);
       _origDraw();
-      try {
-        tc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-        deckThumbCache[i] = tc.getContext('2d').getImageData(0, 0, thumbW, thumbH);
-      } catch (e) {
-        var fCtx = tc.getContext('2d');
-        var grad = fCtx.createLinearGradient(0, 0, 0, thumbH);
-        grad.addColorStop(0, '#025671');
-        grad.addColorStop(0.5, '#261c53');
-        grad.addColorStop(1, '#1f0e1d');
-        fCtx.fillStyle = grad;
-        fCtx.fillRect(0, 0, thumbW, thumbH);
-      }
+      tc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+      // Cache as offscreen canvas (no getImageData — avoids tainted canvas SecurityError)
+      var cacheCanvas = document.createElement('canvas');
+      cacheCanvas.width = thumbW; cacheCanvas.height = thumbH;
+      cacheCanvas.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+      deckThumbCache[i] = cacheCanvas;
       loadSlideState(deck[currentSlideIdx]);
       _origDraw();
     }
@@ -5840,8 +5888,7 @@ function startDeck() {
   deckThumbCache = [null];
   currentSlideIdx = 0;
   $deckBar.classList.add('active');
-  setSaveLabel('Karussell speichern');
-  $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
+  updateSaveButtonLabel();
   _origDraw();
   renderDeckStrip();
   showToast('Karussell-Modus aktiv \u2013 Slides hinzuf\u00fcgen mit +');
@@ -6004,9 +6051,11 @@ function scheduleDeckThumbUpdate() {
     // Update the current slide's canvas thumbnail in-place (redraw from main canvas)
     var thumbCanvas = $deckStrip.querySelector('.deck-slide.current .deck-thumb-canvas');
     if (thumbCanvas) {
-      try {
-        thumbCanvas.getContext('2d').drawImage(cv, 0, 0, thumbCanvas.width, thumbCanvas.height);
-      } catch (e) {}
+      thumbCanvas.getContext('2d').drawImage(cv, 0, 0, thumbCanvas.width, thumbCanvas.height);
+      // Also update the cache canvas
+      if (deckThumbCache[currentSlideIdx]) {
+        deckThumbCache[currentSlideIdx].getContext('2d').drawImage(cv, 0, 0, deckThumbCache[currentSlideIdx].width, deckThumbCache[currentSlideIdx].height);
+      }
     }
   }, 250);
 }
