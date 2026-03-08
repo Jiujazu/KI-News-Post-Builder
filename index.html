@@ -2068,7 +2068,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     <!-- Group 4: Save / Archive -->
     <div class="toolbar-group toolbar-save">
       <button class="btn-x btn-save-toggle" id="bA" aria-label="Post speichern"><span class="save-label" data-short="Speichern" data-long="Karussell speichern">Speichern</span></button>
-      <button class="btn-x" id="bH" aria-label="Gespeicherte Posts öffnen">Gespeicherte</button>
+      <button class="btn-x" id="bH" aria-label="Gespeicherte Posts laden">Laden</button>
     </div>
     <!-- Group 5: Utility -->
     <div class="toolbar-group toolbar-util">
@@ -4058,29 +4058,14 @@ function loadHistoryGrid() {
       item.setAttribute('aria-label', 'Post laden: ' + (post.headline || 'Ohne Titel'));
       // Thumbnail
       var img = document.createElement('img');
+      img.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #0a0a1a 100%)';
       if (post.thumbnail) {
         var thumbUrl = URL.createObjectURL(post.thumbnail);
         activeThumbUrls.push(thumbUrl);
         img.src = thumbUrl;
       } else if (post.thumbnailUrl) {
-        // Blob missing but cloud URL available — fetch and cache the blob
-        (function(imgEl, postRef, cloudUrl) {
-          imgEl.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #0a0a1a 100%)';
-          fetch(cloudUrl).then(function(r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.blob();
-          }).then(function(blob) {
-            var blobUrl = URL.createObjectURL(blob);
-            activeThumbUrls.push(blobUrl);
-            imgEl.src = blobUrl;
-            // Persist the blob back to IndexedDB so it works offline next time
-            postRef.thumbnail = blob;
-            dbAdd(postRef).catch(function() {});
-          }).catch(function() {});
-        })(img, post, post.thumbnailUrl);
-      } else {
-        // No thumbnail — show gradient placeholder
-        img.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #0a0a1a 100%)';
+        // Blob missing — use cloud URL directly (bypasses CORS issues with fetch)
+        img.src = post.thumbnailUrl;
       }
       img.alt = post.headline || 'Post';
       item.appendChild(img);
@@ -4212,19 +4197,48 @@ function loadArchivedPost(post) {
     } else if (hasCloudUrl) {
       total++;
       (function(idx, url) {
-        fetch(url).then(function(r) {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.blob();
-        }).then(function(blob) {
-          // Cache blob back to IndexedDB
-          if (!post.images) post.images = [null, null];
-          post.images[idx] = blob;
-          dbAdd(post).catch(function() {});
-          loadImageBlob(idx, blob);
-        }).catch(function() {
-          loaded++;
-          if (loaded >= total) onAllLoaded();
-        });
+        // Load image directly via <img> (no CORS needed for display)
+        var im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = function() {
+          S.imgs[idx] = im;
+          // Try to create a blob URL for consistent handling
+          try {
+            var c = document.createElement('canvas');
+            c.width = im.naturalWidth; c.height = im.naturalHeight;
+            c.getContext('2d').drawImage(im, 0, 0);
+            c.toBlob(function(blob) {
+              if (blob) {
+                S.draftBlobs[idx] = blob;
+                S.blobs[idx] = URL.createObjectURL(blob);
+                if (!post.images) post.images = [null, null];
+                post.images[idx] = blob;
+                dbAdd(post).catch(function() {});
+              }
+              loaded++;
+              if (loaded >= total) onAllLoaded();
+            }, 'image/jpeg', 0.85);
+          } catch (e) {
+            // Canvas tainted — still usable for display
+            loaded++;
+            if (loaded >= total) onAllLoaded();
+          }
+        };
+        im.onerror = function() {
+          // crossOrigin failed — retry without (still loads for display, taints canvas)
+          var im2 = new Image();
+          im2.onload = function() {
+            S.imgs[idx] = im2;
+            loaded++;
+            if (loaded >= total) onAllLoaded();
+          };
+          im2.onerror = function() {
+            loaded++;
+            if (loaded >= total) onAllLoaded();
+          };
+          im2.src = url;
+        };
+        im.src = url;
       })(i, post.cloudImageUrls[0][i]);
     }
   }
@@ -4329,19 +4343,46 @@ function loadCarouselPost(post) {
         loadCarouselImageBlob(si3, ii2, slides[si3].images[ii2]);
       } else if (hasSlideCloudUrl) {
         (function(sIdx, iIdx, url) {
-          fetch(url).then(function(r) {
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            return r.blob();
-          }).then(function(blob) {
-            // Cache blob to IndexedDB
-            if (!slides[sIdx].images) slides[sIdx].images = [null, null];
-            slides[sIdx].images[iIdx] = blob;
-            dbAdd(post).catch(function() {});
-            loadCarouselImageBlob(sIdx, iIdx, blob);
-          }).catch(function() {
-            loadedImgs++;
-            if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
-          });
+          // Load image directly via <img> (no CORS needed for display)
+          var im = new Image();
+          im.crossOrigin = 'anonymous';
+          im.onload = function() {
+            deck[sIdx].imgs[iIdx] = im;
+            try {
+              var c = document.createElement('canvas');
+              c.width = im.naturalWidth; c.height = im.naturalHeight;
+              c.getContext('2d').drawImage(im, 0, 0);
+              c.toBlob(function(blob) {
+                if (blob) {
+                  deck[sIdx].draftBlobs[iIdx] = blob;
+                  deck[sIdx].blobs[iIdx] = URL.createObjectURL(blob);
+                  if (!slides[sIdx].images) slides[sIdx].images = [null, null];
+                  slides[sIdx].images[iIdx] = blob;
+                  dbAdd(post).catch(function() {});
+                }
+                loadedImgs++;
+                if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+              }, 'image/jpeg', 0.85);
+            } catch (e) {
+              loadedImgs++;
+              if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+            }
+          };
+          im.onerror = function() {
+            // crossOrigin failed — retry without (loads for display, taints canvas)
+            var im2 = new Image();
+            im2.onload = function() {
+              deck[sIdx].imgs[iIdx] = im2;
+              loadedImgs++;
+              if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+            };
+            im2.onerror = function() {
+              loadedImgs++;
+              if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+            };
+            im2.src = url;
+          };
+          im.src = url;
         })(si3, ii2, post.cloudImageUrls[si3][ii2]);
       }
     }
@@ -5091,10 +5132,37 @@ function deleteFromCloud(postId, slideCount) {
   }
   return Promise.all(deletes);
 }
+// Load image from URL via <img> element, then convert to blob via canvas.
+// This bypasses CORS issues that block fetch() on Firebase Storage URLs.
+function imgUrlToBlob(url) {
+  return new Promise(function(resolve) {
+    var im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = function() {
+      try {
+        var c = document.createElement('canvas');
+        c.width = im.naturalWidth;
+        c.height = im.naturalHeight;
+        c.getContext('2d').drawImage(im, 0, 0);
+        c.toBlob(function(blob) {
+          resolve(blob || null);
+        }, 'image/jpeg', 0.85);
+      } catch (e) {
+        // Canvas tainted — resolve with null, but keep the Image for display
+        resolve(null);
+      }
+    };
+    im.onerror = function() {
+      resolve(null);
+    };
+    im.src = url;
+  });
+}
 function downloadCloudPost(id, data) {
-  // Fetch thumbnail
+  // Thumbnail: try fetch first (fast, preserves original quality), fall back to img→canvas
   var thumbFetch = data.thumbnailUrl
-    ? fetch(data.thumbnailUrl).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; })
+    ? fetch(data.thumbnailUrl).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+        .catch(function() { return imgUrlToBlob(data.thumbnailUrl); })
     : Promise.resolve(null);
 
   // Carousel post with slides data
@@ -5107,7 +5175,12 @@ function downloadCloudPost(id, data) {
             slideImgFetches.push(
               fetch(url).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
                 .then(function(blob) { return { si: slideIdx, ii: imgIdx, blob: blob }; })
-                .catch(function() { return { si: slideIdx, ii: imgIdx, blob: null }; })
+                .catch(function() {
+                  // fetch failed (CORS) — try img→canvas fallback
+                  return imgUrlToBlob(url).then(function(blob) {
+                    return { si: slideIdx, ii: imgIdx, blob: blob };
+                  });
+                })
             );
           })(si, ii, data.slides[si].imageUrls[ii]);
         }
@@ -5172,11 +5245,16 @@ function downloadCloudPost(id, data) {
     });
   }
 
-  // Single-post download (original logic)
+  // Single-post download
   var imgFetches = [];
   for (var i = 0; i < 2; i++) {
     if (data.imageUrls && data.imageUrls[i]) {
-      imgFetches.push(fetch(data.imageUrls[i]).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; }));
+      (function(url) {
+        imgFetches.push(
+          fetch(url).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+            .catch(function() { return imgUrlToBlob(url); })
+        );
+      })(data.imageUrls[i]);
     } else {
       imgFetches.push(Promise.resolve(null));
     }
