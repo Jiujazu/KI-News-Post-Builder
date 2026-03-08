@@ -3655,6 +3655,7 @@ function buildSlideData(snap) {
     subtitle: snap.subText,
     date: snap.dateText,
     layout: snap.layout,
+    format: snap.format || S.format,
     hlCaps: snap.hlCaps,
     subCaps: snap.subCaps,
     hlFSOverride: snap.hlFSOverride,
@@ -4121,13 +4122,21 @@ function loadCarouselPost(post) {
   function onAllCarouselImgsLoaded() {
     // Activate carousel mode with pre-built deck
     deckActive = true;
+    deckThumbCache = deck.map(function() { return null; });
     currentSlideIdx = 0;
     loadSlideState(deck[0]);
     refreshEditorFromState();
     $deckBar.classList.add('active');
-    // Sync tab UI to carousel (force=true, skip confirm; reset currentToolMode first so it's not skipped)
-    currentToolMode = 'single';
-    setToolMode('carousel', true);
+    // Sync tab UI to carousel mode directly (no confirm needed since we're loading a saved post)
+    currentToolMode = 'carousel';
+    $appDiv.classList.remove('mode-single');
+    $appDiv.classList.add('mode-carousel');
+    $tabSingle.classList.remove('active');
+    $tabCarousel.classList.add('active');
+    $tabSingle.setAttribute('aria-selected', 'false');
+    $tabCarousel.setAttribute('aria-selected', 'true');
+    $bA.textContent = 'Karussell speichern';
+    $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
     _origDraw();
     renderDeckStrip();
     showToast('\u2713 Karussell mit ' + deck.length + ' Slides geladen');
@@ -4909,6 +4918,8 @@ function syncTemplatesFromCloud() {
 var deck = [];           // array of slide state snapshots
 var currentSlideIdx = 0;
 var deckActive = false;
+var deckThumbCache = []; // cached thumbnail ImageData per slide index
+var MAX_DECK_SLIDES = 50; // soft limit for carousel slides
 var $deckBar = document.getElementById('deckBar');
 var $deckStrip = document.getElementById('deckStrip');
 var $deckLabel = document.getElementById('deckLabel');
@@ -4929,6 +4940,7 @@ function revokeDeckBlobs() {
       if (deck[i].blobs[j]) { URL.revokeObjectURL(deck[i].blobs[j]); deck[i].blobs[j] = null; }
     }
   }
+  deckThumbCache = [];
 }
 
 function setToolMode(mode, force) {
@@ -4997,6 +5009,7 @@ function loadSlideState(snap) {
   S.creds = [snap.creds[0], snap.creds[1]];
   S.crop = [Object.assign({}, snap.crop[0]), Object.assign({}, snap.crop[1])];
   S.layout = snap.layout;
+  S.format = snap.format || S.format;
   S.hlCaps = snap.hlCaps;
   S.subCaps = snap.subCaps;
   S.hlLines = snap.hlLines.slice();
@@ -5021,6 +5034,7 @@ function refreshEditorFromState() {
   $togSubCaps.classList.toggle('on', S.subCaps);
   $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
   setLayout(S.layout);
+  setFormat(S.format);
   updateFSSlider();
   Object.keys(CA_BTNS).forEach(function(k) {
     CA_BTNS[k].classList.toggle('on', k === S.credAlign);
@@ -5049,6 +5063,8 @@ function saveCurrentSlide() {
 function switchToSlide(idx) {
   if (idx < 0 || idx >= deck.length) return;
   saveCurrentSlide();
+  // Invalidate cache for the slide we're leaving (it may have changed)
+  if (deckThumbCache[currentSlideIdx]) deckThumbCache[currentSlideIdx] = null;
   currentSlideIdx = idx;
   loadSlideState(deck[idx]);
   refreshEditorFromState();
@@ -5074,8 +5090,18 @@ function renderDeckStrip() {
   var containerW = 72;
   var containerH = Math.round(containerW * (H / W));
 
-  // Draw current slide once on cv (used for thumbnail capture)
+  // Ensure thumb cache array matches deck length
+  while (deckThumbCache.length < deck.length) deckThumbCache.push(null);
+  if (deckThumbCache.length > deck.length) deckThumbCache.length = deck.length;
+
+  // Always refresh current slide thumbnail from live canvas
   _origDraw();
+  try {
+    var tmpC = document.createElement('canvas');
+    tmpC.width = thumbW; tmpC.height = thumbH;
+    tmpC.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+    deckThumbCache[currentSlideIdx] = tmpC.getContext('2d').getImageData(0, 0, thumbW, thumbH);
+  } catch (e) { deckThumbCache[currentSlideIdx] = null; }
 
   for (var i = 0; i < deck.length; i++) {
     var div = document.createElement('div');
@@ -5083,34 +5109,34 @@ function renderDeckStrip() {
     div.setAttribute('data-idx', i);
     div.style.height = containerH + 'px';
 
-    // Render thumbnail: load slide state, draw, capture to mini canvas
-    if (i !== currentSlideIdx) {
-      loadSlideState(deck[i]);
-      _origDraw();
-    }
     var tc = document.createElement('canvas');
     tc.width = thumbW;
     tc.height = thumbH;
-    try {
-      tc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-    } catch (e) {
-      // Gradient fallback
-      var fCtx = tc.getContext('2d');
-      var grad = fCtx.createLinearGradient(0, 0, 0, thumbH);
-      grad.addColorStop(0, '#025671');
-      grad.addColorStop(0.5, '#261c53');
-      grad.addColorStop(1, '#1f0e1d');
-      fCtx.fillStyle = grad;
-      fCtx.fillRect(0, 0, thumbW, thumbH);
-    }
-    tc.className = 'deck-thumb-canvas';
-    div.appendChild(tc);
 
-    // Restore current slide state after rendering a different slide
-    if (i !== currentSlideIdx) {
+    if (deckThumbCache[i]) {
+      // Use cached thumbnail — no re-render needed
+      tc.getContext('2d').putImageData(deckThumbCache[i], 0, 0);
+    } else {
+      // No cache: render slide, capture, restore (only happens once per slide)
+      loadSlideState(deck[i]);
+      _origDraw();
+      try {
+        tc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
+        deckThumbCache[i] = tc.getContext('2d').getImageData(0, 0, thumbW, thumbH);
+      } catch (e) {
+        var fCtx = tc.getContext('2d');
+        var grad = fCtx.createLinearGradient(0, 0, 0, thumbH);
+        grad.addColorStop(0, '#025671');
+        grad.addColorStop(0.5, '#261c53');
+        grad.addColorStop(1, '#1f0e1d');
+        fCtx.fillStyle = grad;
+        fCtx.fillRect(0, 0, thumbW, thumbH);
+      }
       loadSlideState(deck[currentSlideIdx]);
       _origDraw();
     }
+    tc.className = 'deck-thumb-canvas';
+    div.appendChild(tc);
 
     var num = document.createElement('span');
     num.className = 'slide-num';
@@ -5144,6 +5170,10 @@ function renderDeckStrip() {
   addBtn.style.height = containerH + 'px';
   addBtn.textContent = '+';
   addBtn.title = 'Slide hinzufügen';
+  if (deck.length >= MAX_DECK_SLIDES) {
+    addBtn.disabled = true;
+    addBtn.title = 'Maximale Slide-Anzahl erreicht (' + MAX_DECK_SLIDES + ')';
+  }
   addBtn.addEventListener('click', addSlide);
   $deckStrip.appendChild(addBtn);
 
@@ -5155,6 +5185,10 @@ function renderDeckStrip() {
 }
 
 function addSlide() {
+  if (deck.length >= MAX_DECK_SLIDES) {
+    showToast('\u26a0 Maximale Slide-Anzahl erreicht (' + MAX_DECK_SLIDES + ')');
+    return;
+  }
   saveCurrentSlide();
   // New blank slide inherits format but blank content
   var newSlide = {
@@ -5164,6 +5198,7 @@ function addSlide() {
     creds: ['', ''],
     crop: [defaultCrop(), defaultCrop()],
     layout: 'one',
+    format: S.format,
     hlCaps: false,
     subCaps: false,
     hlLines: [''],
@@ -5185,13 +5220,22 @@ function addSlide() {
 
 function removeSlide(idx) {
   if (deck.length <= 1) return;
+  if (!confirm('Slide ' + (idx + 1) + ' unwiderruflich l\u00f6schen?')) return;
   var removed = deck[idx];
   if (removed) {
+    // Only revoke blob URLs that aren't referenced by other slides
     for (var ri = 0; ri < 2; ri++) {
-      if (removed.blobs[ri]) { URL.revokeObjectURL(removed.blobs[ri]); }
+      if (removed.blobs[ri]) {
+        var urlInUse = false;
+        for (var oi = 0; oi < deck.length; oi++) {
+          if (oi !== idx && deck[oi].blobs[ri] === removed.blobs[ri]) { urlInUse = true; break; }
+        }
+        if (!urlInUse) URL.revokeObjectURL(removed.blobs[ri]);
+      }
     }
   }
   deck.splice(idx, 1);
+  deckThumbCache.splice(idx, 1);
   if (currentSlideIdx >= deck.length) currentSlideIdx = deck.length - 1;
   else if (idx < currentSlideIdx) currentSlideIdx--;
   loadSlideState(deck[currentSlideIdx]);
@@ -5205,6 +5249,7 @@ function startDeck() {
   if (deckActive) return;
   deckActive = true;
   deck = [slideSnapshot()];
+  deckThumbCache = [null];
   currentSlideIdx = 0;
   $deckBar.classList.add('active');
   $bA.textContent = 'Karussell speichern';
@@ -5238,34 +5283,47 @@ $deckExportPdf.addEventListener('click', function() {
   function doExport() {
     try {
       var origSnap = slideSnapshot();
+      // Use first slide's format to determine PDF page size
+      loadSlideState(deck[0]);
+      setFormat(deck[0].format || S.format);
       var orient = W > H ? 'landscape' : 'portrait';
+      var pdfW = W, pdfH = H;
       var pdf = new window.jspdf.jsPDF({
         orientation: orient,
         unit: 'px',
-        format: [W, H],
+        format: [pdfW, pdfH],
         hotfixes: ['px_scaling']
       });
 
+      var failedSlides = [];
       for (var i = 0; i < deck.length; i++) {
-        if (i > 0) pdf.addPage([W, H], orient);
+        if (i > 0) pdf.addPage([pdfW, pdfH], orient);
         loadSlideState(deck[i]);
+        // Ensure canvas matches the slide format
+        setFormat(deck[i].format || S.format);
         _origDraw();
         try {
           var imgData = cv.toDataURL('image/jpeg', 0.95);
-          pdf.addImage(imgData, 'JPEG', 0, 0, W, H);
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
         } catch (taintErr) {
+          failedSlides.push(i + 1);
           // Canvas tainted — draw placeholder
           pdf.setFillColor(26, 26, 62);
-          pdf.rect(0, 0, W, H, 'F');
+          pdf.rect(0, 0, pdfW, pdfH, 'F');
           pdf.setTextColor(255, 255, 255);
           pdf.setFontSize(24);
-          pdf.text('Slide ' + (i + 1) + ' – Export nicht möglich (CORS)', W / 2, H / 2, { align: 'center' });
+          pdf.text('Slide ' + (i + 1) + ' \u2013 Export nicht m\u00f6glich (CORS)', pdfW / 2, pdfH / 2, { align: 'center' });
         }
       }
 
       // Restore current slide
       loadSlideState(origSnap);
+      setFormat(origSnap.format || S.format);
       _origDraw();
+
+      if (failedSlides.length > 0) {
+        showToast('\u26a0 Slides ' + failedSlides.join(', ') + ' konnten nicht exportiert werden (CORS)');
+      }
 
       pdf.save('ki-news-karussell-' + new Date().toISOString().slice(0, 10) + '.pdf');
       btn.classList.add('btn-success');
@@ -5312,6 +5370,7 @@ $deckExportImgs.addEventListener('click', function() {
     if (i >= deck.length) {
       // Done — restore state
       loadSlideState(origSnap);
+      setFormat(origSnap.format || S.format);
       _origDraw();
       btn.disabled = false;
       btn.textContent = 'Bilder Export';
@@ -5321,6 +5380,7 @@ $deckExportImgs.addEventListener('click', function() {
       return;
     }
     loadSlideState(deck[i]);
+    setFormat(deck[i].format || S.format);
     _origDraw();
     try {
       var args = [function(blob) {
