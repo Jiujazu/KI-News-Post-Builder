@@ -82,6 +82,16 @@ body{
 .toolbar-export,.toolbar-save{border-left:1px solid var(--border);padding-left:8px;margin-left:2px}
 /* Share group collapses when empty (both buttons start hidden) */
 .toolbar-share:empty,.toolbar-share{min-width:0}
+/* ===== EXPORT STACK: prevent layout shift between single/carousel modes ===== */
+.toolbar-export-stack{display:grid}
+.toolbar-export-layer{grid-row:1/2;grid-column:1/2;display:flex;gap:4px;align-items:center}
+/* Hidden layer takes up space but is invisible (override !important display:none) */
+.mode-single .toolbar-export-layer.carousel-only{display:flex !important;visibility:hidden;pointer-events:none;z-index:-1}
+.mode-carousel .toolbar-export-layer.single-only{display:flex !important;visibility:hidden;pointer-events:none;z-index:-1}
+/* ===== SAVE BUTTON: stable width via grid-stack for both labels ===== */
+.btn-save-toggle{display:inline-grid;place-items:center}
+.btn-save-toggle .save-label{grid-row:1/2;grid-column:1/2}
+.btn-save-toggle .save-label::after{content:attr(data-long);visibility:hidden;display:block;height:0;overflow:hidden}
 /* Hide overflow button on desktop */
 .toolbar-more-btn{display:none;font-size:18px;font-weight:bold;padding:8px 10px;line-height:1}
 /* Mobile overflow menu */
@@ -2031,18 +2041,24 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
       </div>
     </div>
     <div class="toolbar-spacer"></div>
-    <!-- Group 2: Export -->
+    <!-- Group 2: Export (stacked grid to prevent layout shift between modes) -->
     <div class="toolbar-group toolbar-export">
-      <div class="split-btn single-only" id="saveGroup">
-        <button class="btn-primary split-main" id="bSave" aria-label="Als PNG speichern">PNG speichern</button>
-        <button class="btn-primary split-arrow" id="bSaveArrow" aria-label="Format wählen" aria-haspopup="true" aria-expanded="false">&#9662;</button>
-        <div class="split-menu" id="saveMenu" role="menu">
-          <button class="split-opt active" data-fmt="png" role="menuitem">PNG speichern</button>
-          <button class="split-opt" data-fmt="jpg" role="menuitem">JPG speichern</button>
+      <div class="toolbar-export-stack">
+        <div class="toolbar-export-layer single-only" id="saveGroup">
+          <div class="split-btn">
+            <button class="btn-primary split-main" id="bSave" aria-label="Als PNG speichern">PNG speichern</button>
+            <button class="btn-primary split-arrow" id="bSaveArrow" aria-label="Format wählen" aria-haspopup="true" aria-expanded="false">&#9662;</button>
+            <div class="split-menu" id="saveMenu" role="menu">
+              <button class="split-opt active" data-fmt="png" role="menuitem">PNG speichern</button>
+              <button class="split-opt" data-fmt="jpg" role="menuitem">JPG speichern</button>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar-export-layer carousel-only">
+          <button class="btn-primary" id="bCarouselExportImgs" style="font-size:13px" aria-label="Alle Slides als Bilder exportieren">Bilder Export</button>
+          <button class="btn-x" id="bCarouselExportPdf" aria-label="Karussell als PDF exportieren">PDF Export</button>
         </div>
       </div>
-      <button class="btn-primary carousel-only" id="bCarouselExportImgs" style="font-size:13px" aria-label="Alle Slides als Bilder exportieren">Bilder Export</button>
-      <button class="btn-x carousel-only" id="bCarouselExportPdf" aria-label="Karussell als PDF exportieren">PDF Export</button>
     </div>
     <!-- Group 3: Share (conditional visibility) -->
     <div class="toolbar-group toolbar-share">
@@ -2051,7 +2067,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     </div>
     <!-- Group 4: Save / Archive -->
     <div class="toolbar-group toolbar-save">
-      <button class="btn-x" id="bA" aria-label="Post speichern">Speichern</button>
+      <button class="btn-x btn-save-toggle" id="bA" aria-label="Post speichern"><span class="save-label" data-short="Speichern" data-long="Karussell speichern">Speichern</span></button>
       <button class="btn-x" id="bH" aria-label="Gespeicherte Posts öffnen">Gespeicherte</button>
     </div>
     <!-- Group 5: Utility -->
@@ -2529,6 +2545,11 @@ const $tplDel = document.getElementById('tplDel');
 const $tplName = document.getElementById('tplName');
 const $tplSave = document.getElementById('tplSave');
 const $bA   = document.getElementById('bA');
+const $bASaveLabel = $bA.querySelector('.save-label');
+function setSaveLabel(text) {
+  if ($bASaveLabel) $bASaveLabel.textContent = text;
+  else $bA.textContent = text;
+}
 const $bH   = document.getElementById('bH');
 const $histOverlay = document.getElementById('histOverlay');
 const $histDrawer  = document.getElementById('histDrawer');
@@ -3858,17 +3879,17 @@ $bA.addEventListener('click', function() {
       return dbAdd(post).then(function() { return post; });
     }).then(function(post) {
       syncToCloud(post);
-      btn.textContent = '\u2713 Gespeichert!';
+      setSaveLabel('\u2713 Gespeichert!');
       btn.classList.add('btn-success');
       showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides gespeichert');
       setTimeout(function() {
         btn.disabled = false;
-        btn.textContent = 'Karussell speichern';
+        setSaveLabel('Karussell speichern');
         btn.classList.remove('btn-success');
       }, 1500);
     }).catch(function(err) {
       console.warn('Carousel save failed:', err);
-      btn.disabled = false; btn.textContent = 'Karussell speichern';
+      btn.disabled = false; setSaveLabel('Karussell speichern');
       showToast('\u26a0 Speichern fehlgeschlagen');
     });
     return;
@@ -3914,17 +3935,17 @@ $bA.addEventListener('click', function() {
     return dbAdd(post).then(function() { return post; });
   }).then(function(post) {
     syncToCloud(post);
-    btn.textContent = '\u2713 Gespeichert!';
+    setSaveLabel('\u2713 Gespeichert!');
     btn.classList.add('btn-success');
     showToast('\u2713 Post gespeichert');
     setTimeout(function() {
       btn.disabled = false;
-      btn.textContent = 'Speichern';
+      setSaveLabel('Speichern');
       btn.classList.remove('btn-success');
     }, 1500);
   }).catch(function(err) {
     console.warn('Save failed:', err);
-    btn.disabled = false; btn.textContent = 'Speichern';
+    btn.disabled = false; setSaveLabel('Speichern');
     showToast('\u26a0 Speichern fehlgeschlagen');
   });
 });
@@ -4272,7 +4293,7 @@ function loadCarouselPost(post) {
     $tabCarousel.classList.add('active');
     $tabSingle.setAttribute('aria-selected', 'false');
     $tabCarousel.setAttribute('aria-selected', 'true');
-    $bA.textContent = 'Karussell speichern';
+    setSaveLabel('Karussell speichern');
     $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
     _origDraw();
     renderDeckStrip();
@@ -5289,7 +5310,7 @@ function setToolMode(mode, force) {
   $tabCarousel.setAttribute('aria-selected', String(mode === 'carousel'));
   if (mode === 'carousel') {
     if (!deckActive) startDeck();
-    $bA.textContent = 'Karussell speichern';
+    setSaveLabel('Karussell speichern');
     $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
   } else {
     if (deckActive) {
@@ -5299,7 +5320,7 @@ function setToolMode(mode, force) {
       currentSlideIdx = 0;
       $deckBar.classList.remove('active');
     }
-    $bA.textContent = 'Speichern';
+    setSaveLabel('Speichern');
     $bA.setAttribute('aria-label', 'Post speichern');
   }
 }
@@ -5584,7 +5605,7 @@ function startDeck() {
   deckThumbCache = [null];
   currentSlideIdx = 0;
   $deckBar.classList.add('active');
-  $bA.textContent = 'Karussell speichern';
+  setSaveLabel('Karussell speichern');
   $bA.setAttribute('aria-label', 'Karussell mit allen Slides speichern');
   _origDraw();
   renderDeckStrip();
