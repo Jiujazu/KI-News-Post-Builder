@@ -2592,7 +2592,7 @@ function dbAdd(post) {
       var toDelete = posts.slice(MAX_ARCHIVE_POSTS);
       showToast('\u26a0 Speicher voll \u2013 ' + toDelete.length + ' \u00e4lteste(r) Post(s) entfernt');
       return Promise.all(toDelete.map(function(p) {
-        deleteFromCloud(p.id);
+        deleteFromCloud(p.id, p.isCarousel && p.slides ? p.slides.length : 1);
         return dbDelete(p.id);
       }));
     });
@@ -3875,7 +3875,7 @@ $histGrid.addEventListener('click', function(e) {
     var post = _histPosts[idx];
     if (!post || !confirm('Gespeicherten Post l\u00f6schen?')) return;
     dbDelete(post.id).then(function() {
-      deleteFromCloud(post.id);
+      deleteFromCloud(post.id, post.isCarousel && post.slides ? post.slides.length : 1);
       loadHistoryGrid();
       showToast('\u2713 Post gel\u00f6scht');
     });
@@ -4761,24 +4761,110 @@ function syncToCloud(post) {
   if (!fbUser || !fbEnabled) return Promise.resolve();
   var uid = fbUser.uid;
   var pid = post.id;
-  var uploads = [];
+  var basePath = 'users/' + uid + '/posts/' + pid;
+
+  // Upload thumbnail
+  var thumbUpload = post.thumbnail
+    ? fbStorage.ref(basePath + '/thumb.jpg').put(post.thumbnail).then(function(s) { return s.ref.getDownloadURL(); })
+    : Promise.resolve(null);
+
+  // For carousel posts, upload all slide images
+  if (post.isCarousel && post.slides && post.slides.length > 0) {
+    var slideUploads = [];
+    for (var si = 0; si < post.slides.length; si++) {
+      for (var ii = 0; ii < 2; ii++) {
+        if (post.slides[si].images && post.slides[si].images[ii]) {
+          (function(slideIdx, imgIdx) {
+            var ref = fbStorage.ref(basePath + '/slide' + slideIdx + '_img' + imgIdx + '.jpg');
+            slideUploads.push(
+              ref.put(post.slides[slideIdx].images[imgIdx]).then(function(s) {
+                return s.ref.getDownloadURL().then(function(url) {
+                  return { si: slideIdx, ii: imgIdx, url: url };
+                });
+              })
+            );
+          })(si, ii);
+        }
+      }
+    }
+    return Promise.all([thumbUpload, Promise.all(slideUploads)]).then(function(res) {
+      var thumbnailUrl = res[0];
+      var uploadResults = res[1];
+      // Build slide image URL map
+      var slideImageUrls = {};
+      uploadResults.forEach(function(r) {
+        var key = r.si + '_' + r.ii;
+        slideImageUrls[key] = r.url;
+      });
+      // Build slides metadata for Firestore (without blobs)
+      var slidesData = post.slides.map(function(s, idx) {
+        return {
+          headline: s.headline || '',
+          subtitle: s.subtitle || '',
+          date: s.date || '',
+          layout: s.layout || 'one',
+          format: s.format || post.format || '4:5',
+          hlCaps: !!s.hlCaps,
+          subCaps: !!s.subCaps,
+          hlFSOverride: s.hlFSOverride || 0,
+          subFSOverride: s.subFSOverride || 0,
+          credFSOverride: s.credFSOverride || 0,
+          credAlign: s.credAlign || 'right',
+          credOffX: s.credOffX || 0,
+          credOffY: s.credOffY || 0,
+          credShadow: !!s.credShadow,
+          textPos: s.textPos || 'top',
+          credits: s.credits || ['', ''],
+          crops: s.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
+          imageUrls: [slideImageUrls[idx + '_0'] || null, slideImageUrls[idx + '_1'] || null]
+        };
+      });
+      return fbDb.collection('users').doc(uid).collection('posts').doc(pid).set({
+        headline: post.headline || '',
+        subtitle: post.subtitle || '',
+        date: post.date || '',
+        layout: post.layout || 'one',
+        format: post.format || '4:5',
+        hlCaps: !!post.hlCaps,
+        subCaps: !!post.subCaps,
+        hlFSOverride: post.hlFSOverride || 0,
+        subFSOverride: post.subFSOverride || 0,
+        credFSOverride: post.credFSOverride || 0,
+        credAlign: post.credAlign || 'right',
+        credOffX: post.credOffX || 0,
+        credOffY: post.credOffY || 0,
+        credShadow: !!post.credShadow,
+        textPos: post.textPos || 'top',
+        credits: post.credits || ['', ''],
+        crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
+        savedAt: post.savedAt,
+        imageUrls: [slidesData[0].imageUrls[0], slidesData[0].imageUrls[1]],
+        thumbnailUrl: thumbnailUrl,
+        isCarousel: true,
+        slideCount: post.slides.length,
+        slides: slidesData
+      });
+    }).catch(function(err) {
+      console.warn('syncToCloud (carousel) failed:', err);
+      showToast('\u26a0 Cloud-Sync fehlgeschlagen');
+    });
+  }
+
+  // Single-post upload (original logic)
+  var imgUploads = [];
   for (var i = 0; i < 2; i++) {
     if (post.images && post.images[i]) {
       (function(idx) {
-        var ref = fbStorage.ref('users/' + uid + '/posts/' + pid + '/img' + idx + '.jpg');
-        uploads.push(ref.put(post.images[idx]).then(function(s) { return s.ref.getDownloadURL(); }));
+        var ref = fbStorage.ref(basePath + '/img' + idx + '.jpg');
+        imgUploads.push(ref.put(post.images[idx]).then(function(s) { return s.ref.getDownloadURL(); }));
       })(i);
     } else {
-      uploads.push(Promise.resolve(null));
+      imgUploads.push(Promise.resolve(null));
     }
   }
-  if (post.thumbnail) {
-    var tRef = fbStorage.ref('users/' + uid + '/posts/' + pid + '/thumb.jpg');
-    uploads.push(tRef.put(post.thumbnail).then(function(s) { return s.ref.getDownloadURL(); }));
-  } else {
-    uploads.push(Promise.resolve(null));
-  }
-  return Promise.all(uploads).then(function(urls) {
+  return Promise.all([Promise.all(imgUploads), thumbUpload]).then(function(res) {
+    var imgUrls = res[0];
+    var thumbnailUrl = res[1];
     return fbDb.collection('users').doc(uid).collection('posts').doc(pid).set({
       headline: post.headline || '',
       subtitle: post.subtitle || '',
@@ -4798,41 +4884,127 @@ function syncToCloud(post) {
       credits: post.credits || ['', ''],
       crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
       savedAt: post.savedAt,
-      imageUrls: [urls[0], urls[1]],
-      thumbnailUrl: urls[2],
-      isCarousel: !!post.isCarousel,
-      slideCount: (post.slides && post.slides.length) || 1
+      imageUrls: [imgUrls[0], imgUrls[1]],
+      thumbnailUrl: thumbnailUrl,
+      isCarousel: false,
+      slideCount: 1
     });
   }).catch(function(err) {
     console.warn('syncToCloud failed:', err);
     showToast('\u26a0 Cloud-Sync fehlgeschlagen');
   });
 }
-function deleteFromCloud(postId) {
+function deleteFromCloud(postId, slideCount) {
   if (!fbUser || !fbEnabled) return Promise.resolve();
   var uid = fbUser.uid;
-  return Promise.all([
+  var basePath = 'users/' + uid + '/posts/' + postId;
+  var deletes = [
     fbDb.collection('users').doc(uid).collection('posts').doc(postId).delete().catch(function() {}),
-    fbStorage.ref('users/' + uid + '/posts/' + postId + '/img0.jpg').delete().catch(function() {}),
-    fbStorage.ref('users/' + uid + '/posts/' + postId + '/img1.jpg').delete().catch(function() {}),
-    fbStorage.ref('users/' + uid + '/posts/' + postId + '/thumb.jpg').delete().catch(function() {})
-  ]);
-}
-function downloadCloudPost(id, data) {
-  var fetches = [];
-  for (var i = 0; i < 2; i++) {
-    if (data.imageUrls && data.imageUrls[i]) {
-      fetches.push(fetch(data.imageUrls[i]).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; }));
-    } else {
-      fetches.push(Promise.resolve(null));
+    fbStorage.ref(basePath + '/thumb.jpg').delete().catch(function() {}),
+    // Legacy single-post image paths
+    fbStorage.ref(basePath + '/img0.jpg').delete().catch(function() {}),
+    fbStorage.ref(basePath + '/img1.jpg').delete().catch(function() {})
+  ];
+  // Clean up carousel slide images
+  var sc = slideCount || 1;
+  for (var si = 0; si < sc; si++) {
+    for (var ii = 0; ii < 2; ii++) {
+      deletes.push(fbStorage.ref(basePath + '/slide' + si + '_img' + ii + '.jpg').delete().catch(function() {}));
     }
   }
-  if (data.thumbnailUrl) {
-    fetches.push(fetch(data.thumbnailUrl).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; }));
-  } else {
-    fetches.push(Promise.resolve(null));
+  return Promise.all(deletes);
+}
+function downloadCloudPost(id, data) {
+  // Fetch thumbnail
+  var thumbFetch = data.thumbnailUrl
+    ? fetch(data.thumbnailUrl).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; })
+    : Promise.resolve(null);
+
+  // Carousel post with slides data
+  if (data.isCarousel && data.slides && data.slides.length > 0) {
+    var slideImgFetches = [];
+    for (var si = 0; si < data.slides.length; si++) {
+      for (var ii = 0; ii < 2; ii++) {
+        if (data.slides[si].imageUrls && data.slides[si].imageUrls[ii]) {
+          (function(slideIdx, imgIdx, url) {
+            slideImgFetches.push(
+              fetch(url).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+                .then(function(blob) { return { si: slideIdx, ii: imgIdx, blob: blob }; })
+                .catch(function() { return { si: slideIdx, ii: imgIdx, blob: null }; })
+            );
+          })(si, ii, data.slides[si].imageUrls[ii]);
+        }
+      }
+    }
+    return Promise.all([thumbFetch, Promise.all(slideImgFetches)]).then(function(res) {
+      var thumbnail = res[0];
+      var imgResults = res[1];
+      // Map fetched blobs back to slides
+      var slideImgMap = {};
+      imgResults.forEach(function(r) { slideImgMap[r.si + '_' + r.ii] = r.blob; });
+      var slides = data.slides.map(function(s, idx) {
+        var sd = {
+          headline: s.headline || '',
+          subtitle: s.subtitle || '',
+          date: s.date || '',
+          layout: s.layout || 'one',
+          format: s.format || data.format || '4:5',
+          hlCaps: !!s.hlCaps,
+          subCaps: !!s.subCaps,
+          hlFSOverride: s.hlFSOverride || 0,
+          subFSOverride: s.subFSOverride || 0,
+          credFSOverride: s.credFSOverride || 0,
+          credAlign: s.credAlign || 'right',
+          credOffX: s.credOffX || 0,
+          credOffY: s.credOffY || 0,
+          credShadow: !!s.credShadow,
+          textPos: s.textPos || 'top',
+          credits: s.credits || ['', ''],
+          crops: s.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
+          images: [slideImgMap[idx + '_0'] || null, slideImgMap[idx + '_1'] || null]
+        };
+        return sd;
+      });
+      return dbAdd({
+        id: id,
+        savedAt: data.savedAt,
+        headline: data.headline || slides[0].headline,
+        subtitle: data.subtitle || slides[0].subtitle,
+        date: data.date || slides[0].date,
+        layout: data.layout || slides[0].layout,
+        format: data.format || '4:5',
+        hlCaps: !!data.hlCaps,
+        subCaps: !!data.subCaps,
+        hlFSOverride: data.hlFSOverride || 0,
+        subFSOverride: data.subFSOverride || 0,
+        credFSOverride: data.credFSOverride || 0,
+        credAlign: data.credAlign || 'right',
+        credOffX: data.credOffX || 0,
+        credOffY: data.credOffY || 0,
+        credShadow: !!data.credShadow,
+        textPos: data.textPos || 'top',
+        credits: data.credits || ['', ''],
+        crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
+        images: slides[0].images,
+        thumbnail: thumbnail,
+        isCarousel: true,
+        slides: slides
+      });
+    });
   }
-  return Promise.all(fetches).then(function(blobs) {
+
+  // Single-post download (original logic)
+  var imgFetches = [];
+  for (var i = 0; i < 2; i++) {
+    if (data.imageUrls && data.imageUrls[i]) {
+      imgFetches.push(fetch(data.imageUrls[i]).then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); }).catch(function() { return null; }));
+    } else {
+      imgFetches.push(Promise.resolve(null));
+    }
+  }
+  return Promise.all([Promise.all(imgFetches), thumbFetch]).then(function(res) {
+    var imgBlobs = res[0];
+    var thumbnail = res[1];
     return dbAdd({
       id: id,
       savedAt: data.savedAt,
@@ -4853,8 +5025,8 @@ function downloadCloudPost(id, data) {
       textPos: data.textPos || 'top',
       credits: data.credits || ['', ''],
       crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
-      images: [blobs[0], blobs[1]],
-      thumbnail: blobs[2]
+      images: [imgBlobs[0], imgBlobs[1]],
+      thumbnail: thumbnail
     });
   });
 }
