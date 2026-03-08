@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#0a0a1a">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src 'self' blob: https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src 'self' blob: data: https://*.googleusercontent.com https://*.googleapis.com https://*.firebasestorage.app; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
 <title>KI News Post Generator</title>
 <style>
 @font-face {
@@ -75,6 +75,20 @@ body{
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;padding:12px 0 8px;border-bottom:1px solid var(--border);position:relative;z-index:100}
 .topbar h1{font-size:16px;font-weight:600;white-space:nowrap;color:var(--title-color);letter-spacing:-.02em}
 .btn-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+/* ===== TOOLBAR GROUPS ===== */
+.toolbar-group{display:flex;gap:4px;align-items:center}
+.toolbar-spacer{flex:1 1 0;min-width:4px}
+/* Separators between groups on desktop */
+.toolbar-export,.toolbar-save{border-left:1px solid var(--border);padding-left:8px;margin-left:2px}
+/* Share group collapses when empty (both buttons start hidden) */
+.toolbar-share:empty,.toolbar-share{min-width:0}
+/* Hide overflow button on desktop */
+.toolbar-more-btn{display:none;font-size:18px;font-weight:bold;padding:8px 10px;line-height:1}
+/* Mobile overflow menu */
+.toolbar-overflow-panel{display:none;position:absolute;top:100%;right:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,.25),0 2px 8px rgba(0,0,0,.1);z-index:200;padding:8px;min-width:200px;max-width:calc(100vw - 24px)}
+.toolbar-overflow-panel.open{display:flex;flex-wrap:wrap;gap:6px}
+.toolbar-overflow-panel button,.toolbar-overflow-panel .theme-switcher{flex:none}
+.toolbar-overflow-panel .toolbar-group{flex-wrap:wrap}
 button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12px;border-radius:var(--radius-md);transition:background .15s ease,color .15s ease,transform .1s ease,box-shadow .15s ease,opacity .15s ease;font-family:inherit;-webkit-appearance:none;letter-spacing:-.01em;line-height:1.4}
 .seg-ctrl{display:inline-flex;background:var(--btn-secondary-bg);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;padding:2px;gap:2px}
 .seg{padding:6px 12px;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:background .15s ease,color .15s ease;border-radius:var(--radius-sm)}
@@ -126,9 +140,24 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
 /* ===== MOBILE TOPBAR ===== */
 @media (max-width:1023px) {
   .topbar{flex-wrap:wrap}
-  .btn-row{width:100%;justify-content:flex-start}
+  .btn-row{width:100%;justify-content:flex-start;position:relative}
   .btn-row button{padding:8px 10px;font-size:13px}
   .seg{padding:6px 12px;font-size:12px}
+  /* On mobile: hide share, save, utility groups; show overflow button */
+  .btn-row > .toolbar-share,
+  .btn-row > .toolbar-save,
+  .btn-row > .toolbar-util{display:none}
+  .toolbar-more-btn{display:inline-flex !important;align-items:center;justify-content:center}
+  /* Remove group separators on mobile */
+  .toolbar-export,.toolbar-save{border-left:none;padding-left:0;margin-left:0}
+  /* Overflow panel shows the hidden groups */
+  .toolbar-overflow-panel .toolbar-group{display:flex}
+  .toolbar-overflow-panel .toolbar-share,
+  .toolbar-overflow-panel .toolbar-save,
+  .toolbar-overflow-panel .toolbar-util{display:flex}
+  /* Separate groups in overflow with full-width dividers */
+  .toolbar-overflow-panel .toolbar-group + .toolbar-group{border-top:1px solid var(--border);padding-top:8px;width:100%}
+  .toolbar-overflow-panel .toolbar-group:first-child{width:100%}
 }
 /* ===== EDITOR PANELS ===== */
 .ed{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.05);transition:box-shadow .15s ease,border-color .15s ease}
@@ -1987,53 +2016,66 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 </head>
 <body>
 <div class="app mode-single">
-<header class="topbar">
+<header class="topbar" role="banner">
   <h1>KI-News Post-Builder</h1>
-  <div class="btn-row">
-    <!-- Tool mode tabs -->
-    <div class="tool-tabs" role="tablist" aria-label="Post-Typ">
-      <button class="tool-tab active" id="tabSingle" role="tab" aria-selected="true" data-mode="single">Einzelpost</button>
-      <button class="tool-tab" id="tabCarousel" role="tab" aria-selected="false" data-mode="carousel">Karussell</button>
-    </div>
-    <div class="seg-ctrl" id="segCtrl" role="tablist" aria-label="Ansicht" style="display:none">
-      <button class="seg active" id="segEdit" role="tab" aria-selected="true" aria-label="Editor anzeigen">Editor</button>
-      <button class="seg" id="segPreview" role="tab" aria-selected="false" aria-label="Vorschau anzeigen">Vorschau</button>
-    </div>
-    <!-- Export (single post) -->
-    <div class="split-btn single-only" id="saveGroup">
-      <button class="btn-primary split-main" id="bSave" aria-label="Als PNG speichern">PNG speichern</button>
-      <button class="btn-primary split-arrow" id="bSaveArrow" aria-label="Format wählen" aria-haspopup="true" aria-expanded="false">&#9662;</button>
-      <div class="split-menu" id="saveMenu" role="menu">
-        <button class="split-opt active" data-fmt="png" role="menuitem">PNG speichern</button>
-        <button class="split-opt" data-fmt="jpg" role="menuitem">JPG speichern</button>
+  <div class="btn-row" role="toolbar" aria-label="Werkzeugleiste">
+    <!-- Group 1: Navigation / Mode tabs -->
+    <div class="toolbar-group toolbar-nav">
+      <div class="tool-tabs" role="tablist" aria-label="Post-Typ">
+        <button class="tool-tab active" id="tabSingle" role="tab" aria-selected="true" data-mode="single">Einzelpost</button>
+        <button class="tool-tab" id="tabCarousel" role="tab" aria-selected="false" data-mode="carousel">Karussell</button>
+      </div>
+      <div class="seg-ctrl" id="segCtrl" role="tablist" aria-label="Ansicht" style="display:none">
+        <button class="seg active" id="segEdit" role="tab" aria-selected="true" aria-label="Editor anzeigen">Editor</button>
+        <button class="seg" id="segPreview" role="tab" aria-selected="false" aria-label="Vorschau anzeigen">Vorschau</button>
       </div>
     </div>
-    <!-- Export (carousel) -->
-    <button class="btn-primary carousel-only" id="bCarouselExportImgs" style="font-size:13px" aria-label="Alle Slides als Bilder exportieren">Bilder Export</button>
-    <button class="btn-x carousel-only" id="bCarouselExportPdf" aria-label="Karussell als PDF exportieren">PDF Export</button>
-    <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
-    <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
-    <!-- Save -->
-    <button class="btn-x" id="bA" aria-label="Post speichern">Speichern</button>
-    <button class="btn-x" id="bH" aria-label="Gespeicherte Posts öffnen">Gespeicherte</button>
-    <!-- Utility -->
-    <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
-    <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dunkel/Hell-Modus">&#9790;</button>
-    <div class="theme-switcher">
-      <button class="btn-x theme-switcher-btn" id="designToggle" aria-label="Design-Thema wählen" title="Design-Thema">&#9674;</button>
-      <div class="theme-switcher-menu" id="designMenu" role="menu">
-        <button class="theme-switcher-opt active" data-design="default" role="menuitem"><span class="ts-icon">&#9679;</span>Standard</button>
-        <button class="theme-switcher-opt" data-design="fluent" role="menuitem"><span class="ts-icon">&#9638;</span>Fluent 2</button>
-        <button class="theme-switcher-opt" data-design="liquid-glass" role="menuitem"><span class="ts-icon">&#9830;</span>Liquid Glass</button>
-        <button class="theme-switcher-opt" data-design="m3x" role="menuitem"><span class="ts-icon">&#10022;</span>Material 3</button>
-        <button class="theme-switcher-opt" data-design="geist" role="menuitem"><span class="ts-icon">&#9651;</span>Geist</button>
+    <div class="toolbar-spacer"></div>
+    <!-- Group 2: Export -->
+    <div class="toolbar-group toolbar-export">
+      <div class="split-btn single-only" id="saveGroup">
+        <button class="btn-primary split-main" id="bSave" aria-label="Als PNG speichern">PNG speichern</button>
+        <button class="btn-primary split-arrow" id="bSaveArrow" aria-label="Format wählen" aria-haspopup="true" aria-expanded="false">&#9662;</button>
+        <div class="split-menu" id="saveMenu" role="menu">
+          <button class="split-opt active" data-fmt="png" role="menuitem">PNG speichern</button>
+          <button class="split-opt" data-fmt="jpg" role="menuitem">JPG speichern</button>
+        </div>
+      </div>
+      <button class="btn-primary carousel-only" id="bCarouselExportImgs" style="font-size:13px" aria-label="Alle Slides als Bilder exportieren">Bilder Export</button>
+      <button class="btn-x carousel-only" id="bCarouselExportPdf" aria-label="Karussell als PDF exportieren">PDF Export</button>
+    </div>
+    <!-- Group 3: Share (conditional visibility) -->
+    <div class="toolbar-group toolbar-share">
+      <button class="btn-x" id="bC" style="display:none" aria-label="In Zwischenablage kopieren">Kopieren</button>
+      <button class="btn-x" id="bS" style="display:none" aria-label="Bild teilen">Teilen</button>
+    </div>
+    <!-- Group 4: Save / Archive -->
+    <div class="toolbar-group toolbar-save">
+      <button class="btn-x" id="bA" aria-label="Post speichern">Speichern</button>
+      <button class="btn-x" id="bH" aria-label="Gespeicherte Posts öffnen">Gespeicherte</button>
+    </div>
+    <!-- Group 5: Utility -->
+    <div class="toolbar-group toolbar-util">
+      <button class="btn-danger" id="bN" aria-label="Neuen Post beginnen">Neu</button>
+      <button class="theme-btn btn-x" id="themeToggle" aria-label="Farbschema umschalten" title="Dunkel/Hell-Modus">&#9790;</button>
+      <div class="theme-switcher">
+        <button class="btn-x theme-switcher-btn" id="designToggle" aria-label="Design-Thema wählen" title="Design-Thema">&#9674;</button>
+        <div class="theme-switcher-menu" id="designMenu" role="menu">
+          <button class="theme-switcher-opt active" data-design="default" role="menuitem"><span class="ts-icon">&#9679;</span>Standard</button>
+          <button class="theme-switcher-opt" data-design="fluent" role="menuitem"><span class="ts-icon">&#9638;</span>Fluent 2</button>
+          <button class="theme-switcher-opt" data-design="liquid-glass" role="menuitem"><span class="ts-icon">&#9830;</span>Liquid Glass</button>
+          <button class="theme-switcher-opt" data-design="m3x" role="menuitem"><span class="ts-icon">&#10022;</span>Material 3</button>
+          <button class="theme-switcher-opt" data-design="geist" role="menuitem"><span class="ts-icon">&#9651;</span>Geist</button>
+        </div>
+      </div>
+      <button class="btn-x login-btn" id="loginBtn" aria-label="Mit Google anmelden">Anmelden</button>
+      <div class="user-info" id="userInfo" style="display:none">
+        <img class="user-avatar" id="userAvatar" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Benutzerbild">
+        <button class="btn-x logout-btn" id="logoutBtn" aria-label="Abmelden" title="Abmelden">&#10005;</button>
       </div>
     </div>
-    <button class="btn-x login-btn" id="loginBtn" aria-label="Mit Google anmelden">Anmelden</button>
-    <div class="user-info" id="userInfo" style="display:none">
-      <img class="user-avatar" id="userAvatar" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Benutzerbild">
-      <button class="btn-x logout-btn" id="logoutBtn" aria-label="Abmelden" title="Abmelden">&#10005;</button>
-    </div>
+    <!-- Mobile overflow toggle -->
+    <button class="btn-x toolbar-more-btn" id="toolbarMoreBtn" aria-label="Weitere Aktionen" aria-expanded="false" title="Mehr">&#8942;</button>
   </div>
 </header>
 <main class="app-layout">
@@ -2769,6 +2811,63 @@ if (typeof ClipboardItem !== 'undefined' && navigator.clipboard && navigator.cli
 if (navigator.canShare && navigator.canShare({ files: [new File([''], 't.jpg', { type: 'image/jpeg' })] })) {
   $bS.style.display = '';
 }
+// ===== MOBILE OVERFLOW MENU =====
+var $toolbarMoreBtn = document.getElementById('toolbarMoreBtn');
+var _overflowPanel = null;
+function toggleToolbarOverflow() {
+  if (_overflowPanel && _overflowPanel.classList.contains('open')) {
+    closeToolbarOverflow();
+    return;
+  }
+  if (!_overflowPanel) {
+    _overflowPanel = document.createElement('div');
+    _overflowPanel.className = 'toolbar-overflow-panel';
+    document.querySelector('.btn-row').appendChild(_overflowPanel);
+  }
+  // Move hidden groups into overflow panel
+  var btnRow = document.querySelector('.btn-row');
+  var groups = btnRow.querySelectorAll(':scope > .toolbar-share, :scope > .toolbar-save, :scope > .toolbar-util');
+  _overflowPanel._sourceGroups = [];
+  groups.forEach(function(g) {
+    _overflowPanel._sourceGroups.push({el: g, next: g.nextSibling, parent: g.parentNode});
+    _overflowPanel.appendChild(g);
+  });
+  _overflowPanel.classList.add('open');
+  $toolbarMoreBtn.setAttribute('aria-expanded', 'true');
+  // Close on outside click
+  setTimeout(function() {
+    document.addEventListener('click', _overflowOutsideClick);
+  }, 0);
+}
+function closeToolbarOverflow() {
+  if (!_overflowPanel) return;
+  // Move groups back to their original positions
+  if (_overflowPanel._sourceGroups) {
+    _overflowPanel._sourceGroups.forEach(function(info) {
+      if (info.next) info.parent.insertBefore(info.el, info.next);
+      else info.parent.appendChild(info.el);
+    });
+    _overflowPanel._sourceGroups = null;
+  }
+  _overflowPanel.classList.remove('open');
+  $toolbarMoreBtn.setAttribute('aria-expanded', 'false');
+  document.removeEventListener('click', _overflowOutsideClick);
+}
+function _overflowOutsideClick(e) {
+  if (_overflowPanel && !_overflowPanel.contains(e.target) && e.target !== $toolbarMoreBtn) {
+    closeToolbarOverflow();
+  }
+}
+$toolbarMoreBtn.addEventListener('click', function(e) {
+  e.stopPropagation();
+  toggleToolbarOverflow();
+});
+// Close overflow when a button inside it is clicked
+document.addEventListener('click', function(e) {
+  if (_overflowPanel && _overflowPanel.classList.contains('open') && e.target.closest('.toolbar-overflow-panel button:not(.theme-switcher-btn)')) {
+    setTimeout(closeToolbarOverflow, 100);
+  }
+});
 // ===== CHARACTER LIMITS =====
 const CHAR_LIMITS = { hl: [60, 70], sub: [70, 80] };
 // ===== LOCALSTORAGE =====
@@ -3942,6 +4041,22 @@ function loadHistoryGrid() {
         var thumbUrl = URL.createObjectURL(post.thumbnail);
         activeThumbUrls.push(thumbUrl);
         img.src = thumbUrl;
+      } else if (post.thumbnailUrl) {
+        // Blob missing but cloud URL available — fetch and cache the blob
+        (function(imgEl, postRef, cloudUrl) {
+          imgEl.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #0a0a1a 100%)';
+          fetch(cloudUrl).then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.blob();
+          }).then(function(blob) {
+            var blobUrl = URL.createObjectURL(blob);
+            activeThumbUrls.push(blobUrl);
+            imgEl.src = blobUrl;
+            // Persist the blob back to IndexedDB so it works offline next time
+            postRef.thumbnail = blob;
+            dbAdd(postRef).catch(function() {});
+          }).catch(function() {});
+        })(img, post, post.thumbnailUrl);
       } else {
         // No thumbnail — show gradient placeholder
         img.style.background = 'linear-gradient(180deg, #1a1a3e 0%, #0a0a1a 100%)';
@@ -4050,26 +4165,46 @@ function loadArchivedPost(post) {
       showToast('\u2713 Post geladen');
     }
   }
+  function loadImageBlob(idx, blob) {
+    S.draftBlobs[idx] = blob;
+    var blobUrl = URL.createObjectURL(blob);
+    var im = new Image();
+    im.onload = function() {
+      S.imgs[idx] = im;
+      S.blobs[idx] = blobUrl;
+      loaded++;
+      if (loaded >= total) onAllLoaded();
+    };
+    im.onerror = function() {
+      URL.revokeObjectURL(blobUrl);
+      loaded++;
+      if (loaded >= total) onAllLoaded();
+    };
+    im.src = blobUrl;
+  }
   for (var i = 0; i < 2; i++) {
-    if (post.images && post.images[i]) {
+    var hasBlob = post.images && post.images[i];
+    var hasCloudUrl = !hasBlob && post.cloudImageUrls && post.cloudImageUrls[0] && post.cloudImageUrls[0][i];
+    if (hasBlob) {
       total++;
-      (function(idx, blob) {
-        S.draftBlobs[idx] = blob;
-        var blobUrl = URL.createObjectURL(blob);
-        var im = new Image();
-        im.onload = function() {
-          S.imgs[idx] = im;
-          S.blobs[idx] = blobUrl;
+      loadImageBlob(i, post.images[i]);
+    } else if (hasCloudUrl) {
+      total++;
+      (function(idx, url) {
+        fetch(url).then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.blob();
+        }).then(function(blob) {
+          // Cache blob back to IndexedDB
+          if (!post.images) post.images = [null, null];
+          post.images[idx] = blob;
+          dbAdd(post).catch(function() {});
+          loadImageBlob(idx, blob);
+        }).catch(function() {
           loaded++;
           if (loaded >= total) onAllLoaded();
-        };
-        im.onerror = function() {
-          URL.revokeObjectURL(blobUrl);
-          loaded++;
-          if (loaded >= total) onAllLoaded();
-        };
-        im.src = blobUrl;
-      })(i, post.images[i]);
+        });
+      })(i, post.cloudImageUrls[0][i]);
     }
   }
   if (total === 0) onAllLoaded();
@@ -4113,10 +4248,12 @@ function loadCarouselPost(post) {
   for (var si = 0; si < slides.length; si++) {
     deck.push(loadSlideFromSaved(slides[si]));
   }
-  // Count images to load across all slides
+  // Count images to load across all slides (including cloud fallbacks)
   for (var si2 = 0; si2 < slides.length; si2++) {
     for (var ii = 0; ii < 2; ii++) {
-      if (slides[si2].images && slides[si2].images[ii]) totalImgs++;
+      var hasBlob2 = slides[si2].images && slides[si2].images[ii];
+      var hasCloudUrl2 = !hasBlob2 && post.cloudImageUrls && post.cloudImageUrls[si2] && post.cloudImageUrls[si2][ii];
+      if (hasBlob2 || hasCloudUrl2) totalImgs++;
     }
   }
   function onAllCarouselImgsLoaded() {
@@ -4145,27 +4282,46 @@ function loadCarouselPost(post) {
     onAllCarouselImgsLoaded();
     return;
   }
-  // Load images for each slide
+  // Load images for each slide (with cloud URL fallback)
+  function loadCarouselImageBlob(slideIdx, imgIdx, blob) {
+    deck[slideIdx].draftBlobs[imgIdx] = blob;
+    var blobUrl = URL.createObjectURL(blob);
+    var im = new Image();
+    im.onload = function() {
+      deck[slideIdx].imgs[imgIdx] = im;
+      deck[slideIdx].blobs[imgIdx] = blobUrl;
+      loadedImgs++;
+      if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+    };
+    im.onerror = function() {
+      URL.revokeObjectURL(blobUrl);
+      loadedImgs++;
+      if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
+    };
+    im.src = blobUrl;
+  }
   for (var si3 = 0; si3 < slides.length; si3++) {
     for (var ii2 = 0; ii2 < 2; ii2++) {
-      if (slides[si3].images && slides[si3].images[ii2]) {
-        (function(slideIdx, imgIdx, blob) {
-          deck[slideIdx].draftBlobs[imgIdx] = blob;
-          var blobUrl = URL.createObjectURL(blob);
-          var im = new Image();
-          im.onload = function() {
-            deck[slideIdx].imgs[imgIdx] = im;
-            deck[slideIdx].blobs[imgIdx] = blobUrl;
+      var hasSlideBlob = slides[si3].images && slides[si3].images[ii2];
+      var hasSlideCloudUrl = !hasSlideBlob && post.cloudImageUrls && post.cloudImageUrls[si3] && post.cloudImageUrls[si3][ii2];
+      if (hasSlideBlob) {
+        loadCarouselImageBlob(si3, ii2, slides[si3].images[ii2]);
+      } else if (hasSlideCloudUrl) {
+        (function(sIdx, iIdx, url) {
+          fetch(url).then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.blob();
+          }).then(function(blob) {
+            // Cache blob to IndexedDB
+            if (!slides[sIdx].images) slides[sIdx].images = [null, null];
+            slides[sIdx].images[iIdx] = blob;
+            dbAdd(post).catch(function() {});
+            loadCarouselImageBlob(sIdx, iIdx, blob);
+          }).catch(function() {
             loadedImgs++;
             if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
-          };
-          im.onerror = function() {
-            URL.revokeObjectURL(blobUrl);
-            loadedImgs++;
-            if (loadedImgs >= totalImgs) onAllCarouselImgsLoaded();
-          };
-          im.src = blobUrl;
-        })(si3, ii2, slides[si3].images[ii2]);
+          });
+        })(si3, ii2, post.cloudImageUrls[si3][ii2]);
       }
     }
   }
@@ -4987,6 +5143,8 @@ function downloadCloudPost(id, data) {
         crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
         images: slides[0].images,
         thumbnail: thumbnail,
+        thumbnailUrl: data.thumbnailUrl || null,
+        cloudImageUrls: data.slides.map(function(s) { return s.imageUrls || [null, null]; }),
         isCarousel: true,
         slides: slides
       });
@@ -5026,7 +5184,9 @@ function downloadCloudPost(id, data) {
       credits: data.credits || ['', ''],
       crops: data.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
       images: [imgBlobs[0], imgBlobs[1]],
-      thumbnail: thumbnail
+      thumbnail: thumbnail,
+      thumbnailUrl: data.thumbnailUrl || null,
+      cloudImageUrls: [data.imageUrls || [null, null]]
     });
   });
 }
