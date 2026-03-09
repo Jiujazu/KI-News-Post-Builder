@@ -278,6 +278,11 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
   white-space:nowrap;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ===== LOADING OVERLAY ===== */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center}
+.loading-overlay.show{display:flex}
+.loading-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 /* ===== HISTORY DRAWER ===== */
 .hist-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;
@@ -2373,6 +2378,8 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 <div class="drop-overlay" id="dropOverlay"><span>Bild hier ablegen</span></div>
 <!-- TOAST -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay" aria-hidden="true"><div class="loading-spinner"></div></div>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -2980,6 +2987,21 @@ function showToast(msg) {
   $toast.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function() { $toast.classList.remove('show'); }, 2000);
+}
+// ===== LOADING OVERLAY =====
+var $loadingOverlay = document.getElementById('loadingOverlay');
+var _loadingCount = 0;
+function showLoading() {
+  _loadingCount++;
+  $loadingOverlay.classList.add('show');
+  $loadingOverlay.setAttribute('aria-hidden', 'false');
+}
+function hideLoading() {
+  _loadingCount = Math.max(0, _loadingCount - 1);
+  if (_loadingCount === 0) {
+    $loadingOverlay.classList.remove('show');
+    $loadingOverlay.setAttribute('aria-hidden', 'true');
+  }
 }
 // ===== HELPERS =====
 function autoSize(el) {
@@ -3850,6 +3872,7 @@ $bA.addEventListener('click', function() {
     return;
   }
   btn.disabled = true; setSaveLabel('Speichert\u2026');
+  showLoading();
 
   // If carousel mode active, save all slides (even if only 1 slide)
   if (deckActive && deck.length >= 1) {
@@ -3912,6 +3935,7 @@ $bA.addEventListener('click', function() {
       _loadedPostId = post.id;
       setSaveLabel('\u2713 Gespeichert!');
       btn.classList.add('btn-success');
+      markSaved();
       showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides ' + (wasOverwrite ? '\u00fcberschrieben' : 'gespeichert'));
       setTimeout(function() {
         btn.disabled = false;
@@ -3922,7 +3946,7 @@ $bA.addEventListener('click', function() {
       console.warn('Carousel save failed:', err);
       btn.disabled = false; updateSaveButtonLabel();
       showToast('\u26a0 Speichern fehlgeschlagen');
-    });
+    }).finally(hideLoading);
     return;
   }
 
@@ -3971,6 +3995,7 @@ $bA.addEventListener('click', function() {
     _loadedPostId = post.id;
     setSaveLabel('\u2713 Gespeichert!');
     btn.classList.add('btn-success');
+    markSaved();
     showToast('\u2713 Post ' + (wasOverwrite ? '\u00fcberschrieben' : 'gespeichert'));
     setTimeout(function() {
       btn.disabled = false;
@@ -3981,7 +4006,7 @@ $bA.addEventListener('click', function() {
     console.warn('Save failed:', err);
     btn.disabled = false; updateSaveButtonLabel();
     showToast('\u26a0 Speichern fehlgeschlagen');
-  });
+  }).finally(hideLoading);
 });
 // ===== HISTORY: DRAWER =====
 var _drawerEscHandler = null;
@@ -4753,7 +4778,12 @@ function pushUndo() {
   redoStack = [];
   lastSnap = snap;
 }
+var _undoTimer = null;
+function flushDebouncedUndo() {
+  if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; pushUndo(); }
+}
 function undo() {
+  flushDebouncedUndo();
   if (!undoStack.length) { showToast('Nichts zum R\u00fcckg\u00e4ngig machen'); return; }
   redoStack.push(stateSnapshot());
   var snap = undoStack.pop();
@@ -4888,7 +4918,6 @@ $tplDel.addEventListener('click', function() {
   showToast('\u2713 Vorlage gel\u00f6scht');
 });
 // Hook undo into existing input handlers (debounced to avoid flooding undo stack per-keystroke)
-var _undoTimer = null;
 function debouncedUndo() {
   clearTimeout(_undoTimer);
   _undoTimer = setTimeout(pushUndo, 600);
@@ -6110,6 +6139,16 @@ if (document.fonts && document.fonts.load) {
 }
 window.addEventListener('resize', function() {
   scheduleDraw();
+});
+// ===== BEFOREUNLOAD: UNSAVED CHANGES WARNING =====
+var _savedSnap = stateSnapshot();
+function markSaved() { _savedSnap = stateSnapshot(); }
+window.addEventListener('beforeunload', function(e) {
+  var current = stateSnapshot();
+  if (!snapshotsEqual(current, _savedSnap)) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
 });
 })();
 if ('serviceWorker' in navigator) {

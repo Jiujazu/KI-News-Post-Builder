@@ -531,11 +531,11 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | C-5 | Code | Massive Funktionskomplexität (154-Zeilen-Handler) |
 | C-6 | Code | Code-Duplikation (State-Restoration 3×) |
 | L-4 | Logik | Kein Onboarding / Erstnutzer-Erlebnis |
-| L-5 | Logik | Undo/Redo nicht funktionsfähig |
-| L-6 | Logik | Fehlende Bestätigungs-Dialoge (Überschreiben, Templates) |
-| L-7 | Logik | Stille Fehler bei async Operationen |
-| U-1 | UX | Keine Loading-Indikatoren (Spinner, Progress) |
-| U-2 | UX | Keine user-facing Fehlermeldungen |
+| L-5 | Logik | Undo/Redo nicht funktionsfähig | ✅ Behoben (Debounce-Flush vor Undo, Race Condition fix) |
+| L-6 | Logik | Fehlende Bestätigungs-Dialoge (Überschreiben, Templates) | ✅ Bereits vorhanden (8× confirm()) |
+| L-7 | Logik | Stille Fehler bei async Operationen | ✅ Bereits vorhanden (Toasts bei allen Fehlern) |
+| U-1 | UX | Keine Loading-Indikatoren (Spinner, Progress) | ✅ Behoben (Loading-Overlay bei Save-Operationen) |
+| U-2 | UX | Keine user-facing Fehlermeldungen | ✅ Bereits vorhanden (38+ showToast-Aufrufe) |
 
 ### Mittlere Priorität
 
@@ -546,7 +546,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | C-8 | Code | Export-Timing Race Condition |
 | C-9 | Code | `var` statt `let`/`const` |
 | L-8 | Logik | Export mit 0 Bildern möglich |
-| L-9 | Logik | Draft-Autosave: kein `beforeunload`-Schutz |
+| L-9 | Logik | Draft-Autosave: kein `beforeunload`-Schutz | ✅ Behoben (beforeunload mit Snapshot-Vergleich) |
 | L-10 | Logik | Slide-Reorder ohne Drag-Hinweise |
 | U-3 | UX | Kein Focus-Trap im History-Dialog |
 | U-4 | UX | `aria-describedby` fehlt bei Formularfeldern |
