@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KI News">
 <meta name="theme-color" content="#0a0a1a">
+<meta name="referrer" content="no-referrer-when-downgrade">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src 'self' blob: data: https://*.googleusercontent.com https://*.googleapis.com https://*.firebasestorage.app; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
@@ -2613,7 +2614,7 @@ const $histGrid    = document.getElementById('histGrid');
       var all = document.querySelectorAll('.ed.collapsible');
       var collapsedCount = document.querySelectorAll('.ed.collapsible.collapsed').length;
       var allCollapsed = collapsedCount === all.length;
-      colBtn.innerHTML = allCollapsed ? '&#9654; Alle ausklappen' : '&#9660; Alle einklappen';
+      colBtn.textContent = allCollapsed ? '\u25b6 Alle ausklappen' : '\u25bc Alle einklappen';
     }
     updateColBtn();
     colBtn.addEventListener('click', function() {
@@ -3166,7 +3167,7 @@ $saveMenu.addEventListener('click', function(e) {
   var opt = e.target.closest('.split-opt');
   if (!opt) return;
   saveFmt = opt.getAttribute('data-fmt');
-  localStorage.setItem('ki-save-fmt', saveFmt);
+  try { localStorage.setItem('ki-save-fmt', saveFmt); } catch(e) {}
   updateSaveBtn();
   $saveMenu.classList.remove('open');
 });
@@ -4694,7 +4695,8 @@ function snapshotsEqual(a, b) {
   return a.json === b.json && a.imgs[0] === b.imgs[0] && a.imgs[1] === b.imgs[1];
 }
 function restoreSnapshot(snap) {
-  var data = JSON.parse(snap.json);
+  var data;
+  try { data = JSON.parse(snap.json); } catch(e) { showToast('\u26a0 Snapshot-Daten besch\u00e4digt'); return; }
   S.hlLines = data.hlLines; S.subText = data.subText; S.dateText = data.dateText;
   S.hlCaps = !!data.hlCaps; S.subCaps = !!data.subCaps;
   S.layout = data.layout; S.format = data.format;
@@ -4808,7 +4810,10 @@ function saveTemplates(templates) {
 function refreshTplSelect() {
   var templates = loadTemplates();
   var names = Object.keys(templates).sort();
-  $tplSelect.innerHTML = '<option value="">Vorlage w\u00e4hlen\u2026</option>';
+  while ($tplSelect.firstChild) $tplSelect.removeChild($tplSelect.firstChild);
+  var defOpt = document.createElement('option');
+  defOpt.value = ''; defOpt.textContent = 'Vorlage w\u00e4hlen\u2026';
+  $tplSelect.appendChild(defOpt);
   names.forEach(function(name) {
     var opt = document.createElement('option');
     opt.value = name; opt.textContent = name;
@@ -4816,8 +4821,9 @@ function refreshTplSelect() {
   });
 }
 $tplSave.addEventListener('click', function() {
-  var name = $tplName.value.trim();
+  var name = $tplName.value.trim().slice(0, 50);
   if (!name) { showToast('\u26a0 Bitte Vorlagenname eingeben'); return; }
+  if (/[<>"'`\\\/]/.test(name)) { showToast('\u26a0 Sonderzeichen im Namen nicht erlaubt'); return; }
   var templates = loadTemplates();
   templates[name] = {
     layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
@@ -5529,7 +5535,7 @@ function switchToSlide(idx) {
 
 function renderDeckStrip() {
   if (!deckActive) return;
-  $deckStrip.innerHTML = '';
+  while ($deckStrip.firstChild) $deckStrip.removeChild($deckStrip.firstChild);
   // Sync current editor inputs into S and snapshot
   S.hlLines = $hl.value.split('\n');
   S.subText = $sub.value;
@@ -5587,7 +5593,7 @@ function renderDeckStrip() {
     if (deck.length > 1) {
       var rm = document.createElement('button');
       rm.className = 'slide-rm';
-      rm.innerHTML = '&times;';
+      rm.textContent = '\u00d7';
       rm.setAttribute('data-idx', i);
       rm.addEventListener('click', (function(idx) {
         return function(e) {

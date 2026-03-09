@@ -511,7 +511,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 
 | # | Bereich | Problem | Zeile(n) | Status |
 |---|---------|---------|----------|--------|
-| S-1 | Sicherheit | Firebase Security Rules fehlen | — | ⚠ Offen |
+| S-1 | Sicherheit | Firebase Security Rules fehlen | — | ✅ Behoben (firestore.rules + storage.rules erstellt) |
 | S-2 | Sicherheit | Race Condition bei Post-IDs → Datenverlust | ~2813 | ✅ Behoben (`generatePostId()` nutzt `crypto.getRandomValues`) |
 | C-1 | Code | Memory Leak bei Blob-URLs | ~4082 | ✅ Behoben (`activeThumbUrls` Cleanup implementiert) |
 | C-2 | Code | `toBlob()` null → korrupte Archiv-Daten | ~2794–2853 | ✅ Behoben (`reject()` + dataURL-Fallback) |
@@ -522,11 +522,11 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 
 ### Hohe Priorität (bald beheben)
 
-| # | Bereich | Problem |
-|---|---------|---------|
-| S-3 | Sicherheit | innerHTML-Pattern → potenzielle XSS |
-| S-4 | Sicherheit | Keine Input-Validierung |
-| S-5 | Sicherheit | Unsichere JSON.parse-Aufrufe |
+| # | Bereich | Problem | Status |
+|---|---------|---------|--------|
+| S-3 | Sicherheit | innerHTML-Pattern → potenzielle XSS | ✅ Behoben (alle 4 Stellen → textContent/DOM-API) |
+| S-4 | Sicherheit | Keine Input-Validierung | ✅ Behoben (Template-Name: Länge + Sonderzeichen) |
+| S-5 | Sicherheit | Unsichere JSON.parse-Aufrufe | ✅ Behoben (restoreSnapshot try-catch) |
 | C-4 | Code | Monolithische 6.110-Zeilen-Datei |
 | C-5 | Code | Massive Funktionskomplexität (154-Zeilen-Handler) |
 | C-6 | Code | Code-Duplikation (State-Restoration 3×) |
@@ -541,7 +541,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 
 | # | Bereich | Problem |
 |---|---------|---------|
-| S-6 | Sicherheit | localStorage ohne Quota-Handling |
+| S-6 | Sicherheit | localStorage ohne Quota-Handling | ✅ Behoben (try-catch um alle setItem-Aufrufe) |
 | C-7 | Code | IndexedDB-Connection nie gecacht |
 | C-8 | Code | Export-Timing Race Condition |
 | C-9 | Code | `var` statt `let`/`const` |
@@ -558,7 +558,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 
 | # | Bereich | Problem |
 |---|---------|---------|
-| S-7 | Sicherheit | Kein Referrer-Policy |
+| S-7 | Sicherheit | Kein Referrer-Policy | ✅ Behoben (meta referrer hinzugefügt) |
 | S-8 | Sicherheit | Firebase SDK veraltet |
 | C-10 | Code | Dead Code (isDesktop(), setView()) |
 | C-11 | Code | Inkonsistente Namenskonventionen |
@@ -574,7 +574,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | Bereich | Note | Kommentar |
 |---------|------|-----------|
 | **Architektur** | C | Funktional, aber nicht skalierbar (Monolith) |
-| **Sicherheit** | C- | Fehlende Rules + ID-Race-Condition sind kritisch |
+| **Sicherheit** | B+ | Rules erstellt, innerHTML→textContent, Input-Validierung, JSON.parse try-catch. Offen: CSP unsafe-inline, Firebase SDK Update |
 | **Code-Qualität** | C | Memory Leaks, fehlendes Error-Handling, keine Tests |
 | **Benutzerführung** | C+ | Kernflows gut, aber Moduswechsel-Bugs + kein Onboarding |
 | **UX/UI** | B+ | Sehr gutes Design-System, starke a11y-Basis, 5 Themes |
