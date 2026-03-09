@@ -1,4 +1,4 @@
-import { app, G, S, cv, defaultCrop, todayDE, setSaveLabel, $bA, $bSaveCopy, $bH, $histOverlay, $histDrawer, $histClose, $histBody, $histEmpty, $histGrid, $histFilterAll, $histFilterSingle, $histFilterCarousel, $f } from './state.js';
+import { app, G, S, cv, defaultCrop, todayDE, setSaveLabel, $bA, $bSaveCopy, $bH, $histOverlay, $histDrawer, $histClose, $histBody, $histEmpty, $histGrid, $histFilterAll, $histFilterSingle, $histFilterCarousel, $f, $hl, $sub } from './state.js';
 import { buildSlideData, loadSlideFromSaved } from './utils.js';
 function compressSlideImages(snap) {
   var promises = [];
@@ -327,8 +327,8 @@ function loadArchivedPost(post) {
   $f[0].value = ''; $f[1].value = '';
   var loaded = 0, total = 0;
   function onAllLoaded() {
-    app.autoSize(document.getElementById('inHL'));
-    app.autoSize(document.getElementById('inSub'));
+    app.autoSize($hl);
+    app.autoSize($sub);
     app.renderUI(); app.saveState();
     closeHistory();
     if (post.id && post.id !== '__draft__') {

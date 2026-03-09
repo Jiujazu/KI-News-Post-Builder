@@ -28,8 +28,6 @@ function init() {
   if (!localStorage.getItem('ki-onboarded')) {
     var ob = document.createElement('div');
     ob.className = 'onboarding-hint';
-    ob.innerHTML = '';
-    ob.textContent = '';
     var msg = document.createElement('span');
     msg.textContent = 'Willkommen! Lade ein Bild hoch, schreibe eine Headline und exportiere deinen Post.';
     var closeBtn = document.createElement('button');

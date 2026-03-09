@@ -44,7 +44,10 @@ self.addEventListener('fetch', function(e) {
         var fetched = fetch(e.request).then(function(response) {
           if (response.ok) cache.put(e.request, response.clone());
           return response;
-        }).catch(function() { return cached; });
+        }).catch(function() {
+          if (cached) return cached;
+          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        });
         return cached || fetched;
       });
     })
