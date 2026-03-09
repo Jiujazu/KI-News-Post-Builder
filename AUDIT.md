@@ -543,16 +543,16 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 |---|---------|---------|
 | S-6 | Sicherheit | localStorage ohne Quota-Handling | ✅ Behoben (try-catch um alle setItem-Aufrufe) |
 | C-7 | Code | IndexedDB-Connection nie gecacht | ✅ Bereits implementiert (_dbPromise Caching) |
-| C-8 | Code | Export-Timing Race Condition |
+| C-8 | Code | Export-Timing Race Condition | ✅ Behoben (_exportLock verhindert scheduleDraw während Export) |
 | C-9 | Code | `var` statt `let`/`const` |
 | L-8 | Logik | Export mit 0 Bildern möglich | ✅ Behoben (Guard vor Export) |
 | L-9 | Logik | Draft-Autosave: kein `beforeunload`-Schutz | ✅ Behoben (beforeunload mit Snapshot-Vergleich) |
 | L-10 | Logik | Slide-Reorder ohne Drag-Hinweise |
 | U-3 | UX | Kein Focus-Trap im History-Dialog | ✅ Bereits implementiert (Tab-Trap + Escape) |
-| U-4 | UX | `aria-describedby` fehlt bei Formularfeldern |
+| U-4 | UX | `aria-describedby` fehlt bei Formularfeldern | ✅ Behoben (Headline + Subtitle → Char-Count) |
 | U-5 | UX | Character-Limits erst bei Überschreitung sichtbar |
 | P-1 | Performance | Unnötige Re-Renders in renderDeckStrip() |
-| P-2 | Performance | Fehlende Text-Measurement-Cache |
+| P-2 | Performance | Fehlende Text-Measurement-Cache | ✅ Behoben (cachedMeasure() mit Font-Key) |
 
 ### Niedrige Priorität
 
@@ -562,7 +562,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | S-8 | Sicherheit | Firebase SDK veraltet |
 | C-10 | Code | Dead Code (isDesktop(), setView()) | ✅ Behoben (entfernt) |
 | C-11 | Code | Inkonsistente Namenskonventionen |
-| U-6 | UX | Range-Slider-Thumbs zu klein für Touch (16px) |
+| U-6 | UX | Range-Slider-Thumbs zu klein für Touch (16px) | ✅ Behoben (16px → 24px) |
 | U-7 | UX | Keine Internationalisierung |
 | U-8 | UX | Keine Empty-State-Illustrationen |
 | P-3 | Performance | 241 KB Single-File (kein Code-Splitting) |
@@ -575,8 +575,8 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 |---------|------|-----------|
 | **Architektur** | C | Funktional, aber nicht skalierbar (Monolith) |
 | **Sicherheit** | B+ | Rules erstellt, innerHTML→textContent, Input-Validierung, JSON.parse try-catch. Offen: CSP unsafe-inline, Firebase SDK Update |
-| **Code-Qualität** | C | Memory Leaks, fehlendes Error-Handling, keine Tests |
-| **Benutzerführung** | C+ | Kernflows gut, aber Moduswechsel-Bugs + kein Onboarding |
+| **Code-Qualität** | B- | Duplikation reduziert, Export-Race-Condition behoben, measureText gecacht. Offen: var→let/const, Tests |
+| **Benutzerführung** | B | Loading-States, aria-describedby, Touch-Slider, beforeunload. Offen: Onboarding |
 | **UX/UI** | B+ | Sehr gutes Design-System, starke a11y-Basis, 5 Themes |
 | **Performance** | B- | Für Single-File-App OK, Probleme erst bei 50-Slide-Carousel |
 

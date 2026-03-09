@@ -247,11 +247,11 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
   touch-action:none;
 }
 .crop-ctrl input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);
   border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2);
 }
 .crop-ctrl input[type=range]::-moz-range-thumb{
-  width:16px;height:16px;border-radius:50%;background:var(--accent);
+  width:24px;height:24px;border-radius:50%;background:var(--accent);
   border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2);
 }
 .crop-ctrl .vl{font-size:13px;color:var(--text-muted);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
@@ -364,7 +364,8 @@ html.dark body,html.dark :root{
 .fs-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .fs-row label{font-size:11px;font-weight:500;color:var(--text-dim);min-width:90px;flex-shrink:0}
 .fs-row input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none}
-.fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.fs-row input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .fs-row .vl{font-size:13px;color:var(--text-muted);min-width:45px;text-align:right;font-variant-numeric:tabular-nums}
 .fs-row button,.fs-reset,.crop-reset{padding:5px 8px;font-size:13px;border-radius:var(--radius-sm);background:var(--btn-secondary-bg);color:var(--text-muted);border:1px solid var(--border);cursor:pointer;line-height:1}
 .fs-row button:hover,.fs-reset:hover,.crop-reset:hover{background:var(--border-hover);color:var(--text);border-color:var(--border-hover)}
@@ -2218,7 +2219,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     <div class="ed-body">
     <div class="fld">
       <label>Headline <button class="caps-pill" id="togHlCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="hlCount" aria-live="polite"></span></label>
-      <textarea id="inHL" rows="1" placeholder=""></textarea>
+      <textarea id="inHL" rows="1" placeholder="" aria-describedby="hlCount"></textarea>
     </div>
     <div class="fs-row">
       <label>Gr&ouml;&szlig;e</label>
@@ -2228,7 +2229,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     </div>
     <div class="fld">
       <label>Subheadline <button class="caps-pill" id="togSubCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="subCount" aria-live="polite"></span></label>
-      <textarea id="inSub" rows="1" placeholder=""></textarea>
+      <textarea id="inSub" rows="1" placeholder="" aria-describedby="subCount"></textarea>
     </div>
     <div class="fs-row">
       <label>Gr&ouml;&szlig;e</label>
@@ -2972,12 +2973,14 @@ function loadState() {
 // Users can load saved posts from the "Gespeicherte" drawer.
 // ===== RAF THROTTLE =====
 let rafPending = false;
+var rafPending = false;
+var _exportLock = false;
 function scheduleDraw() {
-  if (rafPending) return;
+  if (rafPending || _exportLock) return;
   rafPending = true;
   requestAnimationFrame(function() {
     rafPending = false;
-    draw();
+    if (!_exportLock) draw();
   });
 }
 // ===== TOAST =====
@@ -3029,20 +3032,30 @@ function revokeBlob(i) {
   S.draftBlobs[i] = null;
 }
 // ===== WORD WRAP =====
+var _mtCache = {};
+var _mtCacheFont = '';
+function cachedMeasure(text) {
+  var font = cx.font;
+  if (font !== _mtCacheFont) { _mtCache = {}; _mtCacheFont = font; }
+  if (text in _mtCache) return _mtCache[text];
+  var w = cx.measureText(text).width;
+  _mtCache[text] = w;
+  return w;
+}
 function wrapLine(text, fs, maxWidth) {
   cx.font = 'bold ' + fs + 'px Festivo, serif';
-  if (cx.measureText(text).width <= maxWidth) return [text];
+  if (cachedMeasure(text) <= maxWidth) return [text];
   var words = text.split(' ');
   var lines = [], cur = '';
   for (var w = 0; w < words.length; w++) {
     var word = words[w];
     // Break single words that exceed maxWidth
-    if (cx.measureText(word).width > maxWidth) {
+    if (cachedMeasure(word) > maxWidth) {
       if (cur) { lines.push(cur); cur = ''; }
       var chars = '';
       for (var c = 0; c < word.length; c++) {
         var next = chars + word[c];
-        if (cx.measureText(next).width > maxWidth && chars) {
+        if (cachedMeasure(next) > maxWidth && chars) {
           lines.push(chars); chars = word[c];
         } else { chars = next; }
       }
@@ -3050,7 +3063,7 @@ function wrapLine(text, fs, maxWidth) {
       continue;
     }
     var test = cur ? cur + ' ' + word : word;
-    if (cx.measureText(test).width > maxWidth && cur) {
+    if (cachedMeasure(test) > maxWidth && cur) {
       lines.push(cur); cur = word;
     } else { cur = test; }
   }
@@ -3530,7 +3543,7 @@ function prepareText(maxW) {
     for (var k = 0; k < rawLines.length; k++) {
       var words = rawLines[k].split(' ');
       for (var wi = 0; wi < words.length; wi++) {
-        var ww = cx.measureText(words[wi]).width;
+        var ww = cachedMeasure(words[wi]);
         if (ww > maxW) {
           var ratio = maxW / ww;
           if (ratio < worstRatio) worstRatio = ratio;
@@ -3540,7 +3553,7 @@ function prepareText(maxW) {
   } else {
     // Auto mode: shrink if any full line is wider than maxW
     for (var k = 0; k < rawLines.length; k++) {
-      var mw = cx.measureText(rawLines[k]).width;
+      var mw = cachedMeasure(rawLines[k]);
       if (mw > maxW) {
         var ratio = maxW / mw;
         if (ratio < worstRatio) worstRatio = ratio;
@@ -5853,7 +5866,8 @@ $deckExportPdf.addEventListener('click', function() {
   btn.disabled = true;
   btn.textContent = 'Exportiert…';
 
-  // Load jsPDF dynamically if not already loaded
+  // Lock canvas to prevent scheduleDraw() from overwriting during export
+  _exportLock = true;
   function doExport() {
     try {
       var origSnap = slideSnapshot();
@@ -5909,6 +5923,7 @@ $deckExportPdf.addEventListener('click', function() {
     }
     btn.disabled = false;
     btn.textContent = 'PDF Export';
+    _exportLock = false;
   }
 
   if (window.jspdf) {
@@ -5936,6 +5951,7 @@ $deckExportImgs.addEventListener('click', function() {
   var isJpg = saveFmt === 'jpg';
   var mime = isJpg ? 'image/jpeg' : 'image/png';
   var ext = isJpg ? '.jpg' : '.png';
+  _exportLock = true;
   var origSnap = slideSnapshot();
   var ts = new Date().toISOString().slice(0, 10);
   var exported = 0;
@@ -5946,6 +5962,7 @@ $deckExportImgs.addEventListener('click', function() {
       loadSlideState(origSnap);
       setFormat(origSnap.format || S.format);
       _origDraw();
+      _exportLock = false;
       btn.disabled = false;
       btn.textContent = 'Bilder Export';
       btn.classList.add('btn-success');
