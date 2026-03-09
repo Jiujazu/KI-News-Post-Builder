@@ -4215,6 +4215,9 @@ function loadArchivedPost(post) {
       // Revoke temporary blob URLs created above — loadCarouselPost will create its own
       revokeBlob(0); revokeBlob(1);
       loadCarouselPost(post);
+    } else if (post.isCarousel) {
+      // Carousel-Post but slides missing/empty — load as single post with warning
+      showToast('\u26a0 Karussell-Daten besch\u00e4digt \u2013 als Einzelpost geladen');
     } else {
       showToast('\u2713 Post geladen');
     }
@@ -5398,8 +5401,8 @@ function revokeDeckBlobs() {
 
 function setToolMode(mode, force) {
   if (mode === currentToolMode && !force) return;
-  if (!force && mode === 'single' && deckActive && deck.length > 1) {
-    if (!confirm('Karussell mit ' + deck.length + ' Slides verwerfen und zum Einzelpost wechseln?')) return;
+  if (!force && mode === 'single' && deckActive && deck.length > 0) {
+    if (!confirm('Karussell mit ' + deck.length + ' Slide' + (deck.length > 1 ? 's' : '') + ' verwerfen und zum Einzelpost wechseln?')) return;
   }
   currentToolMode = mode;
   $appDiv.classList.toggle('mode-single', mode === 'single');
@@ -5827,6 +5830,7 @@ function moveSlide(fromIdx, toIdx) {
 function startDeck() {
   if (deckActive) return;
   deckActive = true;
+  _loadedPostId = null;
   deck = [slideSnapshot()];
   deckThumbCache = [null];
   currentSlideIdx = 0;
@@ -5845,7 +5849,7 @@ function stopDeck() {
 }
 
 $deckClose.addEventListener('click', function() {
-  if (deck.length > 1 && !confirm('Karussell beenden? Alle Slides au\u00dfer dem aktuellen gehen verloren.')) return;
+  if (deck.length > 0 && !confirm('Karussell beenden?' + (deck.length > 1 ? ' Alle Slides au\u00dfer dem aktuellen gehen verloren.' : ''))) return;
   stopDeck();
 });
 

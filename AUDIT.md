@@ -509,16 +509,16 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 
 ### Kritische Findings (sofort beheben)
 
-| # | Bereich | Problem | Zeile(n) |
-|---|---------|---------|----------|
-| S-1 | Sicherheit | Firebase Security Rules fehlen | — |
-| S-2 | Sicherheit | Race Condition bei Post-IDs → Datenverlust | ~3942 |
-| C-1 | Code | Memory Leak bei Blob-URLs | ~4081 |
-| C-2 | Code | `toBlob()` null → korrupte Archiv-Daten | ~2794–2853 |
-| C-3 | Code | Fehlendes Error-Handling (15+ Stellen) | verstreut |
-| L-1 | Logik | Moduswechsel Carousel→Single: Datenverlust ohne Warnung | ~5401 |
-| L-2 | Logik | `_loadedPostId` nicht zurückgesetzt → Post-Überschreibung | ~5827–5838 |
-| L-3 | Logik | Carousel-Post mit leerem `slides`-Array → falscher Modus | ~4214–4217 |
+| # | Bereich | Problem | Zeile(n) | Status |
+|---|---------|---------|----------|--------|
+| S-1 | Sicherheit | Firebase Security Rules fehlen | — | ⚠ Offen |
+| S-2 | Sicherheit | Race Condition bei Post-IDs → Datenverlust | ~2813 | ✅ Behoben (`generatePostId()` nutzt `crypto.getRandomValues`) |
+| C-1 | Code | Memory Leak bei Blob-URLs | ~4082 | ✅ Behoben (`activeThumbUrls` Cleanup implementiert) |
+| C-2 | Code | `toBlob()` null → korrupte Archiv-Daten | ~2794–2853 | ✅ Behoben (`reject()` + dataURL-Fallback) |
+| C-3 | Code | Fehlendes Error-Handling (15+ Stellen) | verstreut | ⚠ Offen |
+| L-1 | Logik | Moduswechsel Carousel→Single: Datenverlust ohne Warnung | ~5401 | ✅ Behoben (`deck.length > 0`) |
+| L-2 | Logik | `_loadedPostId` nicht zurückgesetzt → Post-Überschreibung | ~5828 | ✅ Behoben (Reset in `startDeck()`) |
+| L-3 | Logik | Carousel-Post mit leerem `slides`-Array → falscher Modus | ~4214 | ✅ Behoben (Warnung + Einzelpost-Fallback) |
 
 ### Hohe Priorität (bald beheben)
 
