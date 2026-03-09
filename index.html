@@ -214,7 +214,8 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
 .img-zone.has{border-style:solid;border-color:var(--border-hover)}
 .img-zone.dragover{border-color:var(--accent);background:var(--accent-glow)}
 .img-zone img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
-.img-zone .ph{color:var(--text-faint);font-size:14px;text-align:center;padding:12px;pointer-events:none}
+.img-zone .ph{color:var(--text-faint);font-size:13px;text-align:center;padding:12px;pointer-events:none}
+.img-zone .ph::before{content:'\u2191';display:block;font-size:24px;margin-bottom:4px;opacity:.5}
 .img-zone input[type=file]{display:none}
 .img-zone .rm{
   position:absolute;top:4px;right:4px;width:44px;height:44px;border-radius:50%;
@@ -267,6 +268,15 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
 .lb.on{color:#fff;background:var(--accent);border-color:var(--accent)}
 /* ===== HINT ===== */
 .hint{text-align:center;font-size:13px;color:var(--text-dim);padding:8px 0 20px}
+/* ===== ONBOARDING ===== */
+.onboarding-hint{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;margin-bottom:16px;
+  background:var(--accent-glow);border:1px solid var(--accent);border-radius:var(--radius-md);
+  font-size:13px;color:var(--text);animation:fadeIn .3s ease;
+}
+.onboarding-hint button{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:2px 6px;flex-shrink:0}
+.onboarding-hint button:hover{color:var(--text)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 /* ===== TOAST ===== */
 .toast{
   position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -2004,7 +2014,9 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 .deck-slide.drag-over-left{box-shadow:-3px 0 0 0 var(--accent)}
 .deck-slide.drag-over-right{box-shadow:3px 0 0 0 var(--accent)}
 .deck-slide[draggable]{cursor:grab}
-.deck-slide[draggable]:active{cursor:grabbing}
+.deck-slide[draggable]:active{cursor:grabbing;opacity:.6}
+.deck-slide[draggable]::after{content:'Ziehen zum Sortieren';position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-dim);white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+.deck-slide[draggable]:hover::after{opacity:1}
 .deck-slide .slide-rm:hover,.deck-slide .slide-rm:active{background:rgba(220,50,50,.9)}
 .deck-add{
   flex:0 0 auto;width:72px;height:90px;border-radius:8px;
@@ -2325,14 +2337,14 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
       <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
         <img id="pv0" style="display:none" alt="Vorschau Bild 1">
-        <div class="ph" id="ph0">Bild 1</div>
+        <div class="ph" id="ph0">Bild hochladen</div>
         <button class="rm" id="rm0" aria-label="Bild 1 entfernen">&times;</button>
       </div>
       <button class="swap-btn" id="swapBtn" aria-label="Bilder tauschen">&#8644;</button>
       <div class="img-zone" id="z1" style="display:none" tabindex="0" role="button" aria-label="Bild 2 hochladen">
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f1">
         <img id="pv1" style="display:none" alt="Vorschau Bild 2">
-        <div class="ph" id="ph1">Bild 2</div>
+        <div class="ph" id="ph1">Bild hochladen</div>
         <button class="rm" id="rm1" aria-label="Bild 2 entfernen">&times;</button>
       </div>
     </div>
@@ -2381,10 +2393,10 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <!-- LOADING OVERLAY -->
 <div class="loading-overlay" id="loadingOverlay" aria-hidden="true"><div class="loading-spinner"></div></div>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-storage-compat.js"></script>
 <script>
 (function(){
 "use strict";
@@ -2412,7 +2424,7 @@ const FORMATS = {
 };
 let W = 1200, H = 1500;
 const SAFE_ZONE_RATIO = 0.08; // LinkedIn overlay covers ~8% of slide height
-var showSafeZone = false;
+let showSafeZone = false;
 const LOGO = new Image();
 LOGO.onload = function() { scheduleDraw(); };
 LOGO.onerror = function() { console.warn('Logo konnte nicht geladen werden'); };
@@ -2498,7 +2510,7 @@ const $segPreview = document.getElementById('segPreview');
 const $bSave = document.getElementById('bSave');
 const $bSaveArrow = document.getElementById('bSaveArrow');
 const $saveMenu = document.getElementById('saveMenu');
-var saveFmt = localStorage.getItem('ki-save-fmt') || 'png';
+let saveFmt = localStorage.getItem('ki-save-fmt') || 'png';
 const $bC   = document.getElementById('bC');
 const $bS   = document.getElementById('bS');
 const $togHlCaps = document.getElementById('togHlCaps');
@@ -2566,7 +2578,7 @@ function setSaveLabel(text) {
   if ($bASaveLabel) $bASaveLabel.textContent = text;
   else $bA.textContent = text;
 }
-var $bSaveCopy = document.getElementById('bSaveCopy');
+const $bSaveCopy = document.getElementById('bSaveCopy');
 function updateSaveButtonLabel() {
   var isCarousel = typeof deckActive !== 'undefined' && deckActive;
   if (_loadedPostId) {
@@ -2869,8 +2881,8 @@ if (navigator.canShare && navigator.canShare({ files: [new File([''], 't.jpg', {
   $bS.style.display = '';
 }
 // ===== MOBILE OVERFLOW MENU =====
-var $toolbarMoreBtn = document.getElementById('toolbarMoreBtn');
-var _overflowPanel = null;
+const $toolbarMoreBtn = document.getElementById('toolbarMoreBtn');
+let _overflowPanel = null;
 function toggleToolbarOverflow() {
   if (_overflowPanel && _overflowPanel.classList.contains('open')) {
     closeToolbarOverflow();
@@ -2973,8 +2985,7 @@ function loadState() {
 // Users can load saved posts from the "Gespeicherte" drawer.
 // ===== RAF THROTTLE =====
 let rafPending = false;
-var rafPending = false;
-var _exportLock = false;
+let _exportLock = false;
 function scheduleDraw() {
   if (rafPending || _exportLock) return;
   rafPending = true;
@@ -2992,8 +3003,8 @@ function showToast(msg) {
   toastTimer = setTimeout(function() { $toast.classList.remove('show'); }, 2000);
 }
 // ===== LOADING OVERLAY =====
-var $loadingOverlay = document.getElementById('loadingOverlay');
-var _loadingCount = 0;
+const $loadingOverlay = document.getElementById('loadingOverlay');
+let _loadingCount = 0;
 function showLoading() {
   _loadingCount++;
   $loadingOverlay.classList.add('show');
@@ -3032,8 +3043,8 @@ function revokeBlob(i) {
   S.draftBlobs[i] = null;
 }
 // ===== WORD WRAP =====
-var _mtCache = {};
-var _mtCacheFont = '';
+let _mtCache = {};
+let _mtCacheFont = '';
 function cachedMeasure(text) {
   var font = cx.font;
   if (font !== _mtCacheFont) { _mtCache = {}; _mtCacheFont = font; }
@@ -4016,8 +4027,8 @@ $bA.addEventListener('click', function() {
   }).finally(hideLoading);
 });
 // ===== HISTORY: DRAWER =====
-var _drawerEscHandler = null;
-var _drawerTrapHandler = null;
+let _drawerEscHandler = null;
+let _drawerTrapHandler = null;
 function openHistory() {
   $histOverlay.classList.add('open');
   $histDrawer.classList.add('open');
@@ -4051,8 +4062,8 @@ $bH.addEventListener('click', openHistory);
 $histClose.addEventListener('click', closeHistory);
 $histOverlay.addEventListener('click', closeHistory);
 let activeThumbUrls = [];
-var _histPosts = [];
-var _loadedPostId = null; // ID of post loaded from archive (for overwrite-on-save)
+let _histPosts = [];
+let _loadedPostId = null; // ID of post loaded from archive (for overwrite-on-save)
 // Event delegation for history grid (avoids per-item listener leaks)
 $histGrid.addEventListener('click', function(e) {
   var delBtn = e.target.closest('.hist-del');
@@ -4094,10 +4105,10 @@ $histGrid.addEventListener('keydown', function(e) {
     if (post) loadArchivedPost(post);
   }
 });
-var histFilter = 'all'; // 'all', 'single', 'carousel'
-var $histFilterAll = document.getElementById('histFilterAll');
-var $histFilterSingle = document.getElementById('histFilterSingle');
-var $histFilterCarousel = document.getElementById('histFilterCarousel');
+let histFilter = 'all'; // 'all', 'single', 'carousel'
+const $histFilterAll = document.getElementById('histFilterAll');
+const $histFilterSingle = document.getElementById('histFilterSingle');
+const $histFilterCarousel = document.getElementById('histFilterCarousel');
 function setHistFilter(f) {
   histFilter = f;
   [$histFilterAll, $histFilterSingle, $histFilterCarousel].forEach(function(btn) {
@@ -4397,7 +4408,7 @@ function loadCarouselPost(post) {
   }
 }
 // ===== GLOBAL DRAG & DROP =====
-var dragCounter = 0;
+let dragCounter = 0;
 document.addEventListener('dragover', function(e) { e.preventDefault(); });
 document.addEventListener('dragenter', function(e) {
   e.preventDefault();
@@ -4530,7 +4541,7 @@ document.querySelectorAll('.ch-btns').forEach(function(group) {
   });
 });
 // ===== TEXT POSITION =====
-var TP_BTNS = { top: $tpTop, center: $tpCenter, bottom: $tpBottom };
+const TP_BTNS = { top: $tpTop, center: $tpCenter, bottom: $tpBottom };
 function setTextPos(pos) {
   S.textPos = pos;
   Object.keys(TP_BTNS).forEach(function(k) {
@@ -4545,7 +4556,7 @@ $tpTop.addEventListener('click', function() { setTextPos('top'); });
 $tpCenter.addEventListener('click', function() { setTextPos('center'); });
 $tpBottom.addEventListener('click', function() { setTextPos('bottom'); });
 // ===== CREDIT ALIGNMENT =====
-var CA_BTNS = { left: $caLeft, right: $caRight, center: $caCenter };
+const CA_BTNS = { left: $caLeft, right: $caRight, center: $caCenter };
 function setCredAlign(align) {
   S.credAlign = align;
   Object.keys(CA_BTNS).forEach(function(k) {
@@ -4604,7 +4615,7 @@ $credShadowToggle.addEventListener('click', function() {
   pushUndo(); debouncedSave(); scheduleDraw();
 });
 // ===== DARK MODE TOGGLE =====
-var THEME_KEY = 'ki-news-theme';
+const THEME_KEY = 'ki-news-theme';
 function applyTheme(theme) {
   document.documentElement.classList.remove('light', 'dark');
   if (theme === 'light' || theme === 'dark') {
@@ -4623,13 +4634,13 @@ $themeToggle.addEventListener('click', function() {
   applyTheme(cur === 'dark' ? 'light' : 'dark');
 });
 // ===== DESIGN THEME SWITCHER =====
-var DESIGN_KEY = 'ki-news-design-theme';
-var $designToggle = document.getElementById('designToggle');
-var $designMenu = document.getElementById('designMenu');
-var lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
-var DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666', 'm3x': '\u2726', 'geist': '\u25b3' };
-var DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass', 'm3x': 'Material 3', 'geist': 'Geist' };
-var currentDesign = 'default';
+const DESIGN_KEY = 'ki-news-design-theme';
+const $designToggle = document.getElementById('designToggle');
+const $designMenu = document.getElementById('designMenu');
+const lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
+const DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666', 'm3x': '\u2726', 'geist': '\u25b3' };
+const DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass', 'm3x': 'Material 3', 'geist': 'Geist' };
+let currentDesign = 'default';
 function applyDesignTheme(theme) {
   var html = document.documentElement;
   html.classList.add('lg-transitioning');
@@ -4689,9 +4700,9 @@ document.addEventListener('click', function(e) {
   }
 });
 // ===== UNDO / REDO =====
-var undoStack = [];
-var redoStack = [];
-var MAX_UNDO = 40;
+const undoStack = [];
+let redoStack = [];
+const MAX_UNDO = 40;
 function stateSnapshot() {
   return {
     json: JSON.stringify({
@@ -4739,7 +4750,7 @@ function restoreSnapshot(snap) {
   saveState();
   scheduleDraw();
 }
-var lastSnap = stateSnapshot();
+let lastSnap = stateSnapshot();
 function pushUndo() {
   var snap = stateSnapshot();
   if (snapshotsEqual(snap, lastSnap)) return;
@@ -4748,7 +4759,7 @@ function pushUndo() {
   redoStack = [];
   lastSnap = snap;
 }
-var _undoTimer = null;
+let _undoTimer = null;
 function flushDebouncedUndo() {
   if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; pushUndo(); }
 }
@@ -4796,7 +4807,7 @@ document.addEventListener('keydown', function(e) {
   }
 });
 // ===== TEMPLATE SYSTEM =====
-var TPL_KEY = 'ki-news-templates';
+const TPL_KEY = 'ki-news-templates';
 function loadTemplates() {
   try {
     var raw = localStorage.getItem(TPL_KEY);
@@ -4896,8 +4907,8 @@ $hl.addEventListener('input', debouncedUndo);
 $sub.addEventListener('input', debouncedUndo);
 $date.addEventListener('change', function() { pushUndo(); });
 // ===== FIREBASE CLOUD SYNC =====
-var fbEnabled = typeof firebase !== 'undefined';
-var fbUser = null;
+const fbEnabled = typeof firebase !== 'undefined';
+let fbUser = null;
 if (fbEnabled) {
   firebase.initializeApp({
     apiKey: "AIzaSyBuE_T6Uxvwnm4nCNHrRfdWb27zmjboUPk",
@@ -4972,104 +4983,62 @@ if (fbEnabled) {
   var $loginBtnHide = document.getElementById('loginBtn');
   if ($loginBtnHide) $loginBtnHide.style.display = 'none';
 }
-function syncToCloud(post) {
-  if (!fbUser || !fbEnabled) return Promise.resolve();
-  var uid = fbUser.uid;
-  var pid = post.id;
-  var basePath = 'users/' + uid + '/posts/' + pid;
-
-  // Upload thumbnail
-  var thumbUpload = post.thumbnail
-    ? fbStorage.ref(basePath + '/thumb.jpg').put(post.thumbnail).then(function(s) { return s.ref.getDownloadURL(); })
-    : Promise.resolve(null);
-
-  // For carousel posts, upload all slide images
-  if (post.isCarousel && post.slides && post.slides.length > 0) {
-    var slideUploads = [];
-    for (var si = 0; si < post.slides.length; si++) {
-      for (var ii = 0; ii < 2; ii++) {
-        if (post.slides[si].images && post.slides[si].images[ii]) {
-          (function(slideIdx, imgIdx) {
-            var ref = fbStorage.ref(basePath + '/slide' + slideIdx + '_img' + imgIdx + '.jpg');
-            slideUploads.push(
-              ref.put(post.slides[slideIdx].images[imgIdx]).then(function(s) {
-                return s.ref.getDownloadURL().then(function(url) {
-                  return { si: slideIdx, ii: imgIdx, url: url };
-                });
-              })
-            );
-          })(si, ii);
-        }
+function postMetadata(src) {
+  return {
+    headline: src.headline || '', subtitle: src.subtitle || '', date: src.date || '',
+    layout: src.layout || 'one', format: src.format || '4:5',
+    hlCaps: !!src.hlCaps, subCaps: !!src.subCaps,
+    hlFSOverride: src.hlFSOverride || 0, subFSOverride: src.subFSOverride || 0, credFSOverride: src.credFSOverride || 0,
+    credAlign: src.credAlign || 'right', credOffX: src.credOffX || 0, credOffY: src.credOffY || 0,
+    credShadow: !!src.credShadow, textPos: src.textPos || 'top',
+    credits: src.credits || ['', ''], crops: src.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}]
+  };
+}
+function syncCarouselToCloud(post, uid, basePath, thumbUpload) {
+  var slideUploads = [];
+  for (var si = 0; si < post.slides.length; si++) {
+    for (var ii = 0; ii < 2; ii++) {
+      if (post.slides[si].images && post.slides[si].images[ii]) {
+        (function(slideIdx, imgIdx) {
+          var ref = fbStorage.ref(basePath + '/slide' + slideIdx + '_img' + imgIdx + '.jpg');
+          slideUploads.push(
+            ref.put(post.slides[slideIdx].images[imgIdx]).then(function(s) {
+              return s.ref.getDownloadURL().then(function(url) {
+                return { si: slideIdx, ii: imgIdx, url: url };
+              });
+            })
+          );
+        })(si, ii);
       }
     }
-    return Promise.all([thumbUpload, Promise.all(slideUploads)]).then(function(res) {
-      var thumbnailUrl = res[0];
-      var uploadResults = res[1];
-      // Build slide image URL map
-      var slideImageUrls = {};
-      uploadResults.forEach(function(r) {
-        var key = r.si + '_' + r.ii;
-        slideImageUrls[key] = r.url;
-      });
-      // Build slides metadata for Firestore (without blobs)
-      var slidesData = post.slides.map(function(s, idx) {
-        return {
-          headline: s.headline || '',
-          subtitle: s.subtitle || '',
-          date: s.date || '',
-          layout: s.layout || 'one',
-          format: s.format || post.format || '4:5',
-          hlCaps: !!s.hlCaps,
-          subCaps: !!s.subCaps,
-          hlFSOverride: s.hlFSOverride || 0,
-          subFSOverride: s.subFSOverride || 0,
-          credFSOverride: s.credFSOverride || 0,
-          credAlign: s.credAlign || 'right',
-          credOffX: s.credOffX || 0,
-          credOffY: s.credOffY || 0,
-          credShadow: !!s.credShadow,
-          textPos: s.textPos || 'top',
-          credits: s.credits || ['', ''],
-          crops: s.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
-          imageUrls: [slideImageUrls[idx + '_0'] || null, slideImageUrls[idx + '_1'] || null]
-        };
-      });
-      return fbDb.collection('users').doc(uid).collection('posts').doc(pid).set({
-        headline: post.headline || '',
-        subtitle: post.subtitle || '',
-        date: post.date || '',
-        layout: post.layout || 'one',
-        format: post.format || '4:5',
-        hlCaps: !!post.hlCaps,
-        subCaps: !!post.subCaps,
-        hlFSOverride: post.hlFSOverride || 0,
-        subFSOverride: post.subFSOverride || 0,
-        credFSOverride: post.credFSOverride || 0,
-        credAlign: post.credAlign || 'right',
-        credOffX: post.credOffX || 0,
-        credOffY: post.credOffY || 0,
-        credShadow: !!post.credShadow,
-        textPos: post.textPos || 'top',
-        credits: post.credits || ['', ''],
-        crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
-        savedAt: post.savedAt,
-        imageUrls: [slidesData[0].imageUrls[0], slidesData[0].imageUrls[1]],
-        thumbnailUrl: thumbnailUrl,
-        isCarousel: true,
-        slideCount: post.slides.length,
-        slides: slidesData
-      }).then(function() {
-        // Mark local post as cloud-synced (for cross-device delete detection)
-        post.cloudSynced = true;
-        return dbAdd(post);
-      });
-    }).catch(function(err) {
-      console.warn('syncToCloud (carousel) failed:', err);
-      showToast('\u26a0 Cloud-Sync fehlgeschlagen');
-    });
   }
-
-  // Single-post upload (original logic)
+  return Promise.all([thumbUpload, Promise.all(slideUploads)]).then(function(res) {
+    var thumbnailUrl = res[0];
+    var slideImageUrls = {};
+    res[1].forEach(function(r) { slideImageUrls[r.si + '_' + r.ii] = r.url; });
+    var slidesData = post.slides.map(function(s, idx) {
+      var meta = postMetadata(s);
+      meta.format = s.format || post.format || '4:5';
+      meta.imageUrls = [slideImageUrls[idx + '_0'] || null, slideImageUrls[idx + '_1'] || null];
+      return meta;
+    });
+    var doc = postMetadata(post);
+    doc.savedAt = post.savedAt;
+    doc.imageUrls = [slidesData[0].imageUrls[0], slidesData[0].imageUrls[1]];
+    doc.thumbnailUrl = thumbnailUrl;
+    doc.isCarousel = true;
+    doc.slideCount = post.slides.length;
+    doc.slides = slidesData;
+    return fbDb.collection('users').doc(uid).collection('posts').doc(post.id).set(doc);
+  }).then(function() {
+    post.cloudSynced = true;
+    return dbAdd(post);
+  }).catch(function(err) {
+    console.warn('syncToCloud (carousel) failed:', err);
+    showToast('\u26a0 Cloud-Sync fehlgeschlagen');
+  });
+}
+function syncSingleToCloud(post, uid, basePath, thumbUpload) {
   var imgUploads = [];
   for (var i = 0; i < 2; i++) {
     if (post.images && post.images[i]) {
@@ -5082,42 +5051,35 @@ function syncToCloud(post) {
     }
   }
   return Promise.all([Promise.all(imgUploads), thumbUpload]).then(function(res) {
-    var imgUrls = res[0];
-    var thumbnailUrl = res[1];
-    return fbDb.collection('users').doc(uid).collection('posts').doc(pid).set({
-      headline: post.headline || '',
-      subtitle: post.subtitle || '',
-      date: post.date || '',
-      layout: post.layout || 'one',
-      format: post.format || '4:5',
-      hlCaps: !!post.hlCaps,
-      subCaps: !!post.subCaps,
-      hlFSOverride: post.hlFSOverride || 0,
-      subFSOverride: post.subFSOverride || 0,
-      credFSOverride: post.credFSOverride || 0,
-      credAlign: post.credAlign || 'right',
-      credOffX: post.credOffX || 0,
-      credOffY: post.credOffY || 0,
-      credShadow: !!post.credShadow,
-      textPos: post.textPos || 'top',
-      credits: post.credits || ['', ''],
-      crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
-      savedAt: post.savedAt,
-      imageUrls: [imgUrls[0], imgUrls[1]],
-      thumbnailUrl: thumbnailUrl,
-      isCarousel: false,
-      slideCount: 1
-    }).then(function() {
-      post.cloudSynced = true;
-      return dbAdd(post);
-    });
+    var doc = postMetadata(post);
+    doc.savedAt = post.savedAt;
+    doc.imageUrls = [res[0][0], res[0][1]];
+    doc.thumbnailUrl = res[1];
+    doc.isCarousel = false;
+    doc.slideCount = 1;
+    return fbDb.collection('users').doc(uid).collection('posts').doc(post.id).set(doc);
+  }).then(function() {
+    post.cloudSynced = true;
+    return dbAdd(post);
   }).catch(function(err) {
     console.warn('syncToCloud failed:', err);
     showToast('\u26a0 Cloud-Sync fehlgeschlagen');
   });
 }
+function syncToCloud(post) {
+  if (!fbUser || !fbEnabled) return Promise.resolve();
+  var uid = fbUser.uid;
+  var basePath = 'users/' + uid + '/posts/' + post.id;
+  var thumbUpload = post.thumbnail
+    ? fbStorage.ref(basePath + '/thumb.jpg').put(post.thumbnail).then(function(s) { return s.ref.getDownloadURL(); })
+    : Promise.resolve(null);
+  if (post.isCarousel && post.slides && post.slides.length > 0) {
+    return syncCarouselToCloud(post, uid, basePath, thumbUpload);
+  }
+  return syncSingleToCloud(post, uid, basePath, thumbUpload);
+}
 // Track recently deleted post IDs so syncCloud won't re-download them
-var _recentlyDeletedIds = {};
+const _recentlyDeletedIds = {};
 function deleteFromCloud(postId, slideCount) {
   if (!fbUser || !fbEnabled) return Promise.resolve();
   var uid = fbUser.uid;
@@ -5375,25 +5337,25 @@ function syncTemplatesFromCloud() {
   }).catch(function(err) { console.warn('Template cloud fetch failed:', err); });
 }
 // ===== CAROUSEL / DECK =====
-var deck = [];           // array of slide state snapshots
-var currentSlideIdx = 0;
-var deckActive = false;
-var deckThumbCache = []; // cached thumbnail canvas elements per slide index
-var MAX_DECK_SLIDES = 50; // soft limit for carousel slides
-var _dragSlideIdx = -1;  // index of slide being dragged
-var $deckBar = document.getElementById('deckBar');
-var $deckStrip = document.getElementById('deckStrip');
-var $deckLabel = document.getElementById('deckLabel');
-var $deckExportPdf = document.getElementById('deckExportPdf');
-var $deckExportImgs = document.getElementById('deckExportImgs');
-var $deckClose = document.getElementById('deckClose');
+let deck = [];           // array of slide state snapshots
+let currentSlideIdx = 0;
+let deckActive = false;
+let deckThumbCache = []; // cached thumbnail canvas elements per slide index
+const MAX_DECK_SLIDES = 50; // soft limit for carousel slides
+let _dragSlideIdx = -1;  // index of slide being dragged
+const $deckBar = document.getElementById('deckBar');
+const $deckStrip = document.getElementById('deckStrip');
+const $deckLabel = document.getElementById('deckLabel');
+const $deckExportPdf = document.getElementById('deckExportPdf');
+const $deckExportImgs = document.getElementById('deckExportImgs');
+const $deckClose = document.getElementById('deckClose');
 // Tool mode tabs
-var $tabSingle = document.getElementById('tabSingle');
-var $tabCarousel = document.getElementById('tabCarousel');
+const $tabSingle = document.getElementById('tabSingle');
+const $tabCarousel = document.getElementById('tabCarousel');
 var $bCarouselExportImgs = document.getElementById('bCarouselExportImgs');
 var $bCarouselExportPdf = document.getElementById('bCarouselExportPdf');
 var $appDiv = document.querySelector('.app');
-var currentToolMode = 'single'; // 'single' or 'carousel'
+let currentToolMode = 'single'; // 'single' or 'carousel'
 
 function revokeDeckBlobs() {
   for (var i = 0; i < deck.length; i++) {
@@ -5998,7 +5960,7 @@ $deckExportImgs.addEventListener('click', function() {
 });
 
 // Hook into draw to update current slide thumbnail (debounced)
-var deckThumbTimer = null;
+let deckThumbTimer = null;
 function scheduleDeckThumbUpdate() {
   if (!deckActive) return;
   clearTimeout(deckThumbTimer);
@@ -6017,7 +5979,7 @@ function scheduleDeckThumbUpdate() {
 }
 
 // Patch scheduleDraw to also update deck thumbs
-var _origDraw = draw;
+const _origDraw = draw;
 draw = function() {
   _origDraw();
   if (showSafeZone) {
@@ -6063,9 +6025,32 @@ function init() {
   // Don't restore draft – always start fresh.
   // Delete any leftover draft from a previous session.
   deleteDraft();
+  // Onboarding for first-time users
+  if (!localStorage.getItem('ki-onboarded')) {
+    var ob = document.createElement('div');
+    ob.className = 'onboarding-hint';
+    ob.innerHTML = '';
+    ob.textContent = '';
+    var msg = document.createElement('span');
+    msg.textContent = 'Willkommen! Lade ein Bild hoch, schreibe eine Headline und exportiere deinen Post.';
+    var closeBtn = document.createElement('button');
+    closeBtn.textContent = '\u2715';
+    closeBtn.setAttribute('aria-label', 'Hinweis schlie\u00dfen');
+    closeBtn.addEventListener('click', function() {
+      ob.remove();
+      try { localStorage.setItem('ki-onboarded', '1'); } catch(e) {}
+    });
+    ob.appendChild(msg);
+    ob.appendChild(closeBtn);
+    document.querySelector('.ed-panel').prepend(ob);
+    setTimeout(function() {
+      ob.remove();
+      try { localStorage.setItem('ki-onboarded', '1'); } catch(e) {}
+    }, 15000);
+  }
 }
 let initialized = false;
-var fontReady = false;
+let fontReady = false;
 function safeInit(fontOk) {
   if (initialized) return;
   initialized = true;
@@ -6097,7 +6082,7 @@ window.addEventListener('resize', function() {
   scheduleDraw();
 });
 // ===== BEFOREUNLOAD: UNSAVED CHANGES WARNING =====
-var _savedSnap = stateSnapshot();
+let _savedSnap = stateSnapshot();
 function markSaved() { _savedSnap = stateSnapshot(); }
 window.addEventListener('beforeunload', function(e) {
   var current = stateSnapshot();

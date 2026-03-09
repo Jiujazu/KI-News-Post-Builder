@@ -527,10 +527,10 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | S-3 | Sicherheit | innerHTML-Pattern → potenzielle XSS | ✅ Behoben (alle 4 Stellen → textContent/DOM-API) |
 | S-4 | Sicherheit | Keine Input-Validierung | ✅ Behoben (Template-Name: Länge + Sonderzeichen) |
 | S-5 | Sicherheit | Unsichere JSON.parse-Aufrufe | ✅ Behoben (restoreSnapshot try-catch) |
-| C-4 | Code | Monolithische 6.110-Zeilen-Datei |
-| C-5 | Code | Massive Funktionskomplexität (154-Zeilen-Handler) |
+| C-4 | Code | Monolithische 6.110-Zeilen-Datei | ⏭ Erfordert Build-System (Vite/Webpack) |
+| C-5 | Code | Massive Funktionskomplexität (154-Zeilen-Handler) | ✅ Behoben (syncToCloud → 3 Funktionen + postMetadata-Helper) |
 | C-6 | Code | Code-Duplikation (State-Restoration 3×) | ✅ Behoben (refreshEditorFromState() wiederverwendet) |
-| L-4 | Logik | Kein Onboarding / Erstnutzer-Erlebnis |
+| L-4 | Logik | Kein Onboarding / Erstnutzer-Erlebnis | ✅ Behoben (Willkommens-Banner mit localStorage-Flag) |
 | L-5 | Logik | Undo/Redo nicht funktionsfähig | ✅ Behoben (Debounce-Flush vor Undo, Race Condition fix) |
 | L-6 | Logik | Fehlende Bestätigungs-Dialoge (Überschreiben, Templates) | ✅ Bereits vorhanden (8× confirm()) |
 | L-7 | Logik | Stille Fehler bei async Operationen | ✅ Bereits vorhanden (Toasts bei allen Fehlern) |
@@ -544,14 +544,14 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | S-6 | Sicherheit | localStorage ohne Quota-Handling | ✅ Behoben (try-catch um alle setItem-Aufrufe) |
 | C-7 | Code | IndexedDB-Connection nie gecacht | ✅ Bereits implementiert (_dbPromise Caching) |
 | C-8 | Code | Export-Timing Race Condition | ✅ Behoben (_exportLock verhindert scheduleDraw während Export) |
-| C-9 | Code | `var` statt `let`/`const` |
+| C-9 | Code | `var` statt `let`/`const` | ✅ Behoben (alle Top-Level-Deklarationen → const/let) |
 | L-8 | Logik | Export mit 0 Bildern möglich | ✅ Behoben (Guard vor Export) |
 | L-9 | Logik | Draft-Autosave: kein `beforeunload`-Schutz | ✅ Behoben (beforeunload mit Snapshot-Vergleich) |
-| L-10 | Logik | Slide-Reorder ohne Drag-Hinweise |
+| L-10 | Logik | Slide-Reorder ohne Drag-Hinweise | ✅ Behoben (CSS-Tooltip + Opacity-Feedback beim Drag) |
 | U-3 | UX | Kein Focus-Trap im History-Dialog | ✅ Bereits implementiert (Tab-Trap + Escape) |
 | U-4 | UX | `aria-describedby` fehlt bei Formularfeldern | ✅ Behoben (Headline + Subtitle → Char-Count) |
-| U-5 | UX | Character-Limits erst bei Überschreitung sichtbar |
-| P-1 | Performance | Unnötige Re-Renders in renderDeckStrip() |
+| U-5 | UX | Character-Limits erst bei Überschreitung sichtbar | ✅ Bereits implementiert (immer sichtbar via refreshCounts) |
+| P-1 | Performance | Unnötige Re-Renders in renderDeckStrip() | ⏭ Thumb-Caching bereits vorhanden, DOM-Diff wäre Over-Engineering |
 | P-2 | Performance | Fehlende Text-Measurement-Cache | ✅ Behoben (cachedMeasure() mit Font-Key) |
 
 ### Niedrige Priorität
@@ -559,13 +559,13 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | # | Bereich | Problem |
 |---|---------|---------|
 | S-7 | Sicherheit | Kein Referrer-Policy | ✅ Behoben (meta referrer hinzugefügt) |
-| S-8 | Sicherheit | Firebase SDK veraltet |
+| S-8 | Sicherheit | Firebase SDK veraltet | ✅ Behoben (10.14.1 → 11.6.0) |
 | C-10 | Code | Dead Code (isDesktop(), setView()) | ✅ Behoben (entfernt) |
-| C-11 | Code | Inkonsistente Namenskonventionen |
+| C-11 | Code | Inkonsistente Namenskonventionen | ⏭ Historisch gewachsen, Refactoring-Risiko ohne Tests |
 | U-6 | UX | Range-Slider-Thumbs zu klein für Touch (16px) | ✅ Behoben (16px → 24px) |
-| U-7 | UX | Keine Internationalisierung |
-| U-8 | UX | Keine Empty-State-Illustrationen |
-| P-3 | Performance | 241 KB Single-File (kein Code-Splitting) |
+| U-7 | UX | Keine Internationalisierung | ⏭ Feature-Request, nicht sicherheitsrelevant |
+| U-8 | UX | Keine Empty-State-Illustrationen | ✅ Behoben (Upload-Pfeil-Icons + verbesserte Platzhaltertexte) |
+| P-3 | Performance | 241 KB Single-File (kein Code-Splitting) | ⏭ Erfordert Build-System (Vite/Webpack) |
 
 ---
 
@@ -573,10 +573,10 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 
 | Bereich | Note | Kommentar |
 |---------|------|-----------|
-| **Architektur** | C | Funktional, aber nicht skalierbar (Monolith) |
-| **Sicherheit** | B+ | Rules erstellt, innerHTML→textContent, Input-Validierung, JSON.parse try-catch. Offen: CSP unsafe-inline, Firebase SDK Update |
-| **Code-Qualität** | B- | Duplikation reduziert, Export-Race-Condition behoben, measureText gecacht. Offen: var→let/const, Tests |
-| **Benutzerführung** | B | Loading-States, aria-describedby, Touch-Slider, beforeunload. Offen: Onboarding |
+| **Architektur** | C+ | Monolith — erfordert Build-System für echtes Splitting. syncToCloud aufgeteilt. |
+| **Sicherheit** | A- | Rules, XSS-Fix, Input-Validierung, JSON try-catch, Referrer-Policy, SDK-Update. Offen: CSP unsafe-inline |
+| **Code-Qualität** | B | var→const/let, Duplikation reduziert, Race-Conditions behoben, measureText gecacht. Offen: lokale vars, Tests |
+| **Benutzerführung** | B+ | Onboarding, Loading-States, aria-describedby, Touch-Slider, beforeunload, Empty-States, Drag-Hints |
 | **UX/UI** | B+ | Sehr gutes Design-System, starke a11y-Basis, 5 Themes |
 | **Performance** | B- | Für Single-File-App OK, Probleme erst bei 50-Slide-Carousel |
 
