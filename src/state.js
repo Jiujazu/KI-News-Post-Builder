@@ -1,3 +1,8 @@
+import { MONTHS_DE, todayISO, isoToDE, deToISO, todayDE, defaultCrop, FORMATS } from './utils.js';
+
+// Re-export pure utils so other modules keep their imports from state.js
+export { MONTHS_DE, todayISO, isoToDE, deToISO, todayDE, defaultCrop, FORMATS };
+
 // ===== CROSS-MODULE FUNCTION REGISTRY =====
 // Modules register functions here during init. Other modules call app.fnName().
 // This avoids circular imports.
@@ -42,12 +47,6 @@ export const FOOTER_FS = 36;
 export const FOOTER_BOTTOM = 32;
 export const LOGO_H = 56;
 export const SAFE_ZONE_RATIO = 0.08;
-export const FORMATS = {
-  '4:5':  { w: 1200, h: 1500 },
-  '1:1':  { w: 1200, h: 1200 },
-  '16:9': { w: 1200, h: 675 },
-  '9:16': { w: 1080, h: 1920 }
-};
 
 // ===== LOGO =====
 export const LOGO = new Image();
@@ -78,32 +77,7 @@ rebuildGradient();
 export const cv = document.getElementById('cv');
 export const cx = cv.getContext('2d');
 
-// ===== DATE HELPERS =====
-export const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-export function todayISO() {
-  var d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-export function isoToDE(iso) {
-  var p = iso.split('-');
-  if (p.length !== 3) return iso;
-  var day = parseInt(p[2],10), m = parseInt(p[1],10)-1;
-  if (m < 0 || m > 11) return iso;
-  return day + '. ' + MONTHS_DE[m] + ' ' + parseInt(p[0],10);
-}
-export function deToISO(de) {
-  var match = de.match(/^(\d{1,2})\.\s*(\S+)\s+(\d{4})$/);
-  if (!match) return '';
-  var m = MONTHS_DE.indexOf(match[2]);
-  if (m === -1) return '';
-  return match[3] + '-' + String(m+1).padStart(2,'0') + '-' + String(parseInt(match[1],10)).padStart(2,'0');
-}
-export function todayDE() {
-  return isoToDE(todayISO());
-}
-
 // ===== STATE =====
-export function defaultCrop() { return {x:50, y:50, z:100, flip:false, cropH:100}; }
 export const S = {
   imgs: [null, null],
   blobs: [null, null],
