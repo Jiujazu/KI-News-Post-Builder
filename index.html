@@ -3106,13 +3106,6 @@ function renderUI() {
   scheduleDraw();
 }
 // ===== EVENTS =====
-// Edit toggle (mobile only — on desktop both panels are always visible)
-function isDesktop() { return window.innerWidth >= 1024; }
-function setView(editing) {
-  // Editor panel is always visible — toggle removed
-}
-$segEdit.addEventListener('click', function() { setView(true); });
-$segPreview.addEventListener('click', function() { setView(false); });
 // New post
 const $bN = document.getElementById('bN');
 $bN.addEventListener('click', function() {
@@ -3200,6 +3193,7 @@ document.addEventListener('click', function(e) {
   }
 });
 $bSave.addEventListener('click', function() {
+  if (!S.imgs[0] && !S.imgs[1]) { showToast('\u26a0 Bitte mindestens ein Bild hinzuf\u00fcgen'); return; }
   if (!fontReady && !confirm('Font nicht geladen \u2013 Export k\u00f6nnte fehlerhaft aussehen. Trotzdem exportieren?')) return;
   var btn = this;
   var isJpg = saveFmt === 'jpg';
@@ -4194,6 +4188,8 @@ function loadArchivedPost(post) {
   S.credOffX = post.credOffX || 0;
   S.credOffY = post.credOffY || 0;
   S.credShadow = !!post.credShadow;
+  S.layout = post.layout || 'one';
+  S.format = post.format || '4:5';
   S.textPos = post.textPos || 'top';
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
@@ -4203,28 +4199,9 @@ function loadArchivedPost(post) {
         return defaultCrop();
       })
     : [defaultCrop(), defaultCrop()];
-  // Update text inputs
-  $hl.value = S.hlLines.join('\n');
-  $sub.value = S.subText;
-  $date.value = deToISO(S.dateText) || todayISO();
-  $togHlCaps.classList.toggle('on', S.hlCaps);
-  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
-  $togSubCaps.classList.toggle('on', S.subCaps);
-  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
+  // Update UI from restored state
+  refreshEditorFromState();
   $f[0].value = ''; $f[1].value = '';
-  // Set layout, format, font size, text position
-  setLayout(post.layout || 'one');
-  setFormat(post.format || '4:5');
-  updateFSSlider();
-  Object.keys(CA_BTNS).forEach(function(k) {
-    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-  });
-  updateCredOffsetUI();
-  Object.keys(TP_BTNS).forEach(function(k) {
-    TP_BTNS[k].classList.toggle('on', k === S.textPos);
-    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-  });
   // Load images from blobs
   var loaded = 0, total = 0;
   function onAllLoaded() {
@@ -4738,34 +4715,14 @@ function restoreSnapshot(snap) {
   S.imgs = snap.imgs.slice();
   S.blobs = snap.blobs.slice();
   S.draftBlobs = snap.draftBlobs.slice();
-  // Sync UI
-  $hl.value = S.hlLines.join('\n');
-  $sub.value = S.subText;
-  $date.value = deToISO(S.dateText) || todayISO();
-  $togHlCaps.classList.toggle('on', S.hlCaps);
-  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
-  $togSubCaps.classList.toggle('on', S.subCaps);
-  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
-  setLayout(S.layout);
-  setFormat(S.format);
-  updateFSSlider();
-  Object.keys(CA_BTNS).forEach(function(k) {
-    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-  });
-  updateCredOffsetUI();
-  Object.keys(TP_BTNS).forEach(function(k) {
-    TP_BTNS[k].classList.toggle('on', k === S.textPos);
-    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-  });
+  // Sync UI (reuse shared helper + update crop/credit sliders)
+  refreshEditorFromState();
   for (var i = 0; i < 2; i++) {
     $cr[i].value = S.creds[i];
     $sz[i].value = S.crop[i].z; $vz[i].textContent = S.crop[i].z + '%';
     $sx[i].value = S.crop[i].x; $vx[i].textContent = S.crop[i].x + '%';
     $sy[i].value = S.crop[i].y; $vy[i].textContent = S.crop[i].y + '%';
   }
-  autoSize($hl); autoSize($sub);
-  renderUI();
   saveState();
   scheduleDraw();
 }
@@ -6078,25 +6035,7 @@ function init() {
   if (document.fonts && !document.fonts.check('12px Festivo')) {
     showToast('\u26a0 Font l\u00e4dt\u2026');
   }
-  $hl.value = S.hlLines.join('\n');
-  $sub.value = S.subText;
-  $date.value = deToISO(S.dateText) || todayISO();
-  $togHlCaps.classList.toggle('on', S.hlCaps);
-  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
-  $togSubCaps.classList.toggle('on', S.subCaps);
-  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
-  setLayout(S.layout);
-  setFormat(S.format);
-  updateFSSlider();
-  Object.keys(CA_BTNS).forEach(function(k) {
-    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-  });
-  updateCredOffsetUI();
-  Object.keys(TP_BTNS).forEach(function(k) {
-    TP_BTNS[k].classList.toggle('on', k === S.textPos);
-    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-  });
+  refreshEditorFromState();
   refreshTplSelect();
   lastSnap = stateSnapshot();
   // Editor panel always visible

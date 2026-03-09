@@ -529,7 +529,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | S-5 | Sicherheit | Unsichere JSON.parse-Aufrufe | ✅ Behoben (restoreSnapshot try-catch) |
 | C-4 | Code | Monolithische 6.110-Zeilen-Datei |
 | C-5 | Code | Massive Funktionskomplexität (154-Zeilen-Handler) |
-| C-6 | Code | Code-Duplikation (State-Restoration 3×) |
+| C-6 | Code | Code-Duplikation (State-Restoration 3×) | ✅ Behoben (refreshEditorFromState() wiederverwendet) |
 | L-4 | Logik | Kein Onboarding / Erstnutzer-Erlebnis |
 | L-5 | Logik | Undo/Redo nicht funktionsfähig | ✅ Behoben (Debounce-Flush vor Undo, Race Condition fix) |
 | L-6 | Logik | Fehlende Bestätigungs-Dialoge (Überschreiben, Templates) | ✅ Bereits vorhanden (8× confirm()) |
@@ -542,13 +542,13 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 | # | Bereich | Problem |
 |---|---------|---------|
 | S-6 | Sicherheit | localStorage ohne Quota-Handling | ✅ Behoben (try-catch um alle setItem-Aufrufe) |
-| C-7 | Code | IndexedDB-Connection nie gecacht |
+| C-7 | Code | IndexedDB-Connection nie gecacht | ✅ Bereits implementiert (_dbPromise Caching) |
 | C-8 | Code | Export-Timing Race Condition |
 | C-9 | Code | `var` statt `let`/`const` |
-| L-8 | Logik | Export mit 0 Bildern möglich |
+| L-8 | Logik | Export mit 0 Bildern möglich | ✅ Behoben (Guard vor Export) |
 | L-9 | Logik | Draft-Autosave: kein `beforeunload`-Schutz | ✅ Behoben (beforeunload mit Snapshot-Vergleich) |
 | L-10 | Logik | Slide-Reorder ohne Drag-Hinweise |
-| U-3 | UX | Kein Focus-Trap im History-Dialog |
+| U-3 | UX | Kein Focus-Trap im History-Dialog | ✅ Bereits implementiert (Tab-Trap + Escape) |
 | U-4 | UX | `aria-describedby` fehlt bei Formularfeldern |
 | U-5 | UX | Character-Limits erst bei Überschreitung sichtbar |
 | P-1 | Performance | Unnötige Re-Renders in renderDeckStrip() |
@@ -560,7 +560,7 @@ Gesamte App in einer Datei → kein Code-Splitting, kein Lazy-Loading (außer js
 |---|---------|---------|
 | S-7 | Sicherheit | Kein Referrer-Policy | ✅ Behoben (meta referrer hinzugefügt) |
 | S-8 | Sicherheit | Firebase SDK veraltet |
-| C-10 | Code | Dead Code (isDesktop(), setView()) |
+| C-10 | Code | Dead Code (isDesktop(), setView()) | ✅ Behoben (entfernt) |
 | C-11 | Code | Inkonsistente Namenskonventionen |
 | U-6 | UX | Range-Slider-Thumbs zu klein für Touch (16px) |
 | U-7 | UX | Keine Internationalisierung |
