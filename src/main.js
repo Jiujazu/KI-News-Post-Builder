@@ -94,5 +94,5 @@ window.addEventListener('beforeunload', function(e) {
 
 // Service worker registration
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(function(e) { console.warn('SW registration failed:', e); });
+  navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js').catch(function(e) { console.warn('SW registration failed:', e); });
 }

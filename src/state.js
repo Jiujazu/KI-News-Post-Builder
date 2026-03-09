@@ -52,7 +52,7 @@ export const SAFE_ZONE_RATIO = 0.08;
 export const LOGO = new Image();
 LOGO.onload = function() { if (app.scheduleDraw) app.scheduleDraw(); };
 LOGO.onerror = function() { console.warn('Logo konnte nicht geladen werden'); };
-LOGO.src = "/logo.png";
+LOGO.src = import.meta.env.BASE_URL + "logo.png";
 
 // ===== GRADIENT =====
 export const GRADIENT_STOPS = [
