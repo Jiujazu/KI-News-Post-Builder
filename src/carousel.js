@@ -96,10 +96,6 @@ function loadSlideState(snap) {
   S.textPos = snap.textPos;
 }
 
-function refreshEditorFromState() {
-  app.refreshEditorFromState();
-}
-
 function saveCurrentSlide() {
   if (!G.deckActive || !G.deck.length) return;
   S.hlLines = $hl.value.split('\n');
@@ -115,7 +111,7 @@ function switchToSlide(idx) {
   if (G.deckThumbCache[G.currentSlideIdx]) G.deckThumbCache[G.currentSlideIdx] = null;
   G.currentSlideIdx = idx;
   loadSlideState(G.deck[idx]);
-  refreshEditorFromState();
+  app.refreshEditorFromState();
   app.baseDraw();
   renderDeckStrip();
 }
@@ -149,19 +145,28 @@ function renderDeckStrip() {
     div.setAttribute('data-idx', i);
     div.style.height = containerH + 'px';
 
-    if (!G.deckThumbCache[i]) {
-      loadSlideState(G.deck[i]);
-      app.baseDraw();
-      var cc = document.createElement('canvas');
-      cc.width = thumbW; cc.height = thumbH;
-      cc.getContext('2d').drawImage(cv, 0, 0, thumbW, thumbH);
-      G.deckThumbCache[i] = cc;
-      loadSlideState(G.deck[G.currentSlideIdx]);
-      app.baseDraw();
+    if (!G.deckThumbCache[i] && i !== G.currentSlideIdx) {
+      // Defer uncached thumbnail rendering to avoid blocking the main thread
+      (function(idx, thumbDiv, tw, th) {
+        requestAnimationFrame(function() {
+          if (!G.deckActive || idx >= G.deck.length) return;
+          var savedSlide = slideSnapshot();
+          loadSlideState(G.deck[idx]);
+          app.baseDraw();
+          var cc = document.createElement('canvas');
+          cc.width = tw; cc.height = th;
+          cc.getContext('2d').drawImage(cv, 0, 0, tw, th);
+          G.deckThumbCache[idx] = cc;
+          var existingThumb = thumbDiv.querySelector('.deck-thumb-canvas');
+          if (existingThumb) existingThumb.getContext('2d').drawImage(cc, 0, 0);
+          loadSlideState(savedSlide);
+          app.baseDraw();
+        });
+      })(i, div, thumbW, thumbH);
     }
     var tc = document.createElement('canvas');
     tc.width = thumbW; tc.height = thumbH;
-    tc.getContext('2d').drawImage(G.deckThumbCache[i], 0, 0);
+    if (G.deckThumbCache[i]) tc.getContext('2d').drawImage(G.deckThumbCache[i], 0, 0);
     tc.className = 'deck-thumb-canvas';
     div.appendChild(tc);
 
@@ -378,7 +383,7 @@ function removeSlide(idx) {
   if (G.currentSlideIdx >= G.deck.length) G.currentSlideIdx = G.deck.length - 1;
   else if (idx < G.currentSlideIdx) G.currentSlideIdx--;
   loadSlideState(G.deck[G.currentSlideIdx]);
-  refreshEditorFromState();
+  app.refreshEditorFromState();
   app.baseDraw();
   renderDeckStrip();
   app.saveDraft();
@@ -399,7 +404,7 @@ function moveSlide(fromIdx, toIdx) {
     G.currentSlideIdx++;
   }
   loadSlideState(G.deck[G.currentSlideIdx]);
-  refreshEditorFromState();
+  app.refreshEditorFromState();
   app.baseDraw();
   renderDeckStrip();
 }

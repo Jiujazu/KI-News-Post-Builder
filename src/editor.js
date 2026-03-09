@@ -566,7 +566,14 @@ function stateSnapshot() {
   };
 }
 function snapshotsEqual(a, b) {
-  return a.json === b.json && a.imgs[0] === b.imgs[0] && a.imgs[1] === b.imgs[1];
+  if (a.json !== b.json) return false;
+  for (var si = 0; si < 2; si++) {
+    var ai = a.imgs[si], bi = b.imgs[si];
+    if (ai === bi) continue;
+    if (!ai || !bi) return false;
+    if (a.blobs[si] !== b.blobs[si]) return false;
+  }
+  return true;
 }
 function restoreSnapshot(snap) {
   var data;

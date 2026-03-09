@@ -194,7 +194,7 @@ $themeToggle.addEventListener('click', function() {
 
 // ===== DESIGN THEME SWITCHER =====
 var DESIGN_KEY = 'ki-news-design-theme';
-var lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
+var lgIsFirefox = navigator.userAgent.indexOf('Firefox') > -1;
 var DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666', 'm3x': '\u2726', 'geist': '\u25b3' };
 var DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass', 'm3x': 'Material 3', 'geist': 'Geist' };
 var currentDesign = 'default';

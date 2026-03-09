@@ -13,12 +13,14 @@ function scheduleDraw() {
 // ===== WORD WRAP =====
 var _mtCache = {};
 var _mtCacheFont = '';
+var _mtCacheSize = 0;
+var _MT_CACHE_MAX = 500;
 function cachedMeasure(text) {
   var font = cx.font;
-  if (font !== _mtCacheFont) { _mtCache = {}; _mtCacheFont = font; }
+  if (font !== _mtCacheFont) { _mtCache = {}; _mtCacheFont = font; _mtCacheSize = 0; }
   if (text in _mtCache) return _mtCache[text];
   var w = cx.measureText(text).width;
-  _mtCache[text] = w;
+  if (_mtCacheSize < _MT_CACHE_MAX) { _mtCache[text] = w; _mtCacheSize++; }
   return w;
 }
 function wrapLine(text, fs, maxWidth) {
@@ -119,16 +121,16 @@ function prepareText(maxW) {
   cx.font = 'bold ' + hlFS + 'px Festivo, serif';
   var worstRatio = 1;
   if (S.hlFSOverride > 0) {
-    for (var k = 0; k < rawLines.length; k++) {
-      var words = rawLines[k].split(' ');
+    for (var ki = 0; ki < rawLines.length; ki++) {
+      var words = rawLines[ki].split(' ');
       for (var wi = 0; wi < words.length; wi++) {
         var ww = cachedMeasure(words[wi]);
         if (ww > maxW) { var ratio = maxW / ww; if (ratio < worstRatio) worstRatio = ratio; }
       }
     }
   } else {
-    for (var k = 0; k < rawLines.length; k++) {
-      var mw = cachedMeasure(rawLines[k]);
+    for (var kj = 0; kj < rawLines.length; kj++) {
+      var mw = cachedMeasure(rawLines[kj]);
       if (mw > maxW) { var ratio = maxW / mw; if (ratio < worstRatio) worstRatio = ratio; }
     }
   }
