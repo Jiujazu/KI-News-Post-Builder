@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="KI News">
 <meta name="theme-color" content="#0a0a1a">
+<meta name="referrer" content="no-referrer-when-downgrade">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="manifest" href="manifest.json">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src 'self' blob: data: https://*.googleusercontent.com https://*.googleapis.com https://*.firebasestorage.app; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.firebaseio.com https://*.firebasestorage.app; frame-src https://accounts.google.com https://*.firebaseapp.com https://*.google.com;">
@@ -213,7 +214,8 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
 .img-zone.has{border-style:solid;border-color:var(--border-hover)}
 .img-zone.dragover{border-color:var(--accent);background:var(--accent-glow)}
 .img-zone img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
-.img-zone .ph{color:var(--text-faint);font-size:14px;text-align:center;padding:12px;pointer-events:none}
+.img-zone .ph{color:var(--text-faint);font-size:13px;text-align:center;padding:12px;pointer-events:none}
+.img-zone .ph::before{content:'\u2191';display:block;font-size:24px;margin-bottom:4px;opacity:.5}
 .img-zone input[type=file]{display:none}
 .img-zone .rm{
   position:absolute;top:4px;right:4px;width:44px;height:44px;border-radius:50%;
@@ -246,11 +248,11 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
   touch-action:none;
 }
 .crop-ctrl input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);
+  -webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);
   border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2);
 }
 .crop-ctrl input[type=range]::-moz-range-thumb{
-  width:16px;height:16px;border-radius:50%;background:var(--accent);
+  width:24px;height:24px;border-radius:50%;background:var(--accent);
   border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2);
 }
 .crop-ctrl .vl{font-size:13px;color:var(--text-muted);min-width:40px;text-align:right;font-variant-numeric:tabular-nums}
@@ -266,6 +268,15 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
 .lb.on{color:#fff;background:var(--accent);border-color:var(--accent)}
 /* ===== HINT ===== */
 .hint{text-align:center;font-size:13px;color:var(--text-dim);padding:8px 0 20px}
+/* ===== ONBOARDING ===== */
+.onboarding-hint{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;margin-bottom:16px;
+  background:var(--accent-glow);border:1px solid var(--accent);border-radius:var(--radius-md);
+  font-size:13px;color:var(--text);animation:fadeIn .3s ease;
+}
+.onboarding-hint button{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:2px 6px;flex-shrink:0}
+.onboarding-hint button:hover{color:var(--text)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 /* ===== TOAST ===== */
 .toast{
   position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(80px);
@@ -277,6 +288,11 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
   white-space:nowrap;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* ===== LOADING OVERLAY ===== */
+.loading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center}
+.loading-overlay.show{display:flex}
+.loading-spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 /* ===== HISTORY DRAWER ===== */
 .hist-overlay{
   position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:900;
@@ -358,7 +374,8 @@ html.dark body,html.dark :root{
 .fs-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .fs-row label{font-size:11px;font-weight:500;color:var(--text-dim);min-width:90px;flex-shrink:0}
 .fs-row input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--border);outline:none}
-.fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.fs-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.fs-row input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .fs-row .vl{font-size:13px;color:var(--text-muted);min-width:45px;text-align:right;font-variant-numeric:tabular-nums}
 .fs-row button,.fs-reset,.crop-reset{padding:5px 8px;font-size:13px;border-radius:var(--radius-sm);background:var(--btn-secondary-bg);color:var(--text-muted);border:1px solid var(--border);cursor:pointer;line-height:1}
 .fs-row button:hover,.fs-reset:hover,.crop-reset:hover{background:var(--border-hover);color:var(--text);border-color:var(--border-hover)}
@@ -1997,7 +2014,9 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 .deck-slide.drag-over-left{box-shadow:-3px 0 0 0 var(--accent)}
 .deck-slide.drag-over-right{box-shadow:3px 0 0 0 var(--accent)}
 .deck-slide[draggable]{cursor:grab}
-.deck-slide[draggable]:active{cursor:grabbing}
+.deck-slide[draggable]:active{cursor:grabbing;opacity:.6}
+.deck-slide[draggable]::after{content:'Ziehen zum Sortieren';position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text-dim);white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+.deck-slide[draggable]:hover::after{opacity:1}
 .deck-slide .slide-rm:hover,.deck-slide .slide-rm:active{background:rgba(220,50,50,.9)}
 .deck-add{
   flex:0 0 auto;width:72px;height:90px;border-radius:8px;
@@ -2212,7 +2231,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     <div class="ed-body">
     <div class="fld">
       <label>Headline <button class="caps-pill" id="togHlCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="hlCount" aria-live="polite"></span></label>
-      <textarea id="inHL" rows="1" placeholder=""></textarea>
+      <textarea id="inHL" rows="1" placeholder="" aria-describedby="hlCount"></textarea>
     </div>
     <div class="fs-row">
       <label>Gr&ouml;&szlig;e</label>
@@ -2222,7 +2241,7 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
     </div>
     <div class="fld">
       <label>Subheadline <button class="caps-pill" id="togSubCaps" role="switch" aria-checked="false" aria-label="Grossbuchstaben" title="Grossbuchstaben">AA</button><span class="charcount" id="subCount" aria-live="polite"></span></label>
-      <textarea id="inSub" rows="1" placeholder=""></textarea>
+      <textarea id="inSub" rows="1" placeholder="" aria-describedby="subCount"></textarea>
     </div>
     <div class="fs-row">
       <label>Gr&ouml;&szlig;e</label>
@@ -2318,14 +2337,14 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
       <div class="img-zone" id="z0" tabindex="0" role="button" aria-label="Bild 1 hochladen">
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f0">
         <img id="pv0" style="display:none" alt="Vorschau Bild 1">
-        <div class="ph" id="ph0">Bild 1</div>
+        <div class="ph" id="ph0">Bild hochladen</div>
         <button class="rm" id="rm0" aria-label="Bild 1 entfernen">&times;</button>
       </div>
       <button class="swap-btn" id="swapBtn" aria-label="Bilder tauschen">&#8644;</button>
       <div class="img-zone" id="z1" style="display:none" tabindex="0" role="button" aria-label="Bild 2 hochladen">
         <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" id="f1">
         <img id="pv1" style="display:none" alt="Vorschau Bild 2">
-        <div class="ph" id="ph1">Bild 2</div>
+        <div class="ph" id="ph1">Bild hochladen</div>
         <button class="rm" id="rm1" aria-label="Bild 2 entfernen">&times;</button>
       </div>
     </div>
@@ -2372,10 +2391,12 @@ html.fluent .theme-switcher-opt.active { color: var(--f2-brand); }
 <div class="drop-overlay" id="dropOverlay"><span>Bild hier ablegen</span></div>
 <!-- TOAST -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<!-- LOADING OVERLAY -->
+<div class="loading-overlay" id="loadingOverlay" aria-hidden="true"><div class="loading-spinner"></div></div>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-storage-compat.js"></script>
 <script>
 (function(){
 "use strict";
@@ -2403,7 +2424,7 @@ const FORMATS = {
 };
 let W = 1200, H = 1500;
 const SAFE_ZONE_RATIO = 0.08; // LinkedIn overlay covers ~8% of slide height
-var showSafeZone = false;
+let showSafeZone = false;
 const LOGO = new Image();
 LOGO.onload = function() { scheduleDraw(); };
 LOGO.onerror = function() { console.warn('Logo konnte nicht geladen werden'); };
@@ -2489,7 +2510,7 @@ const $segPreview = document.getElementById('segPreview');
 const $bSave = document.getElementById('bSave');
 const $bSaveArrow = document.getElementById('bSaveArrow');
 const $saveMenu = document.getElementById('saveMenu');
-var saveFmt = localStorage.getItem('ki-save-fmt') || 'png';
+let saveFmt = localStorage.getItem('ki-save-fmt') || 'png';
 const $bC   = document.getElementById('bC');
 const $bS   = document.getElementById('bS');
 const $togHlCaps = document.getElementById('togHlCaps');
@@ -2557,7 +2578,7 @@ function setSaveLabel(text) {
   if ($bASaveLabel) $bASaveLabel.textContent = text;
   else $bA.textContent = text;
 }
-var $bSaveCopy = document.getElementById('bSaveCopy');
+const $bSaveCopy = document.getElementById('bSaveCopy');
 function updateSaveButtonLabel() {
   var isCarousel = typeof deckActive !== 'undefined' && deckActive;
   if (_loadedPostId) {
@@ -2613,7 +2634,7 @@ const $histGrid    = document.getElementById('histGrid');
       var all = document.querySelectorAll('.ed.collapsible');
       var collapsedCount = document.querySelectorAll('.ed.collapsible.collapsed').length;
       var allCollapsed = collapsedCount === all.length;
-      colBtn.innerHTML = allCollapsed ? '&#9654; Alle ausklappen' : '&#9660; Alle einklappen';
+      colBtn.textContent = allCollapsed ? '\u25b6 Alle ausklappen' : '\u25bc Alle einklappen';
     }
     updateColBtn();
     colBtn.addEventListener('click', function() {
@@ -2860,8 +2881,8 @@ if (navigator.canShare && navigator.canShare({ files: [new File([''], 't.jpg', {
   $bS.style.display = '';
 }
 // ===== MOBILE OVERFLOW MENU =====
-var $toolbarMoreBtn = document.getElementById('toolbarMoreBtn');
-var _overflowPanel = null;
+const $toolbarMoreBtn = document.getElementById('toolbarMoreBtn');
+let _overflowPanel = null;
 function toggleToolbarOverflow() {
   if (_overflowPanel && _overflowPanel.classList.contains('open')) {
     closeToolbarOverflow();
@@ -2964,12 +2985,13 @@ function loadState() {
 // Users can load saved posts from the "Gespeicherte" drawer.
 // ===== RAF THROTTLE =====
 let rafPending = false;
+let _exportLock = false;
 function scheduleDraw() {
-  if (rafPending) return;
+  if (rafPending || _exportLock) return;
   rafPending = true;
   requestAnimationFrame(function() {
     rafPending = false;
-    draw();
+    if (!_exportLock) draw();
   });
 }
 // ===== TOAST =====
@@ -2979,6 +3001,21 @@ function showToast(msg) {
   $toast.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function() { $toast.classList.remove('show'); }, 2000);
+}
+// ===== LOADING OVERLAY =====
+const $loadingOverlay = document.getElementById('loadingOverlay');
+let _loadingCount = 0;
+function showLoading() {
+  _loadingCount++;
+  $loadingOverlay.classList.add('show');
+  $loadingOverlay.setAttribute('aria-hidden', 'false');
+}
+function hideLoading() {
+  _loadingCount = Math.max(0, _loadingCount - 1);
+  if (_loadingCount === 0) {
+    $loadingOverlay.classList.remove('show');
+    $loadingOverlay.setAttribute('aria-hidden', 'true');
+  }
 }
 // ===== HELPERS =====
 function autoSize(el) {
@@ -3006,20 +3043,30 @@ function revokeBlob(i) {
   S.draftBlobs[i] = null;
 }
 // ===== WORD WRAP =====
+let _mtCache = {};
+let _mtCacheFont = '';
+function cachedMeasure(text) {
+  var font = cx.font;
+  if (font !== _mtCacheFont) { _mtCache = {}; _mtCacheFont = font; }
+  if (text in _mtCache) return _mtCache[text];
+  var w = cx.measureText(text).width;
+  _mtCache[text] = w;
+  return w;
+}
 function wrapLine(text, fs, maxWidth) {
   cx.font = 'bold ' + fs + 'px Festivo, serif';
-  if (cx.measureText(text).width <= maxWidth) return [text];
+  if (cachedMeasure(text) <= maxWidth) return [text];
   var words = text.split(' ');
   var lines = [], cur = '';
   for (var w = 0; w < words.length; w++) {
     var word = words[w];
     // Break single words that exceed maxWidth
-    if (cx.measureText(word).width > maxWidth) {
+    if (cachedMeasure(word) > maxWidth) {
       if (cur) { lines.push(cur); cur = ''; }
       var chars = '';
       for (var c = 0; c < word.length; c++) {
         var next = chars + word[c];
-        if (cx.measureText(next).width > maxWidth && chars) {
+        if (cachedMeasure(next) > maxWidth && chars) {
           lines.push(chars); chars = word[c];
         } else { chars = next; }
       }
@@ -3027,7 +3074,7 @@ function wrapLine(text, fs, maxWidth) {
       continue;
     }
     var test = cur ? cur + ' ' + word : word;
-    if (cx.measureText(test).width > maxWidth && cur) {
+    if (cachedMeasure(test) > maxWidth && cur) {
       lines.push(cur); cur = word;
     } else { cur = test; }
   }
@@ -3083,13 +3130,6 @@ function renderUI() {
   scheduleDraw();
 }
 // ===== EVENTS =====
-// Edit toggle (mobile only — on desktop both panels are always visible)
-function isDesktop() { return window.innerWidth >= 1024; }
-function setView(editing) {
-  // Editor panel is always visible — toggle removed
-}
-$segEdit.addEventListener('click', function() { setView(true); });
-$segPreview.addEventListener('click', function() { setView(false); });
 // New post
 const $bN = document.getElementById('bN');
 $bN.addEventListener('click', function() {
@@ -3166,7 +3206,7 @@ $saveMenu.addEventListener('click', function(e) {
   var opt = e.target.closest('.split-opt');
   if (!opt) return;
   saveFmt = opt.getAttribute('data-fmt');
-  localStorage.setItem('ki-save-fmt', saveFmt);
+  try { localStorage.setItem('ki-save-fmt', saveFmt); } catch(e) {}
   updateSaveBtn();
   $saveMenu.classList.remove('open');
 });
@@ -3177,6 +3217,7 @@ document.addEventListener('click', function(e) {
   }
 });
 $bSave.addEventListener('click', function() {
+  if (!S.imgs[0] && !S.imgs[1]) { showToast('\u26a0 Bitte mindestens ein Bild hinzuf\u00fcgen'); return; }
   if (!fontReady && !confirm('Font nicht geladen \u2013 Export k\u00f6nnte fehlerhaft aussehen. Trotzdem exportieren?')) return;
   var btn = this;
   var isJpg = saveFmt === 'jpg';
@@ -3513,7 +3554,7 @@ function prepareText(maxW) {
     for (var k = 0; k < rawLines.length; k++) {
       var words = rawLines[k].split(' ');
       for (var wi = 0; wi < words.length; wi++) {
-        var ww = cx.measureText(words[wi]).width;
+        var ww = cachedMeasure(words[wi]);
         if (ww > maxW) {
           var ratio = maxW / ww;
           if (ratio < worstRatio) worstRatio = ratio;
@@ -3523,7 +3564,7 @@ function prepareText(maxW) {
   } else {
     // Auto mode: shrink if any full line is wider than maxW
     for (var k = 0; k < rawLines.length; k++) {
-      var mw = cx.measureText(rawLines[k]).width;
+      var mw = cachedMeasure(rawLines[k]);
       if (mw > maxW) {
         var ratio = maxW / mw;
         if (ratio < worstRatio) worstRatio = ratio;
@@ -3849,6 +3890,7 @@ $bA.addEventListener('click', function() {
     return;
   }
   btn.disabled = true; setSaveLabel('Speichert\u2026');
+  showLoading();
 
   // If carousel mode active, save all slides (even if only 1 slide)
   if (deckActive && deck.length >= 1) {
@@ -3911,6 +3953,7 @@ $bA.addEventListener('click', function() {
       _loadedPostId = post.id;
       setSaveLabel('\u2713 Gespeichert!');
       btn.classList.add('btn-success');
+      markSaved();
       showToast('\u2713 Karussell mit ' + post.slides.length + ' Slides ' + (wasOverwrite ? '\u00fcberschrieben' : 'gespeichert'));
       setTimeout(function() {
         btn.disabled = false;
@@ -3921,7 +3964,7 @@ $bA.addEventListener('click', function() {
       console.warn('Carousel save failed:', err);
       btn.disabled = false; updateSaveButtonLabel();
       showToast('\u26a0 Speichern fehlgeschlagen');
-    });
+    }).finally(hideLoading);
     return;
   }
 
@@ -3970,6 +4013,7 @@ $bA.addEventListener('click', function() {
     _loadedPostId = post.id;
     setSaveLabel('\u2713 Gespeichert!');
     btn.classList.add('btn-success');
+    markSaved();
     showToast('\u2713 Post ' + (wasOverwrite ? '\u00fcberschrieben' : 'gespeichert'));
     setTimeout(function() {
       btn.disabled = false;
@@ -3980,11 +4024,11 @@ $bA.addEventListener('click', function() {
     console.warn('Save failed:', err);
     btn.disabled = false; updateSaveButtonLabel();
     showToast('\u26a0 Speichern fehlgeschlagen');
-  });
+  }).finally(hideLoading);
 });
 // ===== HISTORY: DRAWER =====
-var _drawerEscHandler = null;
-var _drawerTrapHandler = null;
+let _drawerEscHandler = null;
+let _drawerTrapHandler = null;
 function openHistory() {
   $histOverlay.classList.add('open');
   $histDrawer.classList.add('open');
@@ -4018,8 +4062,8 @@ $bH.addEventListener('click', openHistory);
 $histClose.addEventListener('click', closeHistory);
 $histOverlay.addEventListener('click', closeHistory);
 let activeThumbUrls = [];
-var _histPosts = [];
-var _loadedPostId = null; // ID of post loaded from archive (for overwrite-on-save)
+let _histPosts = [];
+let _loadedPostId = null; // ID of post loaded from archive (for overwrite-on-save)
 // Event delegation for history grid (avoids per-item listener leaks)
 $histGrid.addEventListener('click', function(e) {
   var delBtn = e.target.closest('.hist-del');
@@ -4061,10 +4105,10 @@ $histGrid.addEventListener('keydown', function(e) {
     if (post) loadArchivedPost(post);
   }
 });
-var histFilter = 'all'; // 'all', 'single', 'carousel'
-var $histFilterAll = document.getElementById('histFilterAll');
-var $histFilterSingle = document.getElementById('histFilterSingle');
-var $histFilterCarousel = document.getElementById('histFilterCarousel');
+let histFilter = 'all'; // 'all', 'single', 'carousel'
+const $histFilterAll = document.getElementById('histFilterAll');
+const $histFilterSingle = document.getElementById('histFilterSingle');
+const $histFilterCarousel = document.getElementById('histFilterCarousel');
 function setHistFilter(f) {
   histFilter = f;
   [$histFilterAll, $histFilterSingle, $histFilterCarousel].forEach(function(btn) {
@@ -4168,6 +4212,8 @@ function loadArchivedPost(post) {
   S.credOffX = post.credOffX || 0;
   S.credOffY = post.credOffY || 0;
   S.credShadow = !!post.credShadow;
+  S.layout = post.layout || 'one';
+  S.format = post.format || '4:5';
   S.textPos = post.textPos || 'top';
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
@@ -4177,28 +4223,9 @@ function loadArchivedPost(post) {
         return defaultCrop();
       })
     : [defaultCrop(), defaultCrop()];
-  // Update text inputs
-  $hl.value = S.hlLines.join('\n');
-  $sub.value = S.subText;
-  $date.value = deToISO(S.dateText) || todayISO();
-  $togHlCaps.classList.toggle('on', S.hlCaps);
-  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
-  $togSubCaps.classList.toggle('on', S.subCaps);
-  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
+  // Update UI from restored state
+  refreshEditorFromState();
   $f[0].value = ''; $f[1].value = '';
-  // Set layout, format, font size, text position
-  setLayout(post.layout || 'one');
-  setFormat(post.format || '4:5');
-  updateFSSlider();
-  Object.keys(CA_BTNS).forEach(function(k) {
-    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-  });
-  updateCredOffsetUI();
-  Object.keys(TP_BTNS).forEach(function(k) {
-    TP_BTNS[k].classList.toggle('on', k === S.textPos);
-    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-  });
   // Load images from blobs
   var loaded = 0, total = 0;
   function onAllLoaded() {
@@ -4215,6 +4242,9 @@ function loadArchivedPost(post) {
       // Revoke temporary blob URLs created above — loadCarouselPost will create its own
       revokeBlob(0); revokeBlob(1);
       loadCarouselPost(post);
+    } else if (post.isCarousel) {
+      // Carousel-Post but slides missing/empty — load as single post with warning
+      showToast('\u26a0 Karussell-Daten besch\u00e4digt \u2013 als Einzelpost geladen');
     } else {
       showToast('\u2713 Post geladen');
     }
@@ -4378,7 +4408,7 @@ function loadCarouselPost(post) {
   }
 }
 // ===== GLOBAL DRAG & DROP =====
-var dragCounter = 0;
+let dragCounter = 0;
 document.addEventListener('dragover', function(e) { e.preventDefault(); });
 document.addEventListener('dragenter', function(e) {
   e.preventDefault();
@@ -4511,7 +4541,7 @@ document.querySelectorAll('.ch-btns').forEach(function(group) {
   });
 });
 // ===== TEXT POSITION =====
-var TP_BTNS = { top: $tpTop, center: $tpCenter, bottom: $tpBottom };
+const TP_BTNS = { top: $tpTop, center: $tpCenter, bottom: $tpBottom };
 function setTextPos(pos) {
   S.textPos = pos;
   Object.keys(TP_BTNS).forEach(function(k) {
@@ -4526,7 +4556,7 @@ $tpTop.addEventListener('click', function() { setTextPos('top'); });
 $tpCenter.addEventListener('click', function() { setTextPos('center'); });
 $tpBottom.addEventListener('click', function() { setTextPos('bottom'); });
 // ===== CREDIT ALIGNMENT =====
-var CA_BTNS = { left: $caLeft, right: $caRight, center: $caCenter };
+const CA_BTNS = { left: $caLeft, right: $caRight, center: $caCenter };
 function setCredAlign(align) {
   S.credAlign = align;
   Object.keys(CA_BTNS).forEach(function(k) {
@@ -4585,7 +4615,7 @@ $credShadowToggle.addEventListener('click', function() {
   pushUndo(); debouncedSave(); scheduleDraw();
 });
 // ===== DARK MODE TOGGLE =====
-var THEME_KEY = 'ki-news-theme';
+const THEME_KEY = 'ki-news-theme';
 function applyTheme(theme) {
   document.documentElement.classList.remove('light', 'dark');
   if (theme === 'light' || theme === 'dark') {
@@ -4604,13 +4634,13 @@ $themeToggle.addEventListener('click', function() {
   applyTheme(cur === 'dark' ? 'light' : 'dark');
 });
 // ===== DESIGN THEME SWITCHER =====
-var DESIGN_KEY = 'ki-news-design-theme';
-var $designToggle = document.getElementById('designToggle');
-var $designMenu = document.getElementById('designMenu');
-var lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
-var DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666', 'm3x': '\u2726', 'geist': '\u25b3' };
-var DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass', 'm3x': 'Material 3', 'geist': 'Geist' };
-var currentDesign = 'default';
+const DESIGN_KEY = 'ki-news-design-theme';
+const $designToggle = document.getElementById('designToggle');
+const $designMenu = document.getElementById('designMenu');
+const lgIsFirefox = typeof InstallTrigger !== 'undefined' || navigator.userAgent.indexOf('Firefox') > -1;
+const DESIGN_ICONS = { 'default': '\u25c7', 'fluent': '\u25a8', 'liquid-glass': '\u2666', 'm3x': '\u2726', 'geist': '\u25b3' };
+const DESIGN_LABELS = { 'default': 'Standard', 'fluent': 'Fluent 2', 'liquid-glass': 'Liquid Glass', 'm3x': 'Material 3', 'geist': 'Geist' };
+let currentDesign = 'default';
 function applyDesignTheme(theme) {
   var html = document.documentElement;
   html.classList.add('lg-transitioning');
@@ -4670,9 +4700,9 @@ document.addEventListener('click', function(e) {
   }
 });
 // ===== UNDO / REDO =====
-var undoStack = [];
-var redoStack = [];
-var MAX_UNDO = 40;
+const undoStack = [];
+let redoStack = [];
+const MAX_UNDO = 40;
 function stateSnapshot() {
   return {
     json: JSON.stringify({
@@ -4691,7 +4721,8 @@ function snapshotsEqual(a, b) {
   return a.json === b.json && a.imgs[0] === b.imgs[0] && a.imgs[1] === b.imgs[1];
 }
 function restoreSnapshot(snap) {
-  var data = JSON.parse(snap.json);
+  var data;
+  try { data = JSON.parse(snap.json); } catch(e) { showToast('\u26a0 Snapshot-Daten besch\u00e4digt'); return; }
   S.hlLines = data.hlLines; S.subText = data.subText; S.dateText = data.dateText;
   S.hlCaps = !!data.hlCaps; S.subCaps = !!data.subCaps;
   S.layout = data.layout; S.format = data.format;
@@ -4708,38 +4739,18 @@ function restoreSnapshot(snap) {
   S.imgs = snap.imgs.slice();
   S.blobs = snap.blobs.slice();
   S.draftBlobs = snap.draftBlobs.slice();
-  // Sync UI
-  $hl.value = S.hlLines.join('\n');
-  $sub.value = S.subText;
-  $date.value = deToISO(S.dateText) || todayISO();
-  $togHlCaps.classList.toggle('on', S.hlCaps);
-  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
-  $togSubCaps.classList.toggle('on', S.subCaps);
-  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
-  setLayout(S.layout);
-  setFormat(S.format);
-  updateFSSlider();
-  Object.keys(CA_BTNS).forEach(function(k) {
-    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-  });
-  updateCredOffsetUI();
-  Object.keys(TP_BTNS).forEach(function(k) {
-    TP_BTNS[k].classList.toggle('on', k === S.textPos);
-    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-  });
+  // Sync UI (reuse shared helper + update crop/credit sliders)
+  refreshEditorFromState();
   for (var i = 0; i < 2; i++) {
     $cr[i].value = S.creds[i];
     $sz[i].value = S.crop[i].z; $vz[i].textContent = S.crop[i].z + '%';
     $sx[i].value = S.crop[i].x; $vx[i].textContent = S.crop[i].x + '%';
     $sy[i].value = S.crop[i].y; $vy[i].textContent = S.crop[i].y + '%';
   }
-  autoSize($hl); autoSize($sub);
-  renderUI();
   saveState();
   scheduleDraw();
 }
-var lastSnap = stateSnapshot();
+let lastSnap = stateSnapshot();
 function pushUndo() {
   var snap = stateSnapshot();
   if (snapshotsEqual(snap, lastSnap)) return;
@@ -4748,7 +4759,12 @@ function pushUndo() {
   redoStack = [];
   lastSnap = snap;
 }
+let _undoTimer = null;
+function flushDebouncedUndo() {
+  if (_undoTimer) { clearTimeout(_undoTimer); _undoTimer = null; pushUndo(); }
+}
 function undo() {
+  flushDebouncedUndo();
   if (!undoStack.length) { showToast('Nichts zum R\u00fcckg\u00e4ngig machen'); return; }
   redoStack.push(stateSnapshot());
   var snap = undoStack.pop();
@@ -4791,7 +4807,7 @@ document.addEventListener('keydown', function(e) {
   }
 });
 // ===== TEMPLATE SYSTEM =====
-var TPL_KEY = 'ki-news-templates';
+const TPL_KEY = 'ki-news-templates';
 function loadTemplates() {
   try {
     var raw = localStorage.getItem(TPL_KEY);
@@ -4805,7 +4821,10 @@ function saveTemplates(templates) {
 function refreshTplSelect() {
   var templates = loadTemplates();
   var names = Object.keys(templates).sort();
-  $tplSelect.innerHTML = '<option value="">Vorlage w\u00e4hlen\u2026</option>';
+  while ($tplSelect.firstChild) $tplSelect.removeChild($tplSelect.firstChild);
+  var defOpt = document.createElement('option');
+  defOpt.value = ''; defOpt.textContent = 'Vorlage w\u00e4hlen\u2026';
+  $tplSelect.appendChild(defOpt);
   names.forEach(function(name) {
     var opt = document.createElement('option');
     opt.value = name; opt.textContent = name;
@@ -4813,8 +4832,9 @@ function refreshTplSelect() {
   });
 }
 $tplSave.addEventListener('click', function() {
-  var name = $tplName.value.trim();
+  var name = $tplName.value.trim().slice(0, 50);
   if (!name) { showToast('\u26a0 Bitte Vorlagenname eingeben'); return; }
+  if (/[<>"'`\\\/]/.test(name)) { showToast('\u26a0 Sonderzeichen im Namen nicht erlaubt'); return; }
   var templates = loadTemplates();
   templates[name] = {
     layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
@@ -4879,7 +4899,6 @@ $tplDel.addEventListener('click', function() {
   showToast('\u2713 Vorlage gel\u00f6scht');
 });
 // Hook undo into existing input handlers (debounced to avoid flooding undo stack per-keystroke)
-var _undoTimer = null;
 function debouncedUndo() {
   clearTimeout(_undoTimer);
   _undoTimer = setTimeout(pushUndo, 600);
@@ -4888,8 +4907,8 @@ $hl.addEventListener('input', debouncedUndo);
 $sub.addEventListener('input', debouncedUndo);
 $date.addEventListener('change', function() { pushUndo(); });
 // ===== FIREBASE CLOUD SYNC =====
-var fbEnabled = typeof firebase !== 'undefined';
-var fbUser = null;
+const fbEnabled = typeof firebase !== 'undefined';
+let fbUser = null;
 if (fbEnabled) {
   firebase.initializeApp({
     apiKey: "AIzaSyBuE_T6Uxvwnm4nCNHrRfdWb27zmjboUPk",
@@ -4964,104 +4983,62 @@ if (fbEnabled) {
   var $loginBtnHide = document.getElementById('loginBtn');
   if ($loginBtnHide) $loginBtnHide.style.display = 'none';
 }
-function syncToCloud(post) {
-  if (!fbUser || !fbEnabled) return Promise.resolve();
-  var uid = fbUser.uid;
-  var pid = post.id;
-  var basePath = 'users/' + uid + '/posts/' + pid;
-
-  // Upload thumbnail
-  var thumbUpload = post.thumbnail
-    ? fbStorage.ref(basePath + '/thumb.jpg').put(post.thumbnail).then(function(s) { return s.ref.getDownloadURL(); })
-    : Promise.resolve(null);
-
-  // For carousel posts, upload all slide images
-  if (post.isCarousel && post.slides && post.slides.length > 0) {
-    var slideUploads = [];
-    for (var si = 0; si < post.slides.length; si++) {
-      for (var ii = 0; ii < 2; ii++) {
-        if (post.slides[si].images && post.slides[si].images[ii]) {
-          (function(slideIdx, imgIdx) {
-            var ref = fbStorage.ref(basePath + '/slide' + slideIdx + '_img' + imgIdx + '.jpg');
-            slideUploads.push(
-              ref.put(post.slides[slideIdx].images[imgIdx]).then(function(s) {
-                return s.ref.getDownloadURL().then(function(url) {
-                  return { si: slideIdx, ii: imgIdx, url: url };
-                });
-              })
-            );
-          })(si, ii);
-        }
+function postMetadata(src) {
+  return {
+    headline: src.headline || '', subtitle: src.subtitle || '', date: src.date || '',
+    layout: src.layout || 'one', format: src.format || '4:5',
+    hlCaps: !!src.hlCaps, subCaps: !!src.subCaps,
+    hlFSOverride: src.hlFSOverride || 0, subFSOverride: src.subFSOverride || 0, credFSOverride: src.credFSOverride || 0,
+    credAlign: src.credAlign || 'right', credOffX: src.credOffX || 0, credOffY: src.credOffY || 0,
+    credShadow: !!src.credShadow, textPos: src.textPos || 'top',
+    credits: src.credits || ['', ''], crops: src.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}]
+  };
+}
+function syncCarouselToCloud(post, uid, basePath, thumbUpload) {
+  var slideUploads = [];
+  for (var si = 0; si < post.slides.length; si++) {
+    for (var ii = 0; ii < 2; ii++) {
+      if (post.slides[si].images && post.slides[si].images[ii]) {
+        (function(slideIdx, imgIdx) {
+          var ref = fbStorage.ref(basePath + '/slide' + slideIdx + '_img' + imgIdx + '.jpg');
+          slideUploads.push(
+            ref.put(post.slides[slideIdx].images[imgIdx]).then(function(s) {
+              return s.ref.getDownloadURL().then(function(url) {
+                return { si: slideIdx, ii: imgIdx, url: url };
+              });
+            })
+          );
+        })(si, ii);
       }
     }
-    return Promise.all([thumbUpload, Promise.all(slideUploads)]).then(function(res) {
-      var thumbnailUrl = res[0];
-      var uploadResults = res[1];
-      // Build slide image URL map
-      var slideImageUrls = {};
-      uploadResults.forEach(function(r) {
-        var key = r.si + '_' + r.ii;
-        slideImageUrls[key] = r.url;
-      });
-      // Build slides metadata for Firestore (without blobs)
-      var slidesData = post.slides.map(function(s, idx) {
-        return {
-          headline: s.headline || '',
-          subtitle: s.subtitle || '',
-          date: s.date || '',
-          layout: s.layout || 'one',
-          format: s.format || post.format || '4:5',
-          hlCaps: !!s.hlCaps,
-          subCaps: !!s.subCaps,
-          hlFSOverride: s.hlFSOverride || 0,
-          subFSOverride: s.subFSOverride || 0,
-          credFSOverride: s.credFSOverride || 0,
-          credAlign: s.credAlign || 'right',
-          credOffX: s.credOffX || 0,
-          credOffY: s.credOffY || 0,
-          credShadow: !!s.credShadow,
-          textPos: s.textPos || 'top',
-          credits: s.credits || ['', ''],
-          crops: s.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
-          imageUrls: [slideImageUrls[idx + '_0'] || null, slideImageUrls[idx + '_1'] || null]
-        };
-      });
-      return fbDb.collection('users').doc(uid).collection('posts').doc(pid).set({
-        headline: post.headline || '',
-        subtitle: post.subtitle || '',
-        date: post.date || '',
-        layout: post.layout || 'one',
-        format: post.format || '4:5',
-        hlCaps: !!post.hlCaps,
-        subCaps: !!post.subCaps,
-        hlFSOverride: post.hlFSOverride || 0,
-        subFSOverride: post.subFSOverride || 0,
-        credFSOverride: post.credFSOverride || 0,
-        credAlign: post.credAlign || 'right',
-        credOffX: post.credOffX || 0,
-        credOffY: post.credOffY || 0,
-        credShadow: !!post.credShadow,
-        textPos: post.textPos || 'top',
-        credits: post.credits || ['', ''],
-        crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
-        savedAt: post.savedAt,
-        imageUrls: [slidesData[0].imageUrls[0], slidesData[0].imageUrls[1]],
-        thumbnailUrl: thumbnailUrl,
-        isCarousel: true,
-        slideCount: post.slides.length,
-        slides: slidesData
-      }).then(function() {
-        // Mark local post as cloud-synced (for cross-device delete detection)
-        post.cloudSynced = true;
-        return dbAdd(post);
-      });
-    }).catch(function(err) {
-      console.warn('syncToCloud (carousel) failed:', err);
-      showToast('\u26a0 Cloud-Sync fehlgeschlagen');
-    });
   }
-
-  // Single-post upload (original logic)
+  return Promise.all([thumbUpload, Promise.all(slideUploads)]).then(function(res) {
+    var thumbnailUrl = res[0];
+    var slideImageUrls = {};
+    res[1].forEach(function(r) { slideImageUrls[r.si + '_' + r.ii] = r.url; });
+    var slidesData = post.slides.map(function(s, idx) {
+      var meta = postMetadata(s);
+      meta.format = s.format || post.format || '4:5';
+      meta.imageUrls = [slideImageUrls[idx + '_0'] || null, slideImageUrls[idx + '_1'] || null];
+      return meta;
+    });
+    var doc = postMetadata(post);
+    doc.savedAt = post.savedAt;
+    doc.imageUrls = [slidesData[0].imageUrls[0], slidesData[0].imageUrls[1]];
+    doc.thumbnailUrl = thumbnailUrl;
+    doc.isCarousel = true;
+    doc.slideCount = post.slides.length;
+    doc.slides = slidesData;
+    return fbDb.collection('users').doc(uid).collection('posts').doc(post.id).set(doc);
+  }).then(function() {
+    post.cloudSynced = true;
+    return dbAdd(post);
+  }).catch(function(err) {
+    console.warn('syncToCloud (carousel) failed:', err);
+    showToast('\u26a0 Cloud-Sync fehlgeschlagen');
+  });
+}
+function syncSingleToCloud(post, uid, basePath, thumbUpload) {
   var imgUploads = [];
   for (var i = 0; i < 2; i++) {
     if (post.images && post.images[i]) {
@@ -5074,42 +5051,35 @@ function syncToCloud(post) {
     }
   }
   return Promise.all([Promise.all(imgUploads), thumbUpload]).then(function(res) {
-    var imgUrls = res[0];
-    var thumbnailUrl = res[1];
-    return fbDb.collection('users').doc(uid).collection('posts').doc(pid).set({
-      headline: post.headline || '',
-      subtitle: post.subtitle || '',
-      date: post.date || '',
-      layout: post.layout || 'one',
-      format: post.format || '4:5',
-      hlCaps: !!post.hlCaps,
-      subCaps: !!post.subCaps,
-      hlFSOverride: post.hlFSOverride || 0,
-      subFSOverride: post.subFSOverride || 0,
-      credFSOverride: post.credFSOverride || 0,
-      credAlign: post.credAlign || 'right',
-      credOffX: post.credOffX || 0,
-      credOffY: post.credOffY || 0,
-      credShadow: !!post.credShadow,
-      textPos: post.textPos || 'top',
-      credits: post.credits || ['', ''],
-      crops: post.crops || [{x:50, y:50, z:100}, {x:50, y:50, z:100}],
-      savedAt: post.savedAt,
-      imageUrls: [imgUrls[0], imgUrls[1]],
-      thumbnailUrl: thumbnailUrl,
-      isCarousel: false,
-      slideCount: 1
-    }).then(function() {
-      post.cloudSynced = true;
-      return dbAdd(post);
-    });
+    var doc = postMetadata(post);
+    doc.savedAt = post.savedAt;
+    doc.imageUrls = [res[0][0], res[0][1]];
+    doc.thumbnailUrl = res[1];
+    doc.isCarousel = false;
+    doc.slideCount = 1;
+    return fbDb.collection('users').doc(uid).collection('posts').doc(post.id).set(doc);
+  }).then(function() {
+    post.cloudSynced = true;
+    return dbAdd(post);
   }).catch(function(err) {
     console.warn('syncToCloud failed:', err);
     showToast('\u26a0 Cloud-Sync fehlgeschlagen');
   });
 }
+function syncToCloud(post) {
+  if (!fbUser || !fbEnabled) return Promise.resolve();
+  var uid = fbUser.uid;
+  var basePath = 'users/' + uid + '/posts/' + post.id;
+  var thumbUpload = post.thumbnail
+    ? fbStorage.ref(basePath + '/thumb.jpg').put(post.thumbnail).then(function(s) { return s.ref.getDownloadURL(); })
+    : Promise.resolve(null);
+  if (post.isCarousel && post.slides && post.slides.length > 0) {
+    return syncCarouselToCloud(post, uid, basePath, thumbUpload);
+  }
+  return syncSingleToCloud(post, uid, basePath, thumbUpload);
+}
 // Track recently deleted post IDs so syncCloud won't re-download them
-var _recentlyDeletedIds = {};
+const _recentlyDeletedIds = {};
 function deleteFromCloud(postId, slideCount) {
   if (!fbUser || !fbEnabled) return Promise.resolve();
   var uid = fbUser.uid;
@@ -5367,25 +5337,25 @@ function syncTemplatesFromCloud() {
   }).catch(function(err) { console.warn('Template cloud fetch failed:', err); });
 }
 // ===== CAROUSEL / DECK =====
-var deck = [];           // array of slide state snapshots
-var currentSlideIdx = 0;
-var deckActive = false;
-var deckThumbCache = []; // cached thumbnail canvas elements per slide index
-var MAX_DECK_SLIDES = 50; // soft limit for carousel slides
-var _dragSlideIdx = -1;  // index of slide being dragged
-var $deckBar = document.getElementById('deckBar');
-var $deckStrip = document.getElementById('deckStrip');
-var $deckLabel = document.getElementById('deckLabel');
-var $deckExportPdf = document.getElementById('deckExportPdf');
-var $deckExportImgs = document.getElementById('deckExportImgs');
-var $deckClose = document.getElementById('deckClose');
+let deck = [];           // array of slide state snapshots
+let currentSlideIdx = 0;
+let deckActive = false;
+let deckThumbCache = []; // cached thumbnail canvas elements per slide index
+const MAX_DECK_SLIDES = 50; // soft limit for carousel slides
+let _dragSlideIdx = -1;  // index of slide being dragged
+const $deckBar = document.getElementById('deckBar');
+const $deckStrip = document.getElementById('deckStrip');
+const $deckLabel = document.getElementById('deckLabel');
+const $deckExportPdf = document.getElementById('deckExportPdf');
+const $deckExportImgs = document.getElementById('deckExportImgs');
+const $deckClose = document.getElementById('deckClose');
 // Tool mode tabs
-var $tabSingle = document.getElementById('tabSingle');
-var $tabCarousel = document.getElementById('tabCarousel');
+const $tabSingle = document.getElementById('tabSingle');
+const $tabCarousel = document.getElementById('tabCarousel');
 var $bCarouselExportImgs = document.getElementById('bCarouselExportImgs');
 var $bCarouselExportPdf = document.getElementById('bCarouselExportPdf');
 var $appDiv = document.querySelector('.app');
-var currentToolMode = 'single'; // 'single' or 'carousel'
+let currentToolMode = 'single'; // 'single' or 'carousel'
 
 function revokeDeckBlobs() {
   for (var i = 0; i < deck.length; i++) {
@@ -5398,8 +5368,8 @@ function revokeDeckBlobs() {
 
 function setToolMode(mode, force) {
   if (mode === currentToolMode && !force) return;
-  if (!force && mode === 'single' && deckActive && deck.length > 1) {
-    if (!confirm('Karussell mit ' + deck.length + ' Slides verwerfen und zum Einzelpost wechseln?')) return;
+  if (!force && mode === 'single' && deckActive && deck.length > 0) {
+    if (!confirm('Karussell mit ' + deck.length + ' Slide' + (deck.length > 1 ? 's' : '') + ' verwerfen und zum Einzelpost wechseln?')) return;
   }
   currentToolMode = mode;
   $appDiv.classList.toggle('mode-single', mode === 'single');
@@ -5526,7 +5496,7 @@ function switchToSlide(idx) {
 
 function renderDeckStrip() {
   if (!deckActive) return;
-  $deckStrip.innerHTML = '';
+  while ($deckStrip.firstChild) $deckStrip.removeChild($deckStrip.firstChild);
   // Sync current editor inputs into S and snapshot
   S.hlLines = $hl.value.split('\n');
   S.subText = $sub.value;
@@ -5584,7 +5554,7 @@ function renderDeckStrip() {
     if (deck.length > 1) {
       var rm = document.createElement('button');
       rm.className = 'slide-rm';
-      rm.innerHTML = '&times;';
+      rm.textContent = '\u00d7';
       rm.setAttribute('data-idx', i);
       rm.addEventListener('click', (function(idx) {
         return function(e) {
@@ -5827,6 +5797,7 @@ function moveSlide(fromIdx, toIdx) {
 function startDeck() {
   if (deckActive) return;
   deckActive = true;
+  _loadedPostId = null;
   deck = [slideSnapshot()];
   deckThumbCache = [null];
   currentSlideIdx = 0;
@@ -5845,7 +5816,7 @@ function stopDeck() {
 }
 
 $deckClose.addEventListener('click', function() {
-  if (deck.length > 1 && !confirm('Karussell beenden? Alle Slides au\u00dfer dem aktuellen gehen verloren.')) return;
+  if (deck.length > 0 && !confirm('Karussell beenden?' + (deck.length > 1 ? ' Alle Slides au\u00dfer dem aktuellen gehen verloren.' : ''))) return;
   stopDeck();
 });
 
@@ -5857,7 +5828,8 @@ $deckExportPdf.addEventListener('click', function() {
   btn.disabled = true;
   btn.textContent = 'Exportiert…';
 
-  // Load jsPDF dynamically if not already loaded
+  // Lock canvas to prevent scheduleDraw() from overwriting during export
+  _exportLock = true;
   function doExport() {
     try {
       var origSnap = slideSnapshot();
@@ -5913,6 +5885,7 @@ $deckExportPdf.addEventListener('click', function() {
     }
     btn.disabled = false;
     btn.textContent = 'PDF Export';
+    _exportLock = false;
   }
 
   if (window.jspdf) {
@@ -5940,6 +5913,7 @@ $deckExportImgs.addEventListener('click', function() {
   var isJpg = saveFmt === 'jpg';
   var mime = isJpg ? 'image/jpeg' : 'image/png';
   var ext = isJpg ? '.jpg' : '.png';
+  _exportLock = true;
   var origSnap = slideSnapshot();
   var ts = new Date().toISOString().slice(0, 10);
   var exported = 0;
@@ -5950,6 +5924,7 @@ $deckExportImgs.addEventListener('click', function() {
       loadSlideState(origSnap);
       setFormat(origSnap.format || S.format);
       _origDraw();
+      _exportLock = false;
       btn.disabled = false;
       btn.textContent = 'Bilder Export';
       btn.classList.add('btn-success');
@@ -5985,7 +5960,7 @@ $deckExportImgs.addEventListener('click', function() {
 });
 
 // Hook into draw to update current slide thumbnail (debounced)
-var deckThumbTimer = null;
+let deckThumbTimer = null;
 function scheduleDeckThumbUpdate() {
   if (!deckActive) return;
   clearTimeout(deckThumbTimer);
@@ -6004,7 +5979,7 @@ function scheduleDeckThumbUpdate() {
 }
 
 // Patch scheduleDraw to also update deck thumbs
-var _origDraw = draw;
+const _origDraw = draw;
 draw = function() {
   _origDraw();
   if (showSafeZone) {
@@ -6039,25 +6014,7 @@ function init() {
   if (document.fonts && !document.fonts.check('12px Festivo')) {
     showToast('\u26a0 Font l\u00e4dt\u2026');
   }
-  $hl.value = S.hlLines.join('\n');
-  $sub.value = S.subText;
-  $date.value = deToISO(S.dateText) || todayISO();
-  $togHlCaps.classList.toggle('on', S.hlCaps);
-  $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));
-  $togSubCaps.classList.toggle('on', S.subCaps);
-  $togSubCaps.setAttribute('aria-checked', String(S.subCaps));
-  setLayout(S.layout);
-  setFormat(S.format);
-  updateFSSlider();
-  Object.keys(CA_BTNS).forEach(function(k) {
-    CA_BTNS[k].classList.toggle('on', k === S.credAlign);
-    CA_BTNS[k].setAttribute('aria-checked', String(k === S.credAlign));
-  });
-  updateCredOffsetUI();
-  Object.keys(TP_BTNS).forEach(function(k) {
-    TP_BTNS[k].classList.toggle('on', k === S.textPos);
-    TP_BTNS[k].setAttribute('aria-checked', String(k === S.textPos));
-  });
+  refreshEditorFromState();
   refreshTplSelect();
   lastSnap = stateSnapshot();
   // Editor panel always visible
@@ -6068,9 +6025,32 @@ function init() {
   // Don't restore draft – always start fresh.
   // Delete any leftover draft from a previous session.
   deleteDraft();
+  // Onboarding for first-time users
+  if (!localStorage.getItem('ki-onboarded')) {
+    var ob = document.createElement('div');
+    ob.className = 'onboarding-hint';
+    ob.innerHTML = '';
+    ob.textContent = '';
+    var msg = document.createElement('span');
+    msg.textContent = 'Willkommen! Lade ein Bild hoch, schreibe eine Headline und exportiere deinen Post.';
+    var closeBtn = document.createElement('button');
+    closeBtn.textContent = '\u2715';
+    closeBtn.setAttribute('aria-label', 'Hinweis schlie\u00dfen');
+    closeBtn.addEventListener('click', function() {
+      ob.remove();
+      try { localStorage.setItem('ki-onboarded', '1'); } catch(e) {}
+    });
+    ob.appendChild(msg);
+    ob.appendChild(closeBtn);
+    document.querySelector('.ed-panel').prepend(ob);
+    setTimeout(function() {
+      ob.remove();
+      try { localStorage.setItem('ki-onboarded', '1'); } catch(e) {}
+    }, 15000);
+  }
 }
 let initialized = false;
-var fontReady = false;
+let fontReady = false;
 function safeInit(fontOk) {
   if (initialized) return;
   initialized = true;
@@ -6100,6 +6080,16 @@ if (document.fonts && document.fonts.load) {
 }
 window.addEventListener('resize', function() {
   scheduleDraw();
+});
+// ===== BEFOREUNLOAD: UNSAVED CHANGES WARNING =====
+let _savedSnap = stateSnapshot();
+function markSaved() { _savedSnap = stateSnapshot(); }
+window.addEventListener('beforeunload', function(e) {
+  var current = stateSnapshot();
+  if (!snapshotsEqual(current, _savedSnap)) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
 });
 })();
 if ('serviceWorker' in navigator) {
