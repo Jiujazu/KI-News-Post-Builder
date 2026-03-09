@@ -1,18 +1,5 @@
 import { app, G, S, cv, defaultCrop, todayDE, setSaveLabel, $bA, $bSaveCopy, $bH, $histOverlay, $histDrawer, $histClose, $histBody, $histEmpty, $histGrid, $histFilterAll, $histFilterSingle, $histFilterCarousel, $f } from './state.js';
-
-// ===== HISTORY: ARCHIVE POST =====
-function buildSlideData(snap) {
-  return {
-    headline: snap.hlLines.join('\n'), subtitle: snap.subText, date: snap.dateText,
-    layout: snap.layout, format: snap.format || S.format,
-    hlCaps: snap.hlCaps, subCaps: snap.subCaps,
-    hlFSOverride: snap.hlFSOverride, subFSOverride: snap.subFSOverride, credFSOverride: snap.credFSOverride,
-    credAlign: snap.credAlign, credOffX: snap.credOffX, credOffY: snap.credOffY,
-    credShadow: snap.credShadow, textPos: snap.textPos,
-    credits: snap.creds.slice(),
-    crops: snap.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; })
-  };
-}
+import { buildSlideData, loadSlideFromSaved } from './utils.js';
 function compressSlideImages(snap) {
   var promises = [];
   for (var i = 0; i < 2; i++) {
@@ -398,27 +385,6 @@ function loadArchivedPost(post) {
     }
   }
   if (total === 0) onAllLoaded();
-}
-
-function loadSlideFromSaved(slideData) {
-  return {
-    imgs: [null, null], blobs: [null, null], draftBlobs: [null, null],
-    creds: (Array.isArray(slideData.credits) && slideData.credits.length === 2) ? slideData.credits.slice() : ['', ''],
-    crop: (Array.isArray(slideData.crops) && slideData.crops.length === 2)
-      ? slideData.crops.map(function(c) {
-          if (c && typeof c === 'object' && 'x' in c) return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100};
-          return defaultCrop();
-        })
-      : [defaultCrop(), defaultCrop()],
-    layout: slideData.layout || 'one', format: slideData.format || S.format,
-    hlCaps: !!slideData.hlCaps, subCaps: !!slideData.subCaps,
-    hlLines: slideData.headline ? slideData.headline.split('\n') : [''],
-    subText: slideData.subtitle || '', dateText: slideData.date || todayDE(),
-    hlFSOverride: slideData.hlFSOverride || 0, subFSOverride: slideData.subFSOverride || 0,
-    credFSOverride: slideData.credFSOverride || 0, credAlign: slideData.credAlign || 'right',
-    credOffX: slideData.credOffX || 0, credOffY: slideData.credOffY || 0,
-    credShadow: !!slideData.credShadow, textPos: slideData.textPos || 'top'
-  };
 }
 
 function loadCarouselPost(post) {
