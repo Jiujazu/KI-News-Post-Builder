@@ -969,7 +969,7 @@ html.fluent .fs-row button,
 html.fluent .fs-reset {
   background: var(--f2-subtle-bg) !important;
   border: 1px solid var(--f2-border) !important;
-  border-radius: var(--f2-radius-md) !important;
+  border-radius: var(--f2-radius-sm) !important;
   color: var(--f2-text) !important;
   font-family: var(--f2-font) !important;
   font-weight: 400;
@@ -1016,7 +1016,7 @@ html.fluent .btn-danger {
   background: transparent !important;
   border: 1px solid var(--f2-danger) !important;
   color: var(--f2-danger) !important;
-  border-radius: var(--f2-radius-md) !important;
+  border-radius: var(--f2-radius-sm) !important;
   box-shadow: none;
   font-family: var(--f2-font) !important;
 }
