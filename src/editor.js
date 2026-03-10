@@ -1,9 +1,9 @@
 import { app, G, S, FORMATS, defaultCrop, todayDE, todayISO, isoToDE, deToISO, cv,
   setSaveLabel, rebuildGradient,
-  $hl, $sub, $date, $EP, $bSave, $bSaveArrow, $saveMenu, $bC, $bS, $bN,
+  $hl, $sub, $body, $date, $EP, $bSave, $bSaveArrow, $saveMenu, $bC, $bS, $bN,
   $togHlCaps, $togSubCaps, $swapBtn,
   $lbTwo, $lbStacked, $lbOne, $lbNone, $imgEd,
-  $hlCount, $subCount, $hint, $fmtBtns, $btnSafeZone,
+  $hlCount, $subCount, $bodyCount, $togPageNum, $hint, $fmtBtns, $btnSafeZone,
   $z, $pv, $ph, $f, $rm, $cr, $sz, $sx, $sy, $vz, $vx, $vy,
   $fsSlider, $fsVal, $fsReset,
   $subFsSlider, $subFsVal, $subFsReset,
@@ -27,12 +27,12 @@ $bN.addEventListener('click', function() {
     app.saveCurrentSlide();
     for (var ci = 0; ci < G.deck.length; ci++) {
       var ds = G.deck[ci];
-      if (ds.imgs[0] || ds.imgs[1] || ds.hlLines.join('').trim() || ds.subText.trim()) {
+      if (ds.imgs[0] || ds.imgs[1] || ds.hlLines.join('').trim() || ds.subText.trim() || (ds.bodyText && ds.bodyText.trim())) {
         hasContent = true; break;
       }
     }
   } else {
-    hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
+    hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim() || S.bodyText.trim();
   }
   var msg = G.deckActive
     ? 'Karussell mit ' + G.deck.length + ' Slides verwerfen und neu beginnen?'
@@ -42,11 +42,13 @@ $bN.addEventListener('click', function() {
   app.revokeBlob(0); app.revokeBlob(1);
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null]; S.creds = ['', ''];
   S.crop = [defaultCrop(), defaultCrop()]; S.hlCaps = false; S.subCaps = false;
-  S.hlLines = ['']; S.subText = '';
+  S.hlLines = ['']; S.subText = ''; S.bodyText = '';
   S.dateText = todayDE();
   S.hlFSOverride = 0; S.subFSOverride = 0; S.credFSOverride = 0;
   S.credAlign = 'right'; S.credOffX = 0; S.credOffY = 0; S.credShadow = false; S.textPos = 'top';
-  $hl.value = ''; $sub.value = ''; $date.value = todayISO();
+  S.showPageNum = true;
+  $hl.value = ''; $sub.value = ''; $body.value = ''; $date.value = todayISO();
+  if ($bodyCount) $bodyCount.textContent = '';
   $togHlCaps.classList.remove('on'); $togHlCaps.setAttribute('aria-checked', 'false');
   $togSubCaps.classList.remove('on'); $togSubCaps.setAttribute('aria-checked', 'false');
   $f[0].value = ''; $f[1].value = '';
@@ -229,6 +231,15 @@ $sub.addEventListener('input', function() {
   app.scheduleDraw();
 });
 
+// Body text input
+$body.addEventListener('input', function() {
+  if (this.value.length > 800) this.value = this.value.substring(0, 800);
+  S.bodyText = this.value;
+  if ($bodyCount) $bodyCount.textContent = this.value.length > 0 ? this.value.length + '/800' : '';
+  app.debouncedSave();
+  app.scheduleDraw();
+});
+
 // Date input
 $date.addEventListener('change', function() {
   S.dateText = this.value ? isoToDE(this.value) : '';
@@ -294,6 +305,17 @@ $btnSafeZone.addEventListener('click', function() {
   this.setAttribute('aria-checked', String(G.showSafeZone));
   app.scheduleDraw();
 });
+
+// Page number toggle (carousel)
+if ($togPageNum) {
+  $togPageNum.addEventListener('click', function() {
+    S.showPageNum = !S.showPageNum;
+    this.classList.toggle('on', S.showPageNum);
+    this.setAttribute('aria-checked', String(S.showPageNum));
+    app.debouncedSave();
+    app.scheduleDraw();
+  });
+}
 
 // Swap button
 $swapBtn.addEventListener('click', function(e) {
@@ -554,11 +576,12 @@ var MAX_UNDO = 40;
 function stateSnapshot() {
   return {
     json: JSON.stringify({
-      hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
+      hlLines: S.hlLines, subText: S.subText, bodyText: S.bodyText, dateText: S.dateText,
       hlCaps: S.hlCaps, subCaps: S.subCaps, layout: S.layout, format: S.format,
       creds: S.creds, crop: S.crop,
       hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
-      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, credShadow: S.credShadow, textPos: S.textPos
+      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, credShadow: S.credShadow, textPos: S.textPos,
+      showPageNum: S.showPageNum
     }),
     imgs: S.imgs.slice(),
     blobs: S.blobs.slice(),
@@ -578,7 +601,7 @@ function snapshotsEqual(a, b) {
 function restoreSnapshot(snap) {
   var data;
   try { data = JSON.parse(snap.json); } catch(e) { app.showToast('\u26a0 Snapshot-Daten besch\u00e4digt'); return; }
-  S.hlLines = data.hlLines; S.subText = data.subText; S.dateText = data.dateText;
+  S.hlLines = data.hlLines; S.subText = data.subText; S.bodyText = data.bodyText || ''; S.dateText = data.dateText;
   S.hlCaps = !!data.hlCaps; S.subCaps = !!data.subCaps;
   S.layout = data.layout; S.format = data.format;
   S.creds = data.creds; S.crop = data.crop;
@@ -590,6 +613,7 @@ function restoreSnapshot(snap) {
   S.credOffY = data.credOffY || 0;
   S.credShadow = !!data.credShadow;
   S.textPos = data.textPos || 'top';
+  S.showPageNum = data.showPageNum !== false;
   S.imgs = snap.imgs.slice();
   S.blobs = snap.blobs.slice();
   S.draftBlobs = snap.draftBlobs.slice();
@@ -762,12 +786,15 @@ function debouncedUndo() {
 }
 $hl.addEventListener('input', debouncedUndo);
 $sub.addEventListener('input', debouncedUndo);
+$body.addEventListener('input', debouncedUndo);
 $date.addEventListener('change', function() { pushUndo(); });
 
 // ===== refreshEditorFromState =====
 function refreshEditorFromState() {
   $hl.value = S.hlLines.join('\n');
   $sub.value = S.subText;
+  $body.value = S.bodyText || '';
+  if ($bodyCount) $bodyCount.textContent = S.bodyText ? S.bodyText.length + '/800' : '';
   $date.value = deToISO(S.dateText) || todayISO();
   $togHlCaps.classList.toggle('on', S.hlCaps);
   $togHlCaps.setAttribute('aria-checked', String(S.hlCaps));

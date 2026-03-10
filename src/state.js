@@ -99,12 +99,15 @@ export const S = {
   credOffX: 0,
   credOffY: 0,
   credShadow: false,
-  textPos: 'top'
+  textPos: 'top',
+  bodyText: '',
+  showPageNum: true
 };
 
 // ===== DOM REFS =====
 export const $hl   = document.getElementById('inHL');
 export const $sub  = document.getElementById('inSub');
+export const $body = document.getElementById('inBody');
 export const $date = document.getElementById('inDate');
 export const $EP   = document.getElementById('EP');
 export const $segCtrl = document.getElementById('segCtrl');
@@ -126,6 +129,8 @@ export const $lbNone    = document.getElementById('lbNone');
 export const $imgEd   = document.getElementById('imgEd');
 export const $hlCount  = document.getElementById('hlCount');
 export const $subCount = document.getElementById('subCount');
+export const $bodyCount = document.getElementById('bodyCount');
+export const $togPageNum = document.getElementById('togPageNum');
 export const $hint    = document.getElementById('hint');
 export const $fmtBtns = document.querySelectorAll('.fmt');
 export const $btnSafeZone = document.getElementById('btnSafeZone');

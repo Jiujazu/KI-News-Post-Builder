@@ -213,10 +213,11 @@ var STORE_KEY = 'ki-news-state';
 function saveState() {
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify({
-      hlLines: S.hlLines, subText: S.subText, dateText: S.dateText,
+      hlLines: S.hlLines, subText: S.subText, bodyText: S.bodyText, dateText: S.dateText,
       layout: S.layout, format: S.format, hlCaps: S.hlCaps, subCaps: S.subCaps,
       hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
-      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, credShadow: S.credShadow, textPos: S.textPos
+      credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY, credShadow: S.credShadow, textPos: S.textPos,
+      showPageNum: S.showPageNum
     }));
   } catch(e) { console.warn('saveState failed:', e); }
 }
@@ -246,6 +247,8 @@ function loadState() {
     if (typeof saved.credOffX === 'number') S.credOffX = saved.credOffX;
     if (typeof saved.credOffY === 'number') S.credOffY = saved.credOffY;
     if (typeof saved.credShadow === 'boolean') S.credShadow = saved.credShadow;
+    if (typeof saved.bodyText === 'string') S.bodyText = saved.bodyText;
+    if (typeof saved.showPageNum === 'boolean') S.showPageNum = saved.showPageNum;
   } catch(e) { console.warn('loadState failed:', e); }
 }
 

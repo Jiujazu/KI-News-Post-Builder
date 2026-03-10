@@ -179,6 +179,8 @@ button{border:none;cursor:pointer;font-size:13px;font-weight:500;padding:8px 12p
 .fld input:focus,.fld textarea:focus{border-color:var(--accent);background:var(--input-bg-focus);box-shadow:0 0 0 1px var(--accent)}
 .fld input.over,.fld textarea.over{border-color:#e5484d;background:rgba(229,72,77,.06)}
 .fld textarea{resize:none;overflow:hidden;min-height:48px}
+#inBody{min-height:72px;overflow-y:auto;resize:vertical;font-family:Cambria,'Times New Roman',serif;font-size:14px}
+.fld-hint{display:block;font-size:11px;color:var(--text-dim);opacity:.7;margin-top:3px}
 .caps-pill{
   display:inline-block;font-size:11px;font-weight:500;letter-spacing:.02em;
   padding:2px 7px;border-radius:var(--radius-sm);margin-left:6px;vertical-align:middle;

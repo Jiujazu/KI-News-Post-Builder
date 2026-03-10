@@ -41,12 +41,12 @@ export var FORMATS = {
 
 export function buildSlideData(snap) {
   return {
-    headline: snap.hlLines.join('\n'), subtitle: snap.subText, date: snap.dateText,
+    headline: snap.hlLines.join('\n'), subtitle: snap.subText, bodyText: snap.bodyText || '', date: snap.dateText,
     layout: snap.layout, format: snap.format || '4:5',
     hlCaps: snap.hlCaps, subCaps: snap.subCaps,
     hlFSOverride: snap.hlFSOverride, subFSOverride: snap.subFSOverride, credFSOverride: snap.credFSOverride,
     credAlign: snap.credAlign, credOffX: snap.credOffX, credOffY: snap.credOffY,
-    credShadow: snap.credShadow, textPos: snap.textPos,
+    credShadow: snap.credShadow, textPos: snap.textPos, showPageNum: snap.showPageNum !== false,
     credits: snap.creds.slice(),
     crops: snap.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; })
   };
@@ -65,10 +65,11 @@ export function loadSlideFromSaved(slideData) {
     layout: slideData.layout || 'one', format: slideData.format || '4:5',
     hlCaps: !!slideData.hlCaps, subCaps: !!slideData.subCaps,
     hlLines: slideData.headline ? slideData.headline.split('\n') : [''],
-    subText: slideData.subtitle || '', dateText: slideData.date || todayDE(),
+    subText: slideData.subtitle || '', bodyText: slideData.bodyText || '', dateText: slideData.date || todayDE(),
     hlFSOverride: slideData.hlFSOverride || 0, subFSOverride: slideData.subFSOverride || 0,
     credFSOverride: slideData.credFSOverride || 0, credAlign: slideData.credAlign || 'right',
     credOffX: slideData.credOffX || 0, credOffY: slideData.credOffY || 0,
-    credShadow: !!slideData.credShadow, textPos: slideData.textPos || 'top'
+    credShadow: !!slideData.credShadow, textPos: slideData.textPos || 'top',
+    showPageNum: slideData.showPageNum !== false
   };
 }

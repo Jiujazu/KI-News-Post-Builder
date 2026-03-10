@@ -93,6 +93,7 @@
       <div class="deck-strip" id="deckStrip"></div>
       <div class="deck-controls">
         <span class="deck-label" id="deckLabel"></span>
+        <button class="caps-pill on" id="togPageNum" role="switch" aria-checked="true" title="Seitenzahl auf Slides anzeigen">1/n</button>
         <button class="btn-primary" id="deckExportImgs" style="font-size:12px">Bilder Export</button>
         <button class="btn-x" id="deckExportPdf">PDF Export</button>
         <button class="btn-danger" id="deckClose">Karussell beenden</button>
@@ -212,6 +213,11 @@
       <input type="range" id="subFsSlider" min="20" max="150" value="20">
       <span class="vl" id="subFsVal">Auto</span>
       <button class="fs-reset" id="subFsReset" title="Auf Auto zur&uuml;cksetzen">&#8634;</button>
+    </div>
+    <div class="fld">
+      <label>Flie&szlig;text <span class="charcount" id="bodyCount" aria-live="polite"></span></label>
+      <textarea id="inBody" rows="3" placeholder="Flie&szlig;text (optional, &gt; f&uuml;r Zitat)" aria-describedby="bodyCount" maxlength="800"></textarea>
+      <span class="fld-hint" id="bodyHint">Zeilen mit &gt; werden als Zitat dargestellt</span>
     </div>
     <div class="fld">
       <label>Textposition</label>
