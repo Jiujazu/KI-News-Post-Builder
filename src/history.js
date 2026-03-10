@@ -34,12 +34,12 @@ $bA.addEventListener('click', function() {
     app.saveCurrentSlide();
     for (var ci = 0; ci < G.deck.length; ci++) {
       var ds = G.deck[ci];
-      if ((ds.hlLines.join('').trim()) || ds.subText.trim() || ds.imgs[0] || ds.imgs[1]) {
+      if ((ds.hlLines.join('').trim()) || ds.subText.trim() || (ds.bodyText && ds.bodyText.trim()) || ds.imgs[0] || ds.imgs[1]) {
         hasContent = true; break;
       }
     }
   } else {
-    hasContent = S.hlLines.join('').trim() || S.subText.trim() || S.imgs[0] || S.imgs[1];
+    hasContent = S.hlLines.join('').trim() || S.subText.trim() || S.bodyText.trim() || S.imgs[0] || S.imgs[1];
   }
   if (!hasContent) { app.showToast('\u26a0 Nichts zum Speichern'); return; }
   btn.disabled = true; setSaveLabel('Speichert\u2026');
@@ -111,12 +111,12 @@ $bA.addEventListener('click', function() {
     var postId = G._loadedPostId || app.generatePostId();
     var post = {
       id: postId, savedAt: new Date().toISOString(),
-      headline: S.hlLines.join('\n'), subtitle: S.subText, date: S.dateText,
+      headline: S.hlLines.join('\n'), subtitle: S.subText, bodyText: S.bodyText, date: S.dateText,
       layout: S.layout, format: S.format,
       hlCaps: S.hlCaps, subCaps: S.subCaps,
       hlFSOverride: S.hlFSOverride, subFSOverride: S.subFSOverride, credFSOverride: S.credFSOverride,
       credAlign: S.credAlign, credOffX: S.credOffX, credOffY: S.credOffY,
-      credShadow: S.credShadow, textPos: S.textPos,
+      credShadow: S.credShadow, textPos: S.textPos, showPageNum: S.showPageNum,
       credits: S.creds.slice(),
       crops: S.crop.map(function(c) { return {x:c.x, y:c.y, z:c.z, flip:!!c.flip, cropH:c.cropH||100}; }),
       thumbnail: results[2], images: [results[0], results[1]]
@@ -291,7 +291,7 @@ function loadHistoryGrid() {
 
 // ===== HISTORY: LOAD POST =====
 function loadArchivedPost(post) {
-  var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim();
+  var hasContent = S.imgs[0] || S.imgs[1] || S.hlLines.join('').trim() || S.subText.trim() || S.bodyText.trim();
   var confirmMsg = 'Aktuellen Post ersetzen und gespeicherten Post laden?';
   if (G.deckActive && G.deck.length > 1) {
     confirmMsg = 'Aktuelles Karussell (' + G.deck.length + ' Slides) ersetzen und gespeicherten Post laden?';
@@ -302,6 +302,7 @@ function loadArchivedPost(post) {
   S.imgs = [null, null]; S.blobs = [null, null]; S.draftBlobs = [null, null];
   S.hlLines = post.headline ? post.headline.split('\n') : [''];
   S.subText = post.subtitle || '';
+  S.bodyText = post.bodyText || '';
   S.dateText = post.date || todayDE();
   S.hlCaps = !!(post.hlCaps || post.allCaps);
   S.subCaps = !!post.subCaps;
@@ -315,6 +316,7 @@ function loadArchivedPost(post) {
   S.layout = post.layout || 'one';
   S.format = post.format || '4:5';
   S.textPos = post.textPos || 'top';
+  S.showPageNum = post.showPageNum !== false;
   S.creds = (Array.isArray(post.credits) && post.credits.length === 2) ? post.credits.slice() : ['', ''];
   S.crop = (Array.isArray(post.crops) && post.crops.length === 2)
     ? post.crops.map(function(c) {

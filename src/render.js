@@ -203,13 +203,40 @@ function drawText(t, maxW) {
   return curY;
 }
 
+function estimateBodyH(maxW) {
+  if (!S.bodyText || !S.bodyText.trim()) return 0;
+  var W = G.W, H = G.H;
+  var isLandscape = W > H;
+  var fs = isLandscape ? 26 : BODY_FS;
+  var lineH = Math.round(fs * BODY_LH_FACTOR);
+  var text = S.bodyText.length > BODY_MAX_CHARS ? S.bodyText.substring(0, BODY_MAX_CHARS) : S.bodyText;
+  var blocks = parseBodyText(text);
+  var h = BODY_GAP;
+  for (var bi = 0; bi < blocks.length; bi++) {
+    var block = blocks[bi];
+    if (block.type === 'gap') { h += BODY_PARA_GAP; continue; }
+    var isQuote = block.type === 'quote';
+    var wrapMaxW = isQuote ? maxW - QUOTE_LINE_W - QUOTE_PAD_L - 16 : maxW;
+    var wrapCount = 0;
+    cx.save();
+    for (var li = 0; li < block.lines.length; li++) {
+      wrapCount += wrapBodyLine(block.lines[li], fs, wrapMaxW, isQuote).length;
+    }
+    cx.restore();
+    if (isQuote) { h += wrapCount * lineH + QUOTE_PAD_TB * 2 + BODY_PARA_GAP; }
+    else { h += wrapCount * lineH + 4; }
+  }
+  return h;
+}
+
 function drawImages(curY) {
   var W = G.W, H = G.H;
   var isLandscape = W > H;
   var imgTopGap = isLandscape ? 14 : IMG_TOP_GAP;
   var footerH = isLandscape ? 70 : FOOTER_H;
+  var bodyH = estimateBodyH(W - MX * 2);
   var imgTop = curY + imgTopGap;
-  var imgH = Math.max(H - footerH - imgTop, IMG_MIN_H);
+  var imgH = Math.max(H - footerH - imgTop - bodyH, IMG_MIN_H);
   var fullW = W - MX * 2;
   if (S.layout === 'two') {
     var imgW = Math.round((fullW - IMG_GAP) / 2);
@@ -236,8 +263,9 @@ function drawImagesAtTop(t) {
   var subBlockH = t.subArr.length > 0 ? t.subArr.length * subLineH : 0;
   var subGap = t.isNone ? (isLandscape ? 12 : 20) : isLandscape ? 8 : 14;
   var textBlockH = hlBlockH + (subBlockH > 0 ? subGap + subBlockH : 0);
+  var bodyH = estimateBodyH(W - MX * 2);
   var imgTop = topPad;
-  var imgH = Math.max(H - footerH - imgTop - imgTopGap - textBlockH - imgTopGap, IMG_MIN_H);
+  var imgH = Math.max(H - footerH - imgTop - imgTopGap - textBlockH - imgTopGap - bodyH, IMG_MIN_H);
   var fullW = W - MX * 2;
   if (S.layout === 'two') {
     var imgW = Math.round((fullW - IMG_GAP) / 2);
@@ -309,19 +337,165 @@ function drawFooter() {
   cx.textAlign = 'left';
 }
 
+// ===== BODY TEXT + BLOCKQUOTE =====
+var BODY_FS = 38;
+var BODY_LH_FACTOR = 1.45;
+var BODY_MAX_CHARS = 800;
+var QUOTE_ACCENT = '#E0EFF4';
+var QUOTE_BG = 'rgba(224,239,244,0.06)';
+var QUOTE_LINE_W = 4;
+var QUOTE_PAD_L = 20;
+var QUOTE_PAD_TB = 14;
+var BODY_PARA_GAP = 24;
+var BODY_GAP = 30;
+
+function parseBodyText(text) {
+  if (!text || !text.trim()) return [];
+  var lines = text.split('\n');
+  var blocks = [];
+  var curType = null;
+  var curLines = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    var isQuote = line.length >= 2 && line[0] === '>' && line[1] === ' ';
+    var type = isQuote ? 'quote' : (line.trim() === '' ? 'gap' : 'text');
+    if (type === 'gap') {
+      if (curLines.length > 0) { blocks.push({ type: curType, lines: curLines }); curLines = []; curType = null; }
+      blocks.push({ type: 'gap' });
+      continue;
+    }
+    var content = isQuote ? line.substring(2) : line;
+    if (type !== curType) {
+      if (curLines.length > 0) blocks.push({ type: curType, lines: curLines });
+      curLines = [content];
+      curType = type;
+    } else {
+      curLines.push(content);
+    }
+  }
+  if (curLines.length > 0) blocks.push({ type: curType, lines: curLines });
+  return blocks;
+}
+
+function wrapBodyLine(text, fs, maxW, isItalic) {
+  cx.font = (isItalic ? 'italic ' : '') + '400 ' + fs + 'px Cambria,"Times New Roman",serif';
+  if (cachedMeasure(text) <= maxW) return [text];
+  var words = text.split(' ');
+  var lines = [], cur = '';
+  for (var w = 0; w < words.length; w++) {
+    var test = cur ? cur + ' ' + words[w] : words[w];
+    if (cachedMeasure(test) > maxW && cur) {
+      lines.push(cur); cur = words[w];
+    } else { cur = test; }
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function drawBodyText(startY, maxW) {
+  var W = G.W, H = G.H;
+  var isLandscape = W > H;
+  var footerH = isLandscape ? 70 : FOOTER_H;
+  var bodyText = S.bodyText;
+  if (!bodyText || !bodyText.trim()) return startY;
+  if (bodyText.length > BODY_MAX_CHARS) bodyText = bodyText.substring(0, BODY_MAX_CHARS);
+  var blocks = parseBodyText(bodyText);
+  if (!blocks.length) return startY;
+  var fs = isLandscape ? 26 : BODY_FS;
+  var lineH = Math.round(fs * BODY_LH_FACTOR);
+  var curY = startY + BODY_GAP;
+  var bottomLimit = H - footerH - 10;
+  cx.textBaseline = 'top';
+  cx.textAlign = 'left';
+  for (var bi = 0; bi < blocks.length; bi++) {
+    var block = blocks[bi];
+    if (block.type === 'gap') {
+      curY += BODY_PARA_GAP;
+      continue;
+    }
+    var isQuote = block.type === 'quote';
+    var wrapped = [];
+    var wrapMaxW = isQuote ? maxW - QUOTE_LINE_W - QUOTE_PAD_L - 16 : maxW;
+    for (var li = 0; li < block.lines.length; li++) {
+      var wl = wrapBodyLine(block.lines[li], fs, wrapMaxW, isQuote);
+      for (var wi = 0; wi < wl.length; wi++) wrapped.push(wl[wi]);
+    }
+    if (isQuote) {
+      var quoteBlockH = wrapped.length * lineH + QUOTE_PAD_TB * 2;
+      if (curY + quoteBlockH > bottomLimit) break;
+      cx.fillStyle = QUOTE_BG;
+      cx.fillRect(MX, curY, maxW, quoteBlockH);
+      cx.fillStyle = QUOTE_ACCENT;
+      cx.fillRect(MX, curY, QUOTE_LINE_W, quoteBlockH);
+      cx.font = 'italic 400 ' + fs + 'px Cambria,"Times New Roman",serif';
+      cx.fillStyle = 'rgba(255,255,255,0.9)';
+      var qTextX = MX + QUOTE_LINE_W + QUOTE_PAD_L;
+      var qTextY = curY + QUOTE_PAD_TB;
+      for (var qi = 0; qi < wrapped.length; qi++) {
+        if (qTextY + lineH > bottomLimit) break;
+        cx.fillText(wrapped[qi], qTextX, qTextY);
+        qTextY += lineH;
+      }
+      curY += quoteBlockH + BODY_PARA_GAP;
+    } else {
+      cx.font = '400 ' + fs + 'px Cambria,"Times New Roman",serif';
+      cx.fillStyle = 'rgba(210,225,240,0.75)';
+      for (var ti = 0; ti < wrapped.length; ti++) {
+        if (curY + lineH > bottomLimit) break;
+        cx.fillText(wrapped[ti], MX, curY);
+        curY += lineH;
+      }
+      curY += 4;
+    }
+  }
+  cx.textAlign = 'left';
+  return curY;
+}
+
+// ===== PAGE COUNTER =====
+function drawPageCounter() {
+  if (!G.deckActive || !S.showPageNum || G.deck.length < 2) return;
+  var W = G.W, H = G.H;
+  var isLandscape = W > H;
+  var fs = isLandscape ? 22 : 28;
+  var topPad = isLandscape ? 36 : TOP_PAD;
+  cx.save();
+  cx.font = '500 ' + fs + 'px Festivo, serif';
+  cx.fillStyle = 'rgba(255,255,255,0.5)';
+  cx.textAlign = 'right';
+  cx.textBaseline = 'top';
+  cx.fillText((G.currentSlideIdx + 1) + '/' + G.deck.length, W - MX, topPad);
+  cx.restore();
+}
+
 // ===== DRAW =====
 function baseDraw() {
   var W = G.W, H = G.H;
   cx.drawImage(gradCV, 0, 0, 1, H, 0, 0, W, H);
   var maxW = W - MX * 2;
   var t = prepareText(maxW);
+  var hasBody = S.bodyText && S.bodyText.trim();
   if (S.textPos === 'bottom' && !t.isNone) {
     var imgEndY = drawImagesAtTop(t);
     drawTextAtBottom(t, maxW, imgEndY);
+    if (hasBody) drawBodyText(imgEndY, maxW);
   } else {
     var curY = drawText(t, maxW);
-    if (!t.isNone) drawImages(curY);
+    if (!t.isNone) {
+      drawImages(curY);
+      if (hasBody) {
+        var isLandscape = W > H;
+        var footerH = isLandscape ? 70 : FOOTER_H;
+        var imgTopGap = isLandscape ? 14 : IMG_TOP_GAP;
+        var bodyH = estimateBodyH(maxW);
+        var imgH = Math.max(H - footerH - (curY + imgTopGap) - bodyH, IMG_MIN_H);
+        drawBodyText(curY + imgTopGap + imgH, maxW);
+      }
+    } else {
+      if (hasBody) drawBodyText(curY, maxW);
+    }
   }
+  drawPageCounter();
   drawFooter();
 }
 

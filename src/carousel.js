@@ -1,5 +1,5 @@
 import { app, G, S, FORMATS, defaultCrop, todayDE, cv, cx, SYS_FONT, MX,
-  $hl, $sub, $date, $hint,
+  $hl, $sub, $body, $date, $hint,
   $deckBar, $deckStrip, $deckLabel, $deckExportPdf, $deckExportImgs, $deckClose,
   $tabSingle, $tabCarousel, $bCarouselExportImgs, $bCarouselExportPdf, $appDiv,
   isoToDE, rebuildGradient } from './state.js';
@@ -61,6 +61,7 @@ function slideSnapshot() {
     subCaps: S.subCaps,
     hlLines: S.hlLines.slice(),
     subText: S.subText,
+    bodyText: S.bodyText,
     dateText: S.dateText,
     hlFSOverride: S.hlFSOverride,
     subFSOverride: S.subFSOverride,
@@ -69,7 +70,8 @@ function slideSnapshot() {
     credOffX: S.credOffX,
     credOffY: S.credOffY,
     credShadow: S.credShadow,
-    textPos: S.textPos
+    textPos: S.textPos,
+    showPageNum: S.showPageNum
   };
 }
 
@@ -85,6 +87,7 @@ function loadSlideState(snap) {
   S.subCaps = snap.subCaps;
   S.hlLines = snap.hlLines.slice();
   S.subText = snap.subText;
+  S.bodyText = snap.bodyText || '';
   S.dateText = snap.dateText;
   S.hlFSOverride = snap.hlFSOverride;
   S.subFSOverride = snap.subFSOverride;
@@ -94,12 +97,14 @@ function loadSlideState(snap) {
   S.credOffY = snap.credOffY;
   S.credShadow = snap.credShadow;
   S.textPos = snap.textPos;
+  S.showPageNum = snap.showPageNum !== false;
 }
 
 function saveCurrentSlide() {
   if (!G.deckActive || !G.deck.length) return;
   S.hlLines = $hl.value.split('\n');
   S.subText = $sub.value;
+  S.bodyText = $body.value;
   var iso = $date.value;
   if (iso) S.dateText = isoToDE(iso);
   G.deck[G.currentSlideIdx] = slideSnapshot();
@@ -121,6 +126,7 @@ function renderDeckStrip() {
   while ($deckStrip.firstChild) $deckStrip.removeChild($deckStrip.firstChild);
   S.hlLines = $hl.value.split('\n');
   S.subText = $sub.value;
+  S.bodyText = $body.value;
   var iso = $date.value;
   if (iso) S.dateText = isoToDE(iso);
   G.deck[G.currentSlideIdx] = slideSnapshot();
@@ -348,6 +354,7 @@ function addSlide() {
     subCaps: false,
     hlLines: [''],
     subText: '',
+    bodyText: '',
     dateText: S.dateText,
     hlFSOverride: 0,
     subFSOverride: 0,
@@ -356,7 +363,8 @@ function addSlide() {
     credOffX: 0,
     credOffY: 0,
     credShadow: false,
-    textPos: 'top'
+    textPos: 'top',
+    showPageNum: S.showPageNum
   };
   G.deck.push(newSlide);
   switchToSlide(G.deck.length - 1);
